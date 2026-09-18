@@ -207,6 +207,35 @@ Budget the 32 characters deliberately; they are tight. Whatever scheme is chosen
 deterministic from our own estimate revision identity so a retry regenerates the identical
 key.
 
+### `globalId` gives per-line idempotency too — with 100 characters to work with
+
+`costItem.globalId` is a nullable string with **`maxLength: 100`** on `createCostItem`, and
+it was verified to be **filterable** the same way `externalId` is:
+
+```jsonc
+{ "organization": { "$": { "id": "22PBAjem8SSC" },
+    "byGlobalId": { "_": "costItems",
+                    "$": { "size": 2, "where": [["globalId"], "=", "dbest-probe-none"] },
+                    "count": {} } } }
+// => { "byGlobalId": { "count": 0 } }
+```
+
+It is also **null across all 176,155 cost items** — entirely unused, so the namespace is
+ours.
+
+This is a materially stronger position than document-level idempotency alone. Combining the
+two gives:
+
+| Level | Key | Budget | Use |
+|---|---|---|---|
+| Document | `externalId` | 32 chars | "Did this estimate revision already get pushed?" |
+| Line item | `globalId` | 100 chars | "Which of my lines made it, and which need repair?" |
+
+A push that times out halfway can therefore be reconciled **line by line** rather than
+all-or-nothing, and our own line identity survives round-trips through JobTread's UI.
+Whether uniqueness is server-enforced on either field is still **UNVERIFIED** — assume it is
+not, and treat both as advisory keys that we enforce ourselves.
+
 ---
 
 ## 6. Webhooks — 43 event types, with one critical gap
@@ -316,6 +345,28 @@ Document and line-item `files` entries accept both `uploadRequestId` and
 **`annotatedUploadRequestId`**, so an annotated takeoff markup can be attached to an
 individual cost item — the mechanism for making every number on the estimate traceable back
 to the region of plan it came from.
+
+### Create-time defaults that will silently corrupt data
+
+`createCostItem` input defaults, read straight off the schema:
+
+| Field | Default | Live data reality | Risk |
+|---|---|---|---|
+| `isTaxable` | **`true`** | `false` on **every** observed line | **Every line we create is taxable unless we say otherwise.** Must be set explicitly on every write. |
+| `requireSpecificationApproval` | `true` | — | Silently puts lines into an approval workflow. |
+| `showDescription` | `true` | — | Affects customer-facing output. |
+| `showQuantity` | `true` | — | Affects customer-facing output. |
+| `isEditable` | `false` | — | |
+
+The `isTaxable` default is the dangerous one: it is the opposite of this organization's
+universal convention, and the divergence would appear only as a tax line on a customer
+proposal. Never rely on a create-time default — write every field that matters explicitly,
+and assert the round-tripped values match what was sent.
+
+Other constraints worth knowing: `name` ≤ 250 chars, `description` ≤ 4096, `files` ≤ 10 per
+cost item. `positionAfter` takes `{ type, id }` for ordering a new item relative to an
+existing one, which is easier and safer than generating raw fractional `position` strings
+by hand.
 
 ### Mapping endpoints
 
@@ -476,9 +527,9 @@ items it is small enough to review by hand with tooling assistance.
   token bucket, exponential backoff, batching) and confirm with JobTread support.
 - Exact semantics of `createCostCodeMapping` / `createUnitMapping` / `createCostTypeMapping`
   / `createCustomFieldMapping`.
-- Whether `globalId` on `costItem` is writable and uniqueness-enforced, and whether it is
-  filterable the way `externalId` is. If it is, per-line idempotency becomes as strong as
-  per-document idempotency.
+- ~~Whether `globalId` on `costItem` is filterable~~ — **resolved: it is**, with a 100-char
+  budget and currently null everywhere. Whether uniqueness is *server-enforced* on
+  `globalId` or `externalId` remains **UNVERIFIED**; assume not and enforce it ourselves.
 - Whether webhook deliveries are signed, retried, and ordered — and what the retry policy
   is on our 5xx.
 - Whether a sandbox or second organization can be provisioned for integration testing.
