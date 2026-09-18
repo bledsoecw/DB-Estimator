@@ -9,6 +9,27 @@ documentation. Where a claim is unverified it is marked **UNVERIFIED**. Figures 
 baseline that the estimator's JobTread integration is designed against; re-verify before
 relying on any of it after a JobTread release.
 
+> ### Revision 2 — corrections to Revision 1
+>
+> Revision 1 of this document generalized several claims from a single sampled estimate.
+> An adversarial re-verification pass against org-wide counts found six of them wrong. They
+> are corrected in place below; this notice records what changed, because Revision 1 was
+> committed and may have been read.
+>
+> | Rev 1 claim | Reality | Where |
+> |---|---|---|
+> | `_type` discriminator is `"newCostItem"` / `"newCostGroup"` | **`"costItem"` / `"costGroup"`.** New vs. existing is decided by the presence of `id`, not the `_type` string. The Rev 1 payload example would be **rejected by validation**. | §7 |
+> | `isTaxable` is `false` on every line | **80,462 of 176,156 cost items are `isTaxable: true` (46%).** | §4, §9 |
+> | `taxRate` is 0 on live estimates | **60 documents carry `taxRate > 0`, including `customerOrder` "Estimate" at 0.0725 and 0.0685** (Ohio rates). | §9 |
+> | All three formula fields are null everywhere | **`quantityFormula` is populated on 5,451 cost items** with a real named-variable syntax. Only `unitCostFormula`/`unitPriceFormula` are null (0 of 176,156). | §4, §9 |
+> | `externalId` is null on every document | **2,156 of 8,463 documents carry one** — vendor invoice numbers on `vendorBill`. The *conclusion* survives: **0 of 2,181 `customerOrder` documents** have one. | §5 |
+> | The 1500 `lineItems` cap is a document-wide node budget | **It is declared per level**, on the top-level array and on every nested group's array. True capacity is far larger. | §1, §7 |
+> | `jobArea` is null org-wide | **6 cost items carry one** ("Master Bathroom", "Kitchen"). 99.997% free, not empty. | §4 |
+>
+> The lesson generalizes: **a single document is not a sample.** Every claim about
+> org-wide state in this document is now backed by a `count` over the whole organization,
+> not by inspection of one record.
+
 > **Read-only discipline.** All observations below came from read queries and schema
 > introspection. No mutation was executed against the live organization. Keep it that way
 > outside of a dedicated test job.
@@ -46,7 +67,7 @@ variant.
 |---|---|---|
 | Connection page size | **100 max** | `size: 250` is rejected outright. Every sweep must paginate. |
 | Pagination | `nextPage` / `previousPage` opaque cursors | Token strings, not offsets. |
-| `createDocument` `lineItems` | **1500 max** | Nested groups count toward the same cap. |
+| `createDocument` `lineItems` | **1500 max, per level** | Declared independently on the top-level array and on every nested group's array — not a document-wide node budget. |
 | `createWebhook` `eventTypes` | **43 max** | Exactly the number of event types that exist. |
 | `profitBreakdown` | 10 entries max | |
 | `references` | 1000 max | |
@@ -155,13 +176,13 @@ Selected fields (full type has ~45):
 | `name` | string | |
 | `description` | string, ≤4096 | |
 | `quantity` | number, nullable | |
-| `quantityFormula` | string, nullable | **null everywhere in live data** |
+| `quantityFormula` | string, nullable | **Populated on 5,451 items** — a real evaluator, see §9. |
 | `unitCost` / `unitPrice` | number, nullable | |
-| `unitCostFormula` / `unitPriceFormula` | string, nullable | **null everywhere in live data** |
+| `unitCostFormula` / `unitPriceFormula` | string, nullable | Genuinely null — 0 of 176,156. |
 | `cost` / `price` / `priceWithTax` | number | Derived. |
-| `isTaxable` | boolean | `false` everywhere in live data |
+| `isTaxable` | boolean | **`true` on 80,462 of 176,156 (46%)** — not the false-everywhere of Rev 1. |
 | `costCode` / `costType` / `unit` | relations | |
-| `jobArea` | string, nullable | **null everywhere in live data** |
+| `jobArea` | string, nullable | Non-null on only **6** of 176,156 items ("Master Bathroom", "Kitchen"). Effectively free, but do not assert it is empty. |
 | `costGroup` | relation, nullable | Parent group. |
 | `organizationCostItem` | relation, nullable | Link back to the catalog item. **Set on every line observed.** |
 | `sourceCostItem` / `jobCostItem` | relation, nullable | Provenance chains. |
@@ -186,8 +207,13 @@ scheme), not integers. Sorting by `position` requires `sortBy: [{"field": "posit
 `document.externalId` is a nullable string of at most 32 characters. Two properties were
 verified:
 
-1. **It is readable.** It is `null` on every existing document, so the namespace is clean
-   and entirely ours to use.
+1. **It is readable — and already in use, but not where we need it.** 2,156 of 8,463
+   documents carry a non-null `externalId`: 2,155 `vendorBill` and 1 `vendorOrder`, holding
+   vendor invoice numbers (`"69420400"`, `"H26957"`, `"523815"`). Almost certainly written
+   by their accounting integration.
+   **But 0 of 2,181 `customerOrder` documents carry one.** The namespace we actually need
+   is clean — and we must never write `externalId` on a `vendorBill`, where we would
+   collide with a live accounting convention.
 2. **It is filterable**, which is what actually matters:
 
 ```jsonc
@@ -292,11 +318,11 @@ Consequences, which are not optional:
     "externalId": "<=32 chars, deterministic>",
     "taxRate": 0,
     "lineItems": [
-      { "_type": "newCostGroup", "name": "Phase 1 - General Requirements",
+      { "_type": "costGroup", "name": "Phase 1 - General Requirements",
         "lineItems": [
-          { "_type": "newCostGroup", "name": "Demolition",
+          { "_type": "costGroup", "name": "Demolition",
             "lineItems": [
-              { "_type": "newCostItem",
+              { "_type": "costItem",
                 "name": "Demolition",
                 "organizationCostItemId": "22PCCDherj6a",
                 "costCodeId": "22PMwLcyPZBN",
@@ -317,9 +343,32 @@ Consequences, which are not optional:
   "createdDocument": { "id": {}, "externalId": {}, "price": {}, "cost": {} } } }
 ```
 
-`lineItems` entries are a `oneOf` over `newCostItem`, `newCostGroup`, `existingCostItem`,
-`existingCostGroup`; groups nest recursively through their own `lineItems`. The 1500 cap is
-generous — the largest observed real estimate uses 72 items and 28 groups, about 7% of it.
+### The `_type` discriminator is the entity type, not the variant name
+
+This is the single most dangerous detail on the write path, because the wrong value fails
+validation rather than doing something subtly odd:
+
+```jsonc
+{ "schema": { "$": { "expand": true,
+                     "path": "root.createDocument.$.lineItems._on_newCostItem._type" } } }
+// => { "type": "constant", "typeInput": "costItem" }      // NOT "newCostItem"
+// and _on_newCostGroup._type => constant "costGroup"      // NOT "newCostGroup"
+```
+
+`lineItems` entries are a `oneOf` over the schema variants `newCostItem`, `newCostGroup`,
+`existingCostItem`, `existingCostGroup` — but the `_type` **value** you send is only ever
+`"costItem"` or `"costGroup"`. New versus existing is discriminated by **the presence of an
+`id`**, not by the `_type` string. Groups nest recursively through their own `lineItems`.
+
+The **1500 cap is declared independently on each `lineItems` array** — the top-level one and
+every nested group's. It is a per-level cap, not a document-wide node budget, so real
+capacity is far larger than 1500. The largest observed real estimate uses 100 nodes total
+(72 items + 28 groups). A conservative preflight assert on total node count is still worth
+keeping, but it is our own discipline, not an API limit.
+
+`positionAfter` exists on `createCostItem` but is **not present on any `createDocument` /
+`updateDocument` lineItems variant**. Inside the atomic document mutation, ordering is by
+**array index only** — which is simpler and is the path to prefer anyway.
 
 Also accepted on `createDocument`: `profitBreakdown` (≤10 `{name, percentage}`), `files`,
 `references` (≤1000), `scheduledDocuments` (≤20), `requireSignature`,
@@ -375,6 +424,124 @@ by hand.
 JobTread's. Worth evaluating before hand-rolling mapping tables. Their exact semantics are
 **UNVERIFIED** — introspect `root.createCostCodeMapping.$` before committing to them.
 
+---
+
+## 7a. Capabilities worth building on that are easy to miss
+
+These were found on a second introspection pass and several change design options
+materially.
+
+### JobTread has a full plan-annotation vector API — this is the differentiator
+
+`root.createPlan` / `updatePlan` / `deletePlan` exist, and `updatePlan.$.annotations` takes
+up to 1000 entries of `oneOf {path, text, point, meta}`. The `path` variant:
+
+```jsonc
+{ "type": "path",              // constant
+  "page": 1,                   // int, gte 1
+  "id": "<our annotation id>",
+  "isNegative": false,         // optional — DEDUCTION regions are native
+  "isClosed": true,            // optional — closed polygons
+  "strokeWidth": 2,
+  "strokeColor": "<color>",
+  "fillColor": "<color>",      // optional
+  "fillOpacity": 0.25,         // optional
+  "points": [ /* freedraw: 2..2000 numbers, i.e. up to 1000 xy pairs */ ] }
+```
+
+`createUploadRequest.$.annotations` accepts the same shape.
+
+This means takeoff polygons can be pushed back into JobTread as **native plan annotations**,
+including negative/deduction regions and closed areas. A project manager opens the plan in
+JobTread — no new tool, no new login — and sees exactly the regions the estimate was built
+from. Neither STACK nor Togal can do that, because neither is inside JobTread. Treat this as
+a first-class integration target rather than a nicety.
+
+`plan.previousFilePages` (nullable array of `{file, page, updatedAt}`) means JobTread
+**already tracks plan-page revision lineage**. Stale-takeoff detection on a plan revision can
+seed from this instead of inventing it.
+
+### Distinguishing our writes from human edits, natively
+
+`event.createdByGrantId` is **null for actions taken by a human in the JobTread UI** and
+**populated for grant-authenticated API writes**. That is a clean, server-side way to tell
+"a person changed this" from "we changed this" — which is precisely the signal needed to
+avoid a webhook feedback loop, and it is better than timestamp heuristics.
+
+`document.events` is a **per-document** event connection (filterable, sortable, paginated),
+not just the org-wide `organization.events`. Reconciling one document does not require
+trawling a global feed.
+
+Note that `document` has **no `updatedAt` field**, which is why a content fingerprint —
+rather than a timestamp comparison — is the correct drift-detection mechanism.
+
+### Reading a subtree in one call
+
+`costGroup.descendentCostItems` and `costGroup.descendentCostGroups` return an entire
+subtree from a single group in one connection. Far better than paging `document.costItems`
+and `document.costGroups` at 100 apiece and rebuilding the tree from leaves.
+
+### Native allowances are three-valued, not a boolean
+
+`allowanceType` is a `oneOf` enum with **three** values: `cost`, `costAndFee`, `price`.
+Modelling allowances as a local `includes_markup` boolean is a lossy two-value encoding that
+silently drops `costAndFee`. Use the native three-state enum. `document.allowanceCostItem`
+and `document.allowanceDeductionCostItem` exist, and `createDocument.$.allowanceCostItemId`
+lets a document be created *against* an allowance — native allowance reconciliation.
+
+### Native selections / options
+
+`newCostGroup` accepts `isSimpleSelection`, `minSelectionsRequired`, `maxSelectionsAllowed`
+and `showChildDeltas`; `costItem` carries `isSelected` and `isSpecification`;
+`document.isSimpleSelection` and `updateSelectionAssignment` exist. "Give the customer three
+options" is a built-in, not something to rebuild.
+
+### `references` for change-order lineage
+
+`createDocument.$.references` (≤1000) feeds `document.referencedDocuments` and
+`document.referencedTimeEntries`, reversible via `deleteDocumentReference`. A change order
+can natively reference the baseline estimate it amends.
+
+### `documentTemplate.templateName` disambiguates the six "Estimate" templates
+
+`name` is not unique; `templateName` is the meaningful one:
+
+| id | `name` | `templateName` |
+|---|---|---|
+| `22PByuQ6ivP5` | Estimate | **Const - Small** |
+| `22PBz28funCv` | Estimate | **Const - Med** |
+| `22PBz2nQunqm` | Estimate | **Const - Large** |
+| `22PHqjjFH3XC` | Estimate | Ballpark |
+| `22PBAjfWNQrV` | Estimate | Roof - No Terms/50% Down |
+| `22PNbCYDRACT` | Estimate | Roof - SS No Terms/50% Down |
+
+The general-construction targets are **Const - Small / Med / Large**, tiered by project
+size, with Ballpark for early-stage numbers. The roofing pair is cleanly separable, which
+supports doing general construction first.
+
+### `includeInBudget` defaults to `true` — and is not a promotion signal
+
+`createDocument.$.includeInBudget` has `defaultValue: true`, a document-level default trap
+alongside the cost-item ones in §7. More importantly, the live in-flight estimate
+`22PejfgufCkY` has `includeInBudget: true` while still `pending` — it is the *normal* state
+of a working estimate, not a sign that it has been promoted to a contract. Any lifecycle
+lock keyed on `includeInBudget` turning true would lock essentially every document
+immediately. Use `status != draft`, a non-zero `documentRecipients` count, or a non-null
+`signedAt` instead.
+
+### `organizationCostItemId` is optional at the API level
+
+It is `{nullable: jobtreadId}` on both `createCostItem` and the `newCostItem` line variant.
+Its 100% presence in DB's live data is an organizational convention, **not** a server
+constraint — so a dropped catalog link will not be caught by a server rejection. Enforce it
+in our own preflight.
+
+### `root.$.viaUserId`
+
+A request-level "restrict results to a specific user scope" primitive. Potentially a
+server-side way to enforce a price-only role rather than relying solely on our own cost
+stripping. Semantics **UNVERIFIED**; worth a spike.
+
 ### Other notable roots
 
 `signQuery` signs a query with the current grant and returns a token to execute it later —
@@ -429,10 +596,57 @@ Assembly output must map onto **this** shape — a construction-sequence phase t
 estimators will not recognize their own estimates. Cost codes carry the CSI-ish
 classification separately, and the two are orthogonal.
 
-Also true of live estimates: `taxRate` 0, `isTaxable` false on all lines,
-`profitBreakdown` null, `showProfit` false, `jobArea` null, all three formula fields null.
-They do **zero** formula-driven estimating today; formulas would be the first such data in
-the organization.
+On *this* document: `taxRate` 0, `isTaxable` false on all lines, `profitBreakdown` null,
+`showProfit` false, `jobArea` null. **None of those generalize** — see below.
+
+### Tax is real, and not defaulted off
+
+Org-wide counts, not a single sample:
+
+| Query | Count |
+|---|---|
+| `costItems` where `isTaxable = true` | **80,462** |
+| `costItems` where `isTaxable = false` | 95,694 |
+| `documents` where `taxRate > 0` | **60** |
+
+Observed taxed documents include `customerOrder` documents named "Estimate" at `taxRate`
+0.0725 and 0.0685 — Ohio sales-tax rates — and a `vendorOrder` Work Order at 0.0725.
+
+So roughly **46% of all cost items are marked taxable** and real customer estimates do
+charge tax. Any design that hardcodes `isTaxable: false` / `taxRate: 0` "to match their
+data" would **under-bill tax on a real subset of the work**. Taxability needs an actual
+per-project rule, and the rule needs an accountant's sign-off, not a default.
+
+Note also that `taxRate` is a **fraction in [0, 1]** (`gte: 0, lte: 1`), not a percentage —
+0.0725, not 7.25. An easy and expensive off-by-100.
+
+### They already do formula-driven estimating — just not on customer documents
+
+`quantityFormula` is populated on **5,451 cost items**, with a working named-variable
+syntax:
+
+```
+round({Area}/8.5)               → Demolition, in Hours
+round(({Area}*{Depth})/27)      → Hand Excavation / Bulk Excavation / Gravel, in Cubic Yards
+round(({Area}/5.5)/3)           → Framing/Sheathing Labor, in Hours
+ceil({Area} / 8.5)              → Demolition, in Hours  (a `ceil` variant of the same rule)
+```
+
+These live on **catalog rows and job-budget lines**, and on **zero `customerOrder` lines** —
+which is why a sample drawn from one customer estimate showed none. `unitCostFormula` and
+`unitPriceFormula` genuinely are null across all 176,156 items.
+
+Two consequences, both good:
+
+1. **JobTread has a real formula evaluator with named `{Variable}` references, `round` and
+   `ceil`, in production use.** Mirroring our computed quantities into `quantityFormula` is
+   therefore plausible rather than speculative — though the exact grammar, variable
+   binding, and evaluation timing are still **UNVERIFIED** and need a throwaway-document
+   test before anything depends on them.
+2. **Those ~101 catalog formulas are DB's own existing assembly logic, free to read.**
+   `round({Area}/8.5)` is a productivity rate — 8.5 SF of demolition per labor hour —
+   already encoded by their own estimators. That is the seed corpus for an assembly
+   library, and it is far better evidence than anything derived from a generic cost book.
 
 ### The implicit markup schedule (measured, n = 46 priced catalog items)
 
