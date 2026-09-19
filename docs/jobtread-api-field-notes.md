@@ -757,6 +757,66 @@ items it is small enough to review by hand with tooling assistance.
 
 ---
 
+## 10a. Operational facts about the live environment
+
+Verified 2026-09-19. These are about *this organization's setup*, not the API, and each one
+has a direct consequence for a first write.
+
+### Four webhooks already exist, and a push will trigger them
+
+| Consumer | Subscribed events |
+|---|---|
+| Google Apps Script (`script.google.com/macros/…`) | `jobCreated`, `jobUpdated`, `commentCreated`, `documentRecipientUpdated`, **`documentUpdated`** |
+| `closeout.deitemeyerbrothers.com` | `taskCreated`, `taskUpdated`, `taskDeleted`, `jobUpdated` |
+| `db-zone-setter-…vercel.app` | `jobCreated`, `jobUpdated`, `locationCreated`, `locationUpdated`, **`documentCreated`**, **`documentUpdated`** |
+| `ops.deitemeyerbrothers.com` | **`documentCreated`**, **`documentUpdated`** |
+
+So **`documentCreated` fans out to 2 consumers and `documentUpdated` to 3.** The very first
+estimate pushed by DB Estimator will immediately invoke a Google Apps Script, a Vercel
+function and DB's own ops service — all written before this system existed and none aware
+of it.
+
+Every one of those handlers needs an explicit namespace skip for our documents **before**
+push #1, and each needs a confirmed owner. This is a prerequisite, not a follow-up.
+
+> **Credential hygiene.** Three of those webhook URLs embed a bearer token — in a query
+> string (`?token=…`) or in the path. They are readable by anyone who can call
+> `organization.webhooks`. Do not copy webhook URLs into documents, tickets, logs or commit
+> messages, and treat them as rotatable secrets. They are deliberately omitted above.
+
+### Pushing a `customerOrder` almost certainly does not reach QuickBooks
+
+| Query | Count |
+|---|---|
+| `documents` where `qboId != null` | 1,106 (all `customerInvoice` / `vendorBill`) |
+| `customerOrder` documents where `qboId != null` | **0** of 2,181 |
+
+Estimates have never synced to QuickBooks in this organization; invoices and bills have.
+Strong evidence that creating a `customerOrder` has no accounting side effect — but it is
+inference from a pattern, so **confirm in writing** before the first push rather than
+discovering otherwise on a real customer.
+
+### The current grant is shared, and expires soon
+
+```jsonc
+{ "currentGrant": { "id": {}, "name": {}, "expiresAt": {}, "createdAt": {} } }
+// => id 22PXNFaV6ZW4, name "Access for claude.ai",
+//    createdAt 2026-05-15T15:34:30Z, expiresAt 2026-12-18T00:58:10Z
+```
+
+All observations in this document were made through a **general-purpose grant named
+"Access for claude.ai"**, which **expires 2026-12-18** — inside the window of any first
+build phase. The integration must not inherit it. It needs its own named grant, because
+grant identity is also the echo-suppression key (§7a) and a shared grant makes our writes
+indistinguishable from anything else using the same credential.
+
+There is **no `createGrant` mutation**, so provisioning is a manual step in the JobTread UI
+and belongs on the critical path, not in a backlog. Plan for rotation from the start, and
+retain historical grant ids so events written under a previous grant are still recognized
+as ours.
+
+---
+
 ## 11. Open questions to resolve before building the integration
 
 - Rate limits and quotas: nothing observable or documented. Design defensively (client-side
