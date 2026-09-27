@@ -117,7 +117,7 @@ Same quantity, same price, formula stripped on the document. That job carries a 
 
 5. **Roofing is far closer to done than §11 assumes.** §11 treats roofing as a 2029 deliverable. On the assembly side it is already built and running. That should be re-read before any roofing scope is planned.
 
-**One thing is not yet known.** Where the variable *values* are entered is not exposed through the Pave API — job `areas` is a plain label list, cost groups carry no variable store, and no custom field matches the roof variable names. The mechanism demonstrably works, so the answer is a five-minute question for whoever configured the roofing library, or for JobTread support. **It must be answered before anything in §2.7 is scheduled**, because it determines whether general-construction variables can be defined the same way.
+**Answered 2026-09-27 — VERIFIED.** The variable values are **job parameters**: `job.parameters` is a typed array (`number`, `option`, `formula`, and measurement types such as `area`, `linear` and `count` that can hold plan takeoffs), readable on every job and writable through `createJob` / `updateJob`. Job 260369 carries `Roof Facets Area = 3121`, `Waste Factor = 1.1` and the other roof variables by exactly the names the formulas use; 168 jobs carry parameters. General-construction variables can therefore be defined the same way. The first general-construction template built on this is `docs/ballpark/bathroom.md`.
 
 ---
 

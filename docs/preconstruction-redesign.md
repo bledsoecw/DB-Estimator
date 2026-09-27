@@ -269,9 +269,10 @@ measurement variables. The general-construction side has six unpriced stubs. The
 assemblies proposed here are the first three real general-construction entries in that
 library.
 
-The one open question from the roadmap still applies: **where variable values are entered**
-is not visible through the API. Whoever configured the roofing library answers it in five
-minutes. It is the first item in §7.
+The roadmap's open question is now answered (VERIFIED 2026-09-27): **the variable values are
+JobTread job parameters** (`job.parameters`), the same mechanism roofing uses. The bathroom
+template built on it, with its intake sheet and calibration, is in
+[`ballpark/bathroom.md`](ballpark/bathroom.md).
 
 ### 4.2 The Scope Intake sheet
 
@@ -313,7 +314,6 @@ Floor tile               ceil({Bath SF} * 1.10)                     SF      allo
 Drywall / paint          {Bath SF} * <factor>                       SF
 Electrical circuits      {Circuits Added}                           EA
 General requirements     (duration-driven)                          Weeks
-Contingency              named line, 10% at ballpark stage          LS
 ```
 
 Good / Better / Best is a native JobTread selection group (`isSimpleSelection`, min/max
@@ -406,7 +406,7 @@ clause at the rates in the contract."
 
 | Week | Work | Who |
 |---|---|---|
-| 1 | Answer the variable-entry question with whoever built the roofing library. Set DPA fees, hour caps, contingency defaults, and the allowance-type policy. Draft the three intake sheets. | Carl, estimator, designer |
+| 1 | ~~Answer the variable-entry question~~ (answered: job parameters). Set DPA fees, hour caps, contingency defaults, and the allowance-type policy. Draft the three intake sheets. | Carl, estimator, designer |
 | 2 | Author `BALLPARK — Bathroom / Kitchen / Addition` in the catalog with Good/Better/Best selection groups. Rename catalog group `22PPB363cpwn` to `Design & Pricing Agreement`, replace its four hourly lines with fixed-fee items by type, and move `Designer – Con Docs` to a construction-phase catalog item. Retire the `PAR` template. Rewrite the PBA template as the DPA (paid in full, credited, no 10/90). | Estimator, designer, CGM |
 | 3 | Calibrate each assembly against the §1.4 contracts. Adjust. Add `BRE Mid` / `BRE Date` custom fields. Replace the four unused PBA statuses with BRE Out / DPA Out / DPA Signed / Proposal Out. | Estimator, Carl |
 | 4 | Train sales on the driver screen, the intake sheets and the scripts in §6. Go live on all new construction leads. Keep the current PBA only for the 8 signed ones already in progress. | Sales, Carl |

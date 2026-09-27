@@ -670,6 +670,22 @@ Two consequences, both good:
    already encoded by their own estimators. That is the seed corpus for an assembly
    library, and it is far better evidence than anything derived from a generic cost book.
 
+### Variable binding: formula variables are job parameters — VERIFIED 2026-09-27
+
+The `{Variable}` names in a `quantityFormula` resolve against **`job.parameters`**, a typed
+array on every job (`createJob.$.parameters` / `updateJob.$.parameters`, max 1000). Each entry
+is a `oneOf`: `number {name, value}`, `option {name, options, value}`, `formula {name, formula}`,
+or a measurement type — `area`, `areaPitch`, `areaVolume`, `linear`, `linearArea`,
+`linearDrop`, `linearPitch`, `linearVolume`, `count` — carrying a `unit` and up to 100
+`measurements` (each with `planId`, `annotations`, `isManual`), i.e. plan takeoffs.
+
+Job 260369 carries `Roof Facets Area = 3121`, `Waste Factor = 1.1` and eleven more roof
+variables by exactly the names the roofing formulas use, plus two with no value set
+(`Vented Soffit Area`, `Unvented Soffit Area`). **168 jobs** carry parameters. That empty pair
+suggests JobTread creates a parameter when a formula naming it is added to the job; confirm on
+a test job. The grammar observed across all 101 catalog formulas is `+ - * /`, parentheses,
+`round()`, `ceil()` and `{Name}` — no conditionals.
+
 ### The implicit markup schedule (measured, n = 46 priced catalog items)
 
 | Cost type | Modal multiplier | Range | Implied gross margin |
