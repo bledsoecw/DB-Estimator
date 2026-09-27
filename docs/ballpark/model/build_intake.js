@@ -24,8 +24,8 @@ const children=[
   p(t(spec.intro,{size:17,color:'404040'}),{after:100}),
   table([2880,2880,2880,2880],[new TableRow({children:['Job #','Customer','Date of visit','Sales rep'].map(h=>label(h,' ',2880))}),
     new TableRow({children:[label('Property address',' ',5760,{span:2}),label('Photos uploaded to CompanyCam',box+' Yes',2880),label(spec.which,' ',2880)]})]),
-  heading('1  Does this project need the design step?'),
-  p(t('If any answer is Yes, the next step after the budget range is the Design & Pricing Agreement. If every answer is No, it goes straight from the budget range to a fixed-price proposal.',{size:16,color:'404040'}),{after:60}),
+  heading('1  '+(spec.screenTitle||'Does this project need the design step?')),
+  p(t(spec.screenIntro||'If any answer is Yes, the next step after the budget range is the Design & Pricing Agreement. If every answer is No, it goes straight from the budget range to a fixed-price proposal.',{size:16,color:'404040'}),{after:60}),
   table([8520,1500,1500],[new TableRow({children:[cell(p(t('Does any of this apply?',{bold:true,size:16})),8520,{fill:FILL}),...['Yes','No'].map(h=>cell(p(t(h,{bold:true,size:16}),{align:AlignmentType.CENTER}),1500,{fill:FILL}))]}),
     ...spec.screen.map(q=>new TableRow({cantSplit:true,children:[cell(p(t(q,{size:17})),8520),...[0,1].map(()=>cell(p(t(box,{size:22}),{align:AlignmentType.CENTER}),1500))]}))]),
 ];

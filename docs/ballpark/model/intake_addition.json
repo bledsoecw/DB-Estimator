@@ -1,0 +1,221 @@
+{
+ "room": "Addition",
+ "filename": "addition-intake-sheet.docx",
+ "which": "Type: room / sunroom / garage / other",
+ "intro": "Fill this in at the site visit. Every number feeds the addition ballpark in JobTread, which prices Good, Better and Best at once. Write 0 when something does not apply; do not leave it blank. A bathroom or kitchen inside the addition also gets that room's intake sheet.",
+ "screenTitle": "Does this addition need the exception track?",
+ "screenIntro": "Every addition goes on to the Design & Pricing Agreement after the budget range: it has a new foundation and a roof tie-in. If any answer below is Yes, flag it for the CGM: the DPA is quoted individually and the contract carries the design-to-budget clause (proposal §3.4).",
+ "screen": [
+  "Second storey over existing rooms, or the house roof must be re-framed",
+  "Slope, fill, poor soil, or the footprint is near a property line or easement",
+  "A utility is in the footprint: gas or electric meter, sewer lateral, septic or well",
+  "The electrical panel or HVAC system is too small to take the addition",
+  "The customer wants a design we have not built before (unusual roof, large spans, specialty roofing)"
+ ],
+ "sections": [
+  [
+   "Size and shape",
+   [
+    [
+     "Footprint",
+     "___ ft wide × ___ ft deep",
+     "Width along the house wall (for a detached building, the front wall), then depth out from the house. Outside faces of the new walls.",
+     "{Addition Width}  {Addition Depth}"
+    ],
+    [
+     "Storeys",
+     "☐ 1   ☐ 2",
+     "Finished floors on the new footprint.",
+     "{Addition Stories}"
+    ],
+    [
+     "Wall height",
+     "_______ ft",
+     "Per storey. 8 for most rooms; 9–10 for garages.",
+     "{Addition Wall Height}"
+    ],
+    [
+     "Attached or detached",
+     "☐ Attached (0)   ☐ Detached (1)",
+     "Detached = a stand-alone building with four new walls, such as a garage.",
+     "{Addition Detached}"
+    ]
+   ]
+  ],
+  [
+   "Foundation and site",
+   [
+    [
+     "Foundation",
+     "☐ Crawl   ☐ Slab   ☐ Basement   ☐ Piers: ___",
+     "Tick one; it is 1 and the others 0. Slab = footed slab with a stem wall. For piers, write the number of posts.",
+     "{Addition Crawl Space}  {Addition Slab}  {Addition Basement}  {Addition Piers}"
+    ],
+    [
+     "DB digs or grades",
+     "☐ Yes (1)   ☐ No (0)",
+     "Tight access, slope or drainage that means DB brings an excavator. Most concrete subs include the digging.",
+     "{Addition Site Excavation}"
+    ],
+    [
+     "Structure torn down first",
+     "_______ SF",
+     "Existing porch, deck, sunroom or room removed before building. 0 if none.",
+     "{Addition Structure Removed}"
+    ],
+    [
+     "Utility trench",
+     "_______ ft",
+     "Detached buildings only: distance from the house panel to the new building.",
+     "{Addition Utility Trench}"
+    ],
+    [
+     "Dumpster loads",
+     "_______",
+     "1 for most additions; 2–3 with a tear-down.",
+     "{Addition Dumpster Loads}"
+    ],
+    [
+     "Travel hours",
+     "_______",
+     "Only when the job is past the standard service zone. Ask the CGM for the number.",
+     "{Addition Travel Hours}"
+    ]
+   ]
+  ],
+  [
+   "Roof and exterior",
+   [
+    [
+     "Roof tie-in",
+     "☐ None  ☐ Simple  ☐ Valley",
+     "None = 0 (detached). Simple = 1: shed or gable roof against the house. Valley = 2: cross-gable or valley into the house roof.",
+     "{Addition Roof Tie-In}"
+    ],
+    [
+     "House siding to match",
+     "_______ squares",
+     "Squares of the house's own siding that must be replaced so the addition matches (100 SF = 1 square). 0 if it will blend.",
+     "{Addition Extra Siding Squares}"
+    ],
+    [
+     "Exterior today",
+     "Vinyl / Wood / Brick / Stone",
+     "Circle one. Brick or stone to match is priced by hand; flag it in notes.",
+     null
+    ]
+   ]
+  ],
+  [
+   "Windows and doors",
+   [
+    [
+     "Windows",
+     "_______",
+     "New windows in the addition.",
+     "{Addition Windows}"
+    ],
+    [
+     "Entry and patio doors",
+     "Entry ___   Patio ___",
+     "Entry or service doors; sliding or hinged patio doors.",
+     "{Addition Exterior Doors}  {Addition Patio Doors}"
+    ],
+    [
+     "Garage and interior doors",
+     "Garage ___   Interior ___",
+     "Overhead garage doors; interior and closet doors.",
+     "{Addition Garage Doors}  {Addition Interior Doors}"
+    ],
+    [
+     "Openings into the house",
+     "_______",
+     "Doorways or wider openings cut into the existing house wall, each with a header.",
+     "{Addition Wall Openings}"
+    ]
+   ]
+  ],
+  [
+   "Inside",
+   [
+    [
+     "Wired",
+     "☐ Yes (1)   ☐ No (0)",
+     "Outlets, lights and switches. No = shell only.",
+     "{Addition Electrical}"
+    ],
+    [
+     "Insulated and drywalled",
+     "☐ Yes (1)   ☐ No (0)",
+     "Insulated, drywalled and painted. Yes for rooms and finished garages; No for a shell or three-season porch.",
+     "{Addition Drywall}"
+    ],
+    [
+     "Living space",
+     "☐ Yes (1)   ☐ No (0)",
+     "Flooring, trim and finished-room coordination. No for a garage, porch or shell.",
+     "{Addition Living Space}"
+    ],
+    [
+     "Plumbing fixtures",
+     "_______",
+     "Fixtures that need new drain and supply run into the addition. Fill in the bathroom or kitchen sheet for their finishes.",
+     "{Addition Plumbing Fixtures}"
+    ],
+    [
+     "Heating and cooling",
+     "☐ None  ☐ Extend  ☐ New unit",
+     "Extend = existing ductwork runs into the addition. New unit = mini-split or dedicated system. Tick one; it is 1.",
+     "{Addition HVAC Extend}  {Addition HVAC New Unit}"
+    ],
+    [
+     "Panel and HVAC today",
+     "Panel ___ A   Furnace age ___",
+     "For the estimator; not a formula input. Photograph both labels.",
+     null
+    ]
+   ]
+  ]
+ ],
+ "tiers": [
+  [
+   "Roof",
+   "Architectural shingle",
+   "Upgraded shingle",
+   "Standing-seam metal"
+  ],
+  [
+   "Siding",
+   "Standard vinyl",
+   "Premium vinyl lap",
+   "Vinyl shake or board and batten"
+  ],
+  [
+   "Windows",
+   "Vinyl double-hung",
+   "Upgraded vinyl or casement",
+   "Premium: fiberglass or wood-clad"
+  ],
+  [
+   "Patio door",
+   "Vinyl slider",
+   "Hinged patio door",
+   "Premium patio door"
+  ],
+  [
+   "Floor",
+   "Standard LVP",
+   "Upgraded LVP",
+   "Engineered hardwood"
+  ]
+ ],
+ "photos": [
+  "Each side of the house where the addition goes",
+  "Roof line where it ties in",
+  "Ground and grade in the footprint",
+  "Siding close-up",
+  "Electrical panel and label",
+  "Furnace and AC labels",
+  "Access for a concrete truck"
+ ]
+}

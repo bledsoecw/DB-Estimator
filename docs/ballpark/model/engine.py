@@ -6,7 +6,8 @@ JobTread formulas use: + - * / ( ) round() ceil() and {Parameter Name}.
 import math, re
 
 LAB = 55.0                                        # DB catalog labor cost per hour ($100 price)
-MARK = {'L': 100/55, 'M': 1.45, 'S': 1.30, 'O': 1.45}   # price / cost by cost type
+MARK = {'L': 100/55, 'M': 1.45, 'S': 1.30, 'O': 1.45,   # price / cost by cost type
+        'U': 1.45}   # labor the catalog prices per unit (siding, roofing, gutter labor): JobTread type Labor, ×1.45
 T = ('Good', 'Better', 'Best')
 PRICE_OVERRIDE = {'Hauling & Disposal': 450}      # DB's existing catalog item: $250 cost / $450 price
 

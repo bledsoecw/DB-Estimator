@@ -49,7 +49,8 @@ def build(spec):
     rates = [('L', 'Labor', '=C10/C9', "DB catalog labor: $55 cost / $100 price per hour (a 45% margin)."),
              ('M', 'Materials', 1.45, 'DB catalog materials: ×1.45 with zero variance across the catalog (field notes §9).'),
              ('S', 'Subcontractor', 1.30, "Countertop, tile and flooring subs in DB's estimates were marked up ×1.30."),
-             ('O', 'Other', 1.45, 'Permits and misc. fees: ×1.45.')]
+             ('O', 'Other', 1.45, 'Permits and misc. fees: ×1.45.'),
+             ('U', 'Labor, per unit', 1.45, "Labor the catalog prices per square or foot (siding, roofing, gutters). JobTread cost type Labor, marked up ×1.45 like the catalog.")]
     for i, (code, name, v, note) in enumerate(rates, 4):
         ra.cell(i, 1, code).font = font(); ra.cell(i, 2, name).font = font()
         c = ra.cell(i, 3, v); c.number_format = '0.000'
@@ -62,7 +63,7 @@ def build(spec):
     ra['D9'] = 'Used as the unit cost of every labor line on the Template tab.'; ra['D9'].font = GREY
     ra['D12'] = spec.get('range_note', 'The range shown to the customer around each tier total.'); ra['D12'].font = GREY
     for col, w in zip('ABCD', (26, 16, 14, 100)): ra.column_dimensions[col].width = w
-    for nm, ref in (('MarkupCodes', 'Rates!$A$4:$A$7'), ('MarkupVals', 'Rates!$C$4:$C$7'),
+    for nm, ref in (('MarkupCodes', 'Rates!$A$4:$A$8'), ('MarkupVals', 'Rates!$C$4:$C$8'),
                     ('LaborCost', 'Rates!$C$9'), ('RangePct', 'Rates!$C$12')):
         wb.defined_names[nm] = DefinedName(nm, attr_text=ref)
 
@@ -154,8 +155,8 @@ def build(spec):
     ca['F4'] = 'Ballpark'; ca['F4'].font = BOLD; ca['F4'].fill = HEAD
     for j, t in enumerate(T):
         c = ca.cell(4, 7 + j, t); c.font = BOLD; c.fill = HEAD; c.alignment = Alignment(horizontal='center')
-    rowsout = [('Phase 1 - General Requirements', 'Phase 1'), ('Phase 2 - Rough-In', 'Phase 2'),
-               ('Phase 3 - Interior', 'Phase 3'), ('Phase 4 - Finishes', 'Phase 4'), ('Finish selections (tier)', None)]
+    phases = spec.get('phases', ('Phase 1 - General Requirements', 'Phase 2 - Rough-In', 'Phase 3 - Interior', 'Phase 4 - Finishes'))
+    rowsout = [(p, p.split(' -')[0]) for p in phases] + [('Finish selections (tier)', None)]
     for i, (label, ph) in enumerate(rowsout, 5):
         ca.cell(i, 6, label).font = font()
         for k in range(3):

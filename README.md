@@ -17,6 +17,7 @@ decision material for whether — and how — to build it.
 | **[`docs/preconstruction-redesign.md`](docs/preconstruction-redesign.md)** | The pre-construction process proposal: why the PBA loses prospects (measured from JobTread), a budget-first replacement, and how to produce a ±15% ballpark inside JobTread without a developer. |
 | **[`docs/ballpark/bathroom.md`](docs/ballpark/bathroom.md)** | The bathroom ballpark: a two-page site-visit intake sheet and a formula-driven JobTread template pricing Good / Better / Best, calibrated against 17 of DB's own bathroom estimates. |
 | **[`docs/ballpark/kitchen.md`](docs/ballpark/kitchen.md)** | The kitchen ballpark: intake sheet and JobTread template on the same engine, checked against every kitchen DB has estimated. DB has signed none yet, so it is quoted at ±20%. |
+| **[`docs/ballpark/addition.md`](docs/ballpark/addition.md)** | The addition ballpark: intake sheet and JobTread template for room additions, sunrooms and detached garages, checked against eight of DB's addition estimates. Quoted at ±20%; every addition then goes on to the design agreement. |
 
 ## The short version
 

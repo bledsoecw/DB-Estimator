@@ -272,7 +272,8 @@ library.
 The roadmap's open question is now answered (VERIFIED 2026-09-27): **the variable values are
 JobTread job parameters** (`job.parameters`), the same mechanism roofing uses. The templates
 built on it, each with its intake sheet and checks, are in
-[`ballpark/bathroom.md`](ballpark/bathroom.md) and [`ballpark/kitchen.md`](ballpark/kitchen.md).
+[`ballpark/bathroom.md`](ballpark/bathroom.md), [`ballpark/kitchen.md`](ballpark/kitchen.md) and
+[`ballpark/addition.md`](ballpark/addition.md).
 
 ### 4.2 The Scope Intake sheet
 
