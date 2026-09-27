@@ -63,6 +63,64 @@ ADR 0001 is the living verified-facts record with a nightly read-only assertion 
 
 ---
 
+## 1.2 The finding that most changes this plan — VERIFIED 2026-09-27
+
+**DB already runs a working parametric assembly engine inside JobTread. It is in production on roofing, and the general-construction side of it is empty.**
+
+This was missed by every earlier revision, which treated formula-driven assemblies as net-new capability to be built in Phase 2a. They are not. The capability exists, DB's own people configured it, and it works end to end.
+
+What the live data shows:
+
+| Measure | Value |
+|---|---|
+| Catalog items carrying a `quantityFormula` | 101 |
+| — of those, **roofing/exterior assemblies with real unit costs** | **~95** |
+| — of those, **general-construction stubs, all `unitCost: null`** | **~6** |
+| Job-budget lines carrying a formula | 5,360 |
+| Formula lines **resolving to a real quantity** | **4,684** |
+| Distinct jobs using them | **185** |
+| Formula lines resolving to 0 (unbound variables) | 771 |
+
+The roofing library is not a toy. It is a parametric takeoff-to-price system with option tiers:
+
+```
+OC Duration Shingles      ceil({Roof Facets Area} * {Waste Factor} / 100)        Square    $123.99
+OC Ridge Cap              ceil({Roof Ridges Hips Length} * 1.1 / 33)             Bundle    $72.00
+OC Starter Shingles       ceil(({Roof Rakes Length}+{Roof Gutters Eaves Length})*1.1/100)  Bundle  $59.45
+RhinoRoof Underlayment    ceil(({Roof Facets Area}+{3/12 Slopes})*{Waste Factor}/1000)     Roll    $78.00
+Rhino I&W-G               ceil((({Roof Valleys Length}+({Roof Gutters Eaves Length}*{Rows of IWS})
+                                +(({Roof Flashing Length}+{Roof Step Flashing Length})/2))/65))    $79.00
+Drip Edge                 ceil(({Roof Rakes Length}+{Roof Gutters Eaves Length})*1.1/10)   Piece    $8.50
+SS Clips                  ceil({Roof Facets Area} * {Waste Factor} / 1000)        Box      $155.00
+```
+
+Those variable names — `{Roof Facets Area}`, `{Roof Ridges Hips Length}`, `{Roof Gutters Eaves Length}`, `{Roof Rakes Length}`, `{Roof Valleys Length}`, `{Roof Flashing Length}`, `{Roof Step Flashing Length}`, `{Vented Ridges}`, `{Rows of IWS}`, `{3/12 Slopes}`, `{Waste Factor}` — are the field list of a **HOVER report**. DB buys the measurement for $58.99–112.61, feeds it in, and the estimate computes itself. Option groups (`OC Duration Shingle System`, `— Premium Color`, `Class 4 Upgrade`, `Upgrades`, warranty tiers) are modelled as sibling cost groups.
+
+**And it flows through to the customer document automatically.** Verified on job `22PTvB2JUpdz` (260369 Bibler_Storm Damage):
+
+| | quantity | `quantityFormula` | price |
+|---|---|---|---|
+| Job budget line | 35 Square | `ceil({Roof Facets Area}*{Waste Factor}/100)` | $6,585.31 |
+| Customer estimate line | 35 Square | *(null — resolved snapshot)* | $6,585.31 |
+
+Same quantity, same price, formula stripped on the document. That job carries a live estimate created **2026-09-25** for $24,586.12. This is current daily practice, not an experiment.
+
+### What this means for the plan
+
+1. **There is no retyping problem on roofing.** The budget→document flow-through is native and automatic. Any part of the build case that rests on "eliminating the triple-entered quantity" must be re-argued for general construction specifically, and measured there (Spike 1), because the mechanism that would eliminate it already exists and is in use.
+
+2. **Phase 2a's assembly engine is now substantially harder to justify.** Building a second assembly engine, outside the system of record, to do what the system of record already does for 185 jobs, is a weak proposition. The defensible remainder is what JobTread's engine does *not* do: dimensional unit typing, cost distributions mined from history, audit provenance, and measurement capture.
+
+3. **The general-construction gap is real, and it is a configuration gap, not a software gap.** Six unpriced stubs — `round({Area}/8.5)` for demolition hours, `round(({Area}*{Depth})/27)` for excavation yards, `round(({Area}/5.5)/3)` for framing labor — duplicated across `round()` and `ceil()` variants by someone experimenting. Nobody finished the work or priced it.
+
+4. **The fastest path to value is therefore not this project.** It is authoring general-construction assemblies in JobTread the way the roofing ones already exist. That needs Carl, an estimator, and whoever configured the roofing library — not a developer, not $250K, and not 15 months. See §2.7.
+
+5. **Roofing is far closer to done than §11 assumes.** §11 treats roofing as a 2029 deliverable. On the assembly side it is already built and running. That should be re-read before any roofing scope is planned.
+
+**One thing is not yet known.** Where the variable *values* are entered is not exposed through the Pave API — job `areas` is a plain label list, cost groups carry no variable store, and no custom field matches the roof variable names. The mechanism demonstrably works, so the answer is a five-minute question for whoever configured the roofing library, or for JobTread support. **It must be answered before anything in §2.7 is scheduled**, because it determines whether general-construction variables can be defined the same way.
+
+---
+
 ## 2. The build-vs-buy reckoning
 
 ### 2.1 What buying costs (the weakest number here — must be re-quoted)
@@ -206,6 +264,37 @@ This is the least certain claim in the document and the most vulnerable to wishf
 | **A markup basis turns out to be an accident, not a policy (Spike 6 / Q6)** | **Split the gate.** Reproduce history *and* reproduce intent, in shadow, with the dollar delta per project type reported to Carl before he chooses a go-forward rule set (§8.4). A historical-fidelity gate must never silently become pricing policy |
 | Carl's roofing appetite is near-term | **Take seam 8 early** — the vendor-measurement adapter moves into Phase 2b (§11) |
 | All of the above come back favorably | **Approve Phases 1–3. Re-decide the canvas at Gate 3.** |
+
+### 2.7 The two-week option
+
+Carl asked whether anything useful can exist in a couple of weeks. It can — and it is not this project.
+
+**Finish the general-construction half of the assembly library DB already owns** (§1.2). The roofing side proves the pattern works in production on 185 jobs. The general-construction side has six unpriced stubs.
+
+| Week | Work | Who |
+|---|---|---|
+| 0 (2 days) | Answer the one open question: where variable values are entered. Ask whoever built the roofing library, or JobTread support | Carl |
+| 1 | Pick the two highest-volume GC scopes from the last 12 months. For each, write the driver variables (floor area, wall length, ceiling height, opening counts) and the line items each drives, using the existing 709-item catalog for pricing | Carl + estimator |
+| 2 | Author them as formula catalog items, exactly like the roofing ones. Bind variables on one real job. Compare the computed estimate against one already priced by hand | Estimator + whoever configured roofing |
+| 3–4 (optional) | Two more scopes, then run it live on real bids | Estimator |
+
+**Cost:** no developer, no subscription, no code. Perhaps 30–50 hours of Carl's and an estimator's time.
+
+**What it delivers:** for the covered scopes, an estimator types a handful of driver numbers and the line items, quantities, waste and pricing compute — then flow to the customer estimate automatically, the way roofing already does.
+
+**What it does not deliver**, and these are the honest limits:
+
+- **It does not measure anything.** Roofing works because HOVER supplies the measurements for $58.99–112.61. For general-construction interiors there is no equivalent, so someone still walks the job or scales the plans and types the drivers in. That is the gap a takeoff tool would eventually fill, and it remains unfilled.
+- **Pricing is only as good as the catalog**, which has the known hygiene problems — wrong cost codes, `Each` used as a catch-all, one item at three prices, pervasive duplicates (§10).
+- **No dimensional type safety.** Nothing stops a square-foot value reaching a linear-foot slot; JobTread's evaluator does not type units.
+- **No cost distributions.** Unit costs are whatever the catalog says today, not mined from the ~175k historical instances.
+- **No audit provenance** beyond what JobTread records natively.
+
+**Why do it first regardless of the Gate 0 decision.** It is the cheapest possible test of the central premise of this whole plan: that assembly-driven estimating is faster and more consistent for DB's general-construction work. If two scopes go in and estimators use them, the premise holds and the larger build has evidence behind it. If the assemblies sit unused, that is the most valuable negative result available — bought for 40 hours instead of $250K — and Gate 0 should be a decision to buy.
+
+This does not replace Phase 0; it runs inside it, needs no developer, and should start before the contractor engagement is posted.
+
+---
 
 ---
 
