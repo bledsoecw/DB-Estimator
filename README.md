@@ -14,6 +14,7 @@ decision material for whether — and how — to build it.
 |---|---|
 | **[`docs/ROADMAP.md`](docs/ROADMAP.md)** | The build roadmap. Phases, gates, costs, the build-vs-buy reckoning, the JobTread subsystem design, the reliability model, and the questions only Carl can answer. |
 | **[`docs/jobtread-api-field-notes.md`](docs/jobtread-api-field-notes.md)** | The JobTread Pave API, verified by direct query against the live organization. The factual baseline the integration is designed against. |
+| **[`docs/preconstruction-redesign.md`](docs/preconstruction-redesign.md)** | The pre-construction process proposal: why the PBA loses prospects (measured from JobTread), a budget-first replacement, and how to produce a ±15% ballpark inside JobTread without a developer. |
 
 ## The short version
 
