@@ -1,0 +1,230 @@
+{
+ "room": "Kitchen",
+ "filename": "kitchen-intake-sheet.docx",
+ "which": "Layout today (L, U, galley…)",
+ "intro": "Fill this in at the site visit. Every number feeds the kitchen ballpark in JobTread, which prices Good, Better and Best at once. Write 0 when something does not apply; do not leave it blank.",
+ "screen": [
+  "A structural wall is removed or opened",
+  "The sink, range or another fixture moves (drain, supply or gas line moves)",
+  "New foundation, footing or roof tie-in",
+  "HVAC extended or relocated beyond a register move",
+  "The cabinet layout changes or the room footprint changes"
+ ],
+ "sections": [
+  [
+   "Room",
+   [
+    [
+     "Kitchen floor area",
+     "___ ft × ___ ft = ____ SF",
+     "Wall to wall, including any eat-in area being remodeled.",
+     "{Kitchen Floor Area}"
+    ],
+    [
+     "Full gut?",
+     "☐ Full gut   ☐ Swap only",
+     "Walls opened and every cabinet out = 1. Cabinets and counters swapped with walls left intact = 0.",
+     "{Kitchen Full Gut}"
+    ],
+    [
+     "Walls moved",
+     "_______",
+     "Walls framed, removed or relocated. Count each wall. Any structural wall means the design step.",
+     "{Kitchen Walls Moved}"
+    ],
+    [
+     "Dumpster loads",
+     "_______",
+     "1 for most kitchens. 2–3 when walls come out.",
+     "{Kitchen Dumpster Loads}"
+    ]
+   ]
+  ],
+  [
+   "Cabinets and counters",
+   [
+    [
+     "Cabinet run",
+     "_______ ft",
+     "Linear feet of base cabinets, including the island and the width of any pantry or oven towers. Uppers are priced in; do not measure them.",
+     "{Kitchen Cabinet Run}"
+    ],
+    [
+     "Island length",
+     "_______ ft",
+     "Length of the island, already counted in the cabinet run. 0 if none.",
+     "{Kitchen Island Length}"
+    ],
+    [
+     "New backsplash",
+     "☐ Yes (1)   ☐ No (0)",
+     "Backsplash along the wall run.",
+     "{Kitchen Backsplash}"
+    ],
+    [
+     "Layout today",
+     "________________",
+     "Shape and run today, e.g. \"L-shape, 22 ft, no island\". For the estimator; not a formula input.",
+     null
+    ]
+   ]
+  ],
+  [
+   "Plumbing and appliances",
+   [
+    [
+     "Fixtures replaced in place",
+     "_______",
+     "Count the sink, dishwasher, fridge water line and any pot filler that stay where they are.",
+     "{Kitchen Fixtures Replaced}"
+    ],
+    [
+     "Fixtures relocated",
+     "_______",
+     "Count each fixture whose drain, supply or gas line moves. An island sink counts.",
+     "{Kitchen Fixtures Relocated}"
+    ],
+    [
+     "Appliances we supply",
+     "_______",
+     "Appliances DB buys for the customer. 0 if the customer buys their own.",
+     "{Kitchen Appliances Supplied}"
+    ],
+    [
+     "Appliances we install",
+     "_______",
+     "Every appliance DB sets, including ones the customer buys.",
+     "{Kitchen Appliances Installed}"
+    ],
+    [
+     "HVAC work",
+     "☐ Yes (1)   ☐ No (0)",
+     "Register moved or duct extended (toe-kick heaters count).",
+     "{Kitchen HVAC Work}"
+    ],
+    [
+     "Range fuel",
+     "Gas / Electric / Switching",
+     "Circle one. Switching fuel adds a gas line or a 240 V circuit; count it above.",
+     null
+    ]
+   ]
+  ],
+  [
+   "Floor",
+   [
+    [
+     "New flooring area",
+     "_______ SF",
+     "All new flooring, including any that runs into adjoining rooms.",
+     "{Kitchen New Flooring Area}"
+    ],
+    [
+     "Subfloor repair",
+     "_______ SF",
+     "Soft or damaged area you can see or feel today, often at the sink base or dishwasher.",
+     "{Kitchen Subfloor Repair Area}"
+    ]
+   ]
+  ],
+  [
+   "Electrical",
+   [
+    [
+     "Light fixtures",
+     "_______",
+     "Pendants or ceiling fixtures replaced.",
+     "{Kitchen Light Fixtures}"
+    ],
+    [
+     "Recessed lights",
+     "_______",
+     "New recessed cans.",
+     "{Kitchen Recessed Lights}"
+    ],
+    [
+     "Circuits added",
+     "_______",
+     "New appliance circuits, GFCI runs and island outlets. A kitchen typically needs 2–4.",
+     "{Kitchen Circuits Added}"
+    ],
+    [
+     "Under-cabinet lighting",
+     "☐ Yes (1)   ☐ No (0)",
+     "Add under-cabinet lights.",
+     "{Kitchen Under-Cabinet Lighting}"
+    ],
+    [
+     "Panel",
+     "Room / Full / Unknown",
+     "Circle one. A full panel may need an upgrade; flag it in notes.",
+     null
+    ]
+   ]
+  ],
+  [
+   "Doors and travel",
+   [
+    [
+     "Interior doors",
+     "_______",
+     "Interior doors replaced.",
+     "{Kitchen Interior Doors}"
+    ],
+    [
+     "Exterior doors",
+     "_______",
+     "Exterior doors replaced.",
+     "{Kitchen Exterior Doors}"
+    ],
+    [
+     "Travel hours",
+     "_______",
+     "Only when the job is past the standard service zone. Ask the CGM for the number.",
+     "{Kitchen Travel Hours}"
+    ]
+   ]
+  ]
+ ],
+ "tiers": [
+  [
+   "Cabinets",
+   "Stock builder-grade line",
+   "Semi-custom, e.g. KraftMaid standard",
+   "KraftMaid plywood, painted, or custom"
+  ],
+  [
+   "Countertops",
+   "Laminate",
+   "Entry-level quartz",
+   "Premium 3 cm quartz"
+  ],
+  [
+   "Backsplash",
+   "Standard tile",
+   "Upgraded tile",
+   "Quartz slab to match the counters"
+  ],
+  [
+   "Floor",
+   "Standard LVP",
+   "Upgraded LVP",
+   "Tile, set by our sub"
+  ],
+  [
+   "Appliances (if we supply)",
+   "Builder grade",
+   "Mid-range",
+   "Premium"
+  ]
+ ],
+ "photos": [
+  "Each wall",
+  "Cabinets open, including under the sink",
+  "Counters and backsplash",
+  "Floor and any soft spots",
+  "Ceiling and lighting",
+  "Electrical panel and label",
+  "Access path for materials"
+ ]
+}

@@ -11,7 +11,7 @@
 |---|---|
 | [`bathroom-intake-sheet.docx`](bathroom-intake-sheet.docx) | The two-page site-visit form. Prints on US Letter. |
 | [`bathroom-ballpark-template.xlsx`](bathroom-ballpark-template.xlsx) | The JobTread build sheet, a working calculator, the parameter list, markup rates and the calibration. |
-| [`model/`](model/) | The Python model the workbook mirrors, the calibration script, and the scripts that build both files. |
+| [`model/`](model/) | The pricing engine shared with the kitchen template, the bathroom model and calibration, and the scripts that build both files. |
 
 ---
 
@@ -36,6 +36,8 @@ test job before the build** (§5, step 3).
 
 - **22 parameters**, all numbers. Yes/no items are 1 or 0. The full list, with how to measure
   each, is on the workbook's Parameters tab and printed beside every field on the intake sheet.
+  Every name starts with `Bath ` (for example `{Bath Full Gut}`), so a job that also carries the
+  kitchen template never shares a parameter between rooms.
 - **Formulas use only what DB's live formulas already use:** `+ - * /`, parentheses, `round()`,
   `ceil()` and `{Parameter Name}`. None of DB's 101 live formulas uses a conditional, so none
   of these does either. A yes/no switch works by multiplying by its 0/1 parameter.
@@ -181,8 +183,8 @@ grouped by name and cost type with this read-only query:
 Then, from `docs/ballpark/model/`:
 
 ```
-python3 analyze.py        # parse and bucket; checks each estimate reconciles to its total
-python3 calib.py          # structure error and tier-band check
-python3 build_xlsx.py     # rebuild the workbook (then recalculate it in Excel or LibreOffice)
-node intake.js            # rebuild the intake sheet (needs the docx npm package)
+python3 analyze.py                    # parse and bucket; checks each estimate reconciles to its total
+python3 calib.py                      # structure error and tier-band check
+python3 build_bathroom.py             # rebuild the workbook (then recalculate in Excel or LibreOffice)
+node build_intake.js intake_bathroom.json   # rebuild the intake sheet (needs the docx npm package)
 ```

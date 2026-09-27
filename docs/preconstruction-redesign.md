@@ -270,9 +270,9 @@ assemblies proposed here are the first three real general-construction entries i
 library.
 
 The roadmap's open question is now answered (VERIFIED 2026-09-27): **the variable values are
-JobTread job parameters** (`job.parameters`), the same mechanism roofing uses. The bathroom
-template built on it, with its intake sheet and calibration, is in
-[`ballpark/bathroom.md`](ballpark/bathroom.md).
+JobTread job parameters** (`job.parameters`), the same mechanism roofing uses. The templates
+built on it, each with its intake sheet and checks, are in
+[`ballpark/bathroom.md`](ballpark/bathroom.md) and [`ballpark/kitchen.md`](ballpark/kitchen.md).
 
 ### 4.2 The Scope Intake sheet
 
