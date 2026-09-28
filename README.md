@@ -42,6 +42,39 @@ If the numbers come back the wrong way, the recommended answer is to buy STACK, 
 cost-intelligence phase, and build only the bridge — and the roadmap treats that as a
 successful outcome, not a failed one.
 
+## Running the v0.5 auditor
+
+Read-only. It checks one JobTread estimate against policy and writes nothing.
+
+```bash
+npm install
+npm run audit -- --fixture test/fixtures/jones-bath-kitchen.json   # offline, no setup
+npm run doctor                                                      # check your setup
+npm run audit -- <documentId>                                       # live
+npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
+npm test                                                            # 32 tests
+```
+
+### Setup for live runs
+
+1. Create a grant at [app.jobtread.com/grants](https://app.jobtread.com/grants). The key is
+   shown once and begins with `grant_`.
+   **Scope it to reads only** — see §19.2 of the roadmap. It must not carry
+   `updateCostType`, `updateCostCode` or `updateCatalog`: an auditor that can rewrite the
+   policy it audits against has no invariants.
+2. `cp .env.example .env` and put the key in it. `.env` is git-ignored.
+3. `npm run doctor` — it checks the key, the org id, and whether JobTread is actually
+   reachable from where you are.
+
+**This has to run somewhere with network access to `api.jobtread.com`.** A Claude Code
+cloud session cannot reach it: outbound egress is restricted, so a request there comes back
+`403` from the proxy rather than from JobTread. `npm run doctor` tells the two apart — it
+checks whether the response body is JSON, because JobTread always returns JSON and a proxy
+does not. Run it on your own machine, or anywhere with normal outbound access.
+
+Offline work needs none of this: the fixture path exercises every rule with no network and
+no credential.
+
 ## Working conventions
 
 Every factual claim about JobTread in these documents is tagged:

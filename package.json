@@ -9,7 +9,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types test/*.test.ts",
-    "audit": "node --experimental-strip-types src/cli.ts"
+    "audit": "node --env-file-if-exists=.env --experimental-strip-types src/cli.ts",
+    "doctor": "node --env-file-if-exists=.env --experimental-strip-types src/cli.ts --doctor"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
