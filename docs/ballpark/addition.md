@@ -5,7 +5,7 @@
 > The third of the three ballpark templates proposed in `../preconstruction-redesign.md` §4.
 > It covers room additions, sunrooms and detached garages, one or two storeys. It works like the
 > bathroom and kitchen templates (`bathroom.md`, `kitchen.md`): a two-page site-visit sheet,
-> 28 site-visit parameters plus the contingency rate, and a formula-driven cost group that prices Good, Better and
+> 28 site-visit parameters plus the contingency rate and permit fee, and a formula-driven cost group that prices Good, Better and
 > Best at once. It runs on the same pricing engine, with DB's catalog rates and markup.
 
 | File | What it is |
@@ -194,7 +194,7 @@ unit cost shown. Their price is cost ×1.45, as in the catalog, not the hourly $
 parameter starts with its room's prefix, so they never collide. The addition group already
 prices the whole shell and floor area: drywall, paint, flooring labor, electrical, and the
 plumbing rough-in. In the room's group, keep its finish selections, fixtures, cabinets and
-their install labor. Delete its Phase 1 lines and its drywall, paint and flooring lines, and
+their install labor. Delete its Phase 1 lines except Travel, and its drywall, paint and flooring lines, and
 set its Full Gut, Walls Moved and Fixtures Relocated to 0. No estimate has tested this
 combination yet, so check the first one line by line.
 
@@ -213,10 +213,14 @@ Decided by Carl on 28 Sep 2026 (`../preconstruction-redesign.md` §9):
    customer now.
 6. **Price guide.** Published as above.
 
-Still open:
-
-7. **Permit.** Drafted at $200 cost. DB's addition permits ranged from $58 to $1,595 depending
-   on the city.
+7. **Permit fee follows the jurisdiction.** `{Addition Permit Fee}` is the fee DB pays, in dollars; the
+   estimator enters it from the permit table on the workbook's Rates tab (DB's permit bills for the
+   last six months, from $10 in Convoy to $300 in Pleasant Township; Van Wert charges $20 plus $2
+   per $1K of project cost over $10K). The default, $200, is what DB's own estimates of this type carried.
+8. **Travel applies in Zones 2 and 3.** `{Addition Service Zone}` comes from the job's Service Zone field
+   in JobTread. Travel hours are the crew's person-days times 0.5 h (Zone 2) or 1.25 h (Zone 3),
+   which is DB's own Service Call zone charges ($85 / $115 / $155 cost) turned into drive time.
+   Zone 1 adds none. Extended jobs (over 50 miles) are quoted by hand; enter 4 as a floor.
 
 ## 8. Re-running the checks
 

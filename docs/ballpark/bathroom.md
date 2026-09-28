@@ -34,7 +34,8 @@ test job before the build** (§5, step 3).
 
 ## 2. How the template works
 
-- **22 site-visit parameters**, all numbers, plus the contingency rate the estimator sets.
+- **22 site-visit parameters**, all numbers, plus two the estimator sets: the contingency rate and
+  the permit fee.
   Yes/no items are 1 or 0. The full list, with how to measure
   each, is on the workbook's Parameters tab and printed beside every field on the intake sheet.
   Every name starts with `Bath ` (for example `{Bath Full Gut}`), so a job that also carries the
@@ -134,7 +135,7 @@ Two pages, US Letter, for the sales rep at the site visit:
 1. **The design-step screen.** Five yes/no questions. Any "yes" routes the job through the
    Design & Pricing Agreement after the budget range.
 2. **The 22 measurements**, grouped by room, shower and tub, plumbing, vanity and toilet,
-   floor, electrical, and doors and travel. Each field names its JobTread parameter in small
+   floor, electrical, and doors, travel and permit. Each field names its JobTread parameter in small
    print, so entering them afterward is mechanical.
 3. **What the customer wants.** Their Good / Better / Best leaning, described in customer
    terms, plus budget, timing and whether all decision-makers were present.
@@ -156,7 +157,7 @@ read-only discipline.
    the markup set to 0, and a new cost code `Contingency`. JobTread formulas can't reference other
    lines, so its formula spells out the tier's subtotal; paste it whole, and regenerate it
    (`python3 build_bathroom.py`) after any rate change.
-3. **Add the group to a test job** and check whether JobTread creates the 23 parameters
+3. **Add the group to a test job** and check whether JobTread creates the 24 parameters
    automatically. If not, add them to the job by hand. Either way, write down which.
 4. **Enter the Calculator tab's example values** as the test job's parameters. The Good, Better
    and Best totals, with the 5% contingency, should match the Calculator to the dollar:
@@ -177,10 +178,15 @@ Decided by Carl on 28 Sep 2026 (`../preconstruction-redesign.md` §9):
    cell in one sitting and lock the grid for six months. The drafted allowances are medians of
    what DB charged; the proposal's §9 has the starting grid.
 
-Still open:
-
-4. **Permit amount.** Drafted at $100 cost. DB's estimates ranged $29–$435 depending on city.
-5. **Travel.** One estimate carried 30 hours of travel. Set the rule for when travel hours apply.
+4. **Permit fee follows the jurisdiction.** `{Bath Permit Fee}` is the fee DB pays, in dollars; the
+   estimator enters it from the permit table on the workbook's Rates tab (DB's permit bills for the
+   last six months, from $10 in Convoy to $300 in Pleasant Township; Van Wert charges $20 plus $2
+   per $1K of project cost over $10K). The default, $100, is what DB's own estimates of this type carried.
+5. **Travel applies in Zones 2 and 3.** `{Bath Service Zone}` comes from the job's Service Zone field
+   in JobTread. Travel hours are the crew's person-days times 0.5 h (Zone 2) or 1.25 h (Zone 3),
+   which is DB's own Service Call zone charges ($85 / $115 / $155 cost) turned into drive time.
+   Zone 1 adds none. Extended jobs (over 50 miles) are quoted by hand; enter 4 as a floor. The one bathroom estimate with travel, 261280 in the Extended
+   zone, carried 30 h; zone 4 gives it 36.
 
 ## 7. Re-running the calibration
 

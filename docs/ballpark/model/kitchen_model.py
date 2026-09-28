@@ -15,7 +15,7 @@ PARAMS = [  # name, type, default, help
  ('Kitchen Cabinet Run', 'number', 24, 'Linear feet of base cabinets, including the island and the width of any pantry or oven towers. Uppers are priced in.'),
  ('Kitchen Island Length', 'number', 0, 'Linear feet of island (already counted in the cabinet run)'),
  ('Kitchen Backsplash', 'number', 1, '1 = new backsplash along the wall run; 0 = none'),
- ('Kitchen Appliances Supplied', 'number', 0, 'Appliances DB buys for the customer'),
+ ('Kitchen Appliances Supplied', 'number', 0, 'Appliances DB buys for the customer. DB does not supply appliances by default: 0 unless the customer asks DB to buy them'),
  ('Kitchen Appliances Installed', 'number', 4, 'All appliances DB sets, including ones the customer buys'),
  ('Kitchen Fixtures Replaced', 'number', 2, 'Plumbing fixtures in the same spot: sink, dishwasher, fridge water line, pot filler'),
  ('Kitchen Fixtures Relocated', 'number', 0, 'Fixtures whose drain, supply or gas line moves (an island sink counts)'),
@@ -30,8 +30,9 @@ PARAMS = [  # name, type, default, help
  ('Kitchen Exterior Doors', 'number', 0, 'Exterior doors replaced'),
  ('Kitchen HVAC Work', 'number', 0, '1 = register or duct moved'),
  ('Kitchen Dumpster Loads', 'number', 1, 'Haul-away loads (1 for most kitchens; 2-3 when walls come out)'),
- ('Kitchen Travel Hours', 'number', 0, 'Crew travel hours for jobs past the standard service zone'),
+ ('Kitchen Service Zone', 'number', 1, 'Service Zone from the job in JobTread: 1 (within ~15 mi), 2 (~15-30 mi), 3 (~30-50 mi). Zone 1 adds no travel. Extended (over 50 mi) is quoted by hand: enter 4 as a floor and flag it.'),
  ('Kitchen Contingency Rate', 'number', 8, 'Contingency as a % of the tier total, set by the estimator: 5 for a refresh that keeps the layout, 8 when anything moves'),
+ ('Kitchen Permit Fee', 'number', 190, 'Permit fee DB pays the city or township, in dollars (cost), from the permit table on the Rates tab. The estimator sets it from the job address.'),
 ]
 
 A, G, R = '{Kitchen Floor Area}', '{Kitchen Full Gut}', '{Kitchen Cabinet Run}'
@@ -39,14 +40,14 @@ P1, P2, P3, P4 = ('Phase 1 - General Requirements', 'Phase 2 - Rough-In',
                   'Phase 3 - Interior', 'Phase 4 - Finishes')
 
 COMMON = [
- (P1, 'Permits', 'Permit', 'O', 'Lump Sum', '1', 190),
+ (P1, 'Permits', 'Permit', 'O', 'Lump Sum', '{Kitchen Permit Fee}', 1),
  (P1, 'Project/Site Management', 'Project Management (C)', 'L', 'Hours', f'4 + 4*{G}', LAB),
  (P1, 'Site Preparation', 'Site Prep Material', 'M', 'Each', '1', 150),
  (P1, 'Site Preparation', 'Site Prep Labor', 'L', 'Hours', '2', LAB),
  (P1, 'Demolition', 'Demolition', 'L', 'Hours', f'8 + {G}*ceil({A}/15) + 6*{{Kitchen Walls Moved}}', LAB),
  (P1, 'Site Clean Up', 'Hauling & Disposal', 'L', 'Each', '{Kitchen Dumpster Loads}', 250),
  (P1, 'Site Clean Up', 'Final Clean', 'L', 'Hours', f'2 + 2*{G}', LAB),
- (P1, 'Travel', 'Travel', 'L', 'Hours', '{Kitchen Travel Hours}', LAB),
+ (P1, 'Travel', 'Travel', 'L', 'Hours', None, LAB),   # formula filled in from the labor lines below
  (P2, 'Framing Materials', 'Framing/Sheathing Materials', 'M', 'Lump Sum',
   f'{G} + 3*{{Kitchen Walls Moved}} + ceil({{Kitchen Subfloor Repair Area}}/32)', 150),
  (P2, 'Framing Materials', 'Framing/Sheathing Labor', 'L', 'Hours',
@@ -111,6 +112,7 @@ TIERS = [  # name, unit, formula (or per-tier formulas), {tier: (unit_cost, cost
 ]
 
 
+COMMON = engine.with_travel(COMMON, TIERS, '{Kitchen Service Zone}')
 CONT = 'Kitchen Contingency Rate'   # the contingency line's rate parameter
 
 

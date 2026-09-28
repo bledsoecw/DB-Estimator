@@ -4,7 +4,7 @@ from analyze import OUT
 docs={d['job']:d for d in json.load(open(OUT))}
 D=dict(model.PARAMS and {k:d for k,_,d,_ in model.PARAMS})
 def I(**kw):
-    P={k:0 for k in D}; P.update({'Bath Dumpster Loads':1})
+    P={k:0 for k in D}; P.update({'Bath Dumpster Loads':1,'Bath Service Zone':1,'Bath Permit Fee':100})
     bad=set(kw)-set(D)
     if bad: raise KeyError(f'not bathroom parameters: {sorted(bad)}')
     P.update(kw); return P
@@ -23,7 +23,7 @@ INTAKE={
  '260877': I(**{'Bath Floor Area':90,'Bath Full Gut':1,'Bath Walk-In Shower':1,'Bath Fixtures Replaced':3,'Bath Fixtures Relocated':1,'Bath Vanity Length':6,'Bath Vanity Sinks':1,'Bath New Flooring Area':66,'Bath Exhaust Fan':1,'Bath Light Fixtures':1,'Bath Circuits Added':1,'Bath Interior Doors':3,'Bath HVAC Work':1}),
  '260955': I(**{'Bath Floor Area':120,'Bath Full Gut':1,'Bath Walk-In Shower':1,'Bath Fixtures Replaced':4,'Bath Fixtures Relocated':0,'Bath Vanity Length':7,'Bath Vanity Sinks':2,'Bath New Flooring Area':80,'Bath Exhaust Fan':2,'Bath Light Fixtures':2,'Bath Circuits Added':2,'Bath Walls Moved':1,'Bath HVAC Work':1}),
  '261165': I(**{'Bath Floor Area':60,'Bath Full Gut':1,'Bath Walk-In Shower':1,'Bath Fixtures Replaced':3,'Bath Fixtures Relocated':1,'Bath Vanity Length':4,'Bath Vanity Sinks':1,'Bath New Flooring Area':465,'Bath Light Fixtures':1,'Bath Circuits Added':1,'Bath HVAC Work':1,'Bath Dumpster Loads':2}),
- '261280': I(**{'Bath Floor Area':150,'Bath Full Gut':1,'Bath Walk-In Shower':1,'Bath Fixtures Replaced':4,'Bath Fixtures Relocated':1,'Bath Vanity Length':8,'Bath Vanity Sinks':2,'Bath New Flooring Area':150,'Bath Light Fixtures':6,'Bath Interior Doors':1,'Bath Travel Hours':30}),
+ '261280': I(**{'Bath Floor Area':150,'Bath Full Gut':1,'Bath Walk-In Shower':1,'Bath Fixtures Replaced':4,'Bath Fixtures Relocated':1,'Bath Vanity Length':8,'Bath Vanity Sinks':2,'Bath New Flooring Area':150,'Bath Light Fixtures':6,'Bath Interior Doors':1,'Bath Service Zone':4}),
  '261335': I(**{'Bath Floor Area':50,'Bath Full Gut':0,'Bath Walk-In Shower':1,'Bath Fixtures Replaced':1}),
  '261346': I(**{'Bath Floor Area':50,'Bath Full Gut':0,'Bath Walk-In Shower':1,'Bath Fixtures Replaced':1,'Bath Recessed Lights':4,'Bath Exhaust Fan':1,'Bath Circuits Added':1,'Bath Grab Bars':2}),
  '261396': I(**{'Bath Floor Area':60,'Bath Full Gut':1,'Bath Walk-In Shower':1,'Bath Fixtures Replaced':3,'Bath Vanity Length':3,'Bath Vanity Sinks':1,'Bath Exhaust Fan':1,'Bath Light Fixtures':2,'Bath Circuits Added':1,'Bath Pocket Doors':1}),

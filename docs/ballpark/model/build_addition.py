@@ -99,6 +99,8 @@ README = [
 ]
 
 
+NOTES['Permit'] = workbook.PERMIT_NOTE
+NOTES['Travel'] = engine.ZONE_NOTE
 INPUTS = [p for p in am.PARAMS if p[0] != am.CONT]   # site-visit inputs; the estimator sets the contingency rate
 
 

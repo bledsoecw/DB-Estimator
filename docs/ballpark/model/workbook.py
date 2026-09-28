@@ -13,6 +13,19 @@ import engine
 
 F = 'Arial'
 
+# Permit fees DB paid by jurisdiction: vendor bills for the Permit item, last 6 months (from Carl, 28 Sep 2026)
+PERMITS = [('Village of Convoy', '$10'),
+           ('City of Van Wert', '$20 for the first $10K of project cost, plus $2 per additional $1K (paid $20–$122, average $36)'),
+           ('City of Lima', '$63'),
+           ('Lucas County', '$75.75'),
+           ('Union Township', '$100'),
+           ('Pleasant Township Trustees', '$300'),
+           ('Deitemeyer Brothers internal', '$32–$40, average $36')]
+PERMIT_NOTE = ("Quantity is the permit fee in dollars at $1.00 each, so it can follow the jurisdiction: the estimator enters "
+               "the fee from the permit table on the Rates tab as the Permit Fee parameter. Marked up like other costs.")
+ZONES = [('Zone 1 (within ~15 mi)', 1, 0), ('Zone 2 (~15–30 mi)', 2, 0.5), ('Zone 3 (~30–50 mi)', 3, 1.25),
+         ('Extended (over 50 mi): quote by hand', 4, 2.25)]
+
 
 def font(**k):
     k.setdefault('name', F); k.setdefault('size', 10); return Font(**k)
@@ -63,7 +76,21 @@ def build(spec):
         ra['A' + cell] = lab; ra['C' + cell] = v; ra['C' + cell].font = BLUE; ra['C' + cell].fill = YEL; ra['C' + cell].number_format = fmt
     ra['D11'] = 'Used as the unit cost of every labor line on the Template tab.'; ra['D11'].font = GREY
     ra['D14'] = spec.get('range_note', 'The range shown to the customer around each tier total.'); ra['D14'].font = GREY
-    for col, w in zip('ABCD', (26, 16, 14, 100)): ra.column_dimensions[col].width = w
+    r = 16
+    ra.cell(r, 1, 'Permit fees by jurisdiction').font = BOLD
+    ra.cell(r, 4, "DB's vendor bills for permits, last 6 months. Enter the job's fee as the Permit Fee parameter.").font = GREY
+    header(ra, r + 1, ['Jurisdiction', '', '', 'Fee DB pays'])
+    for i, (j, fee) in enumerate(PERMITS, r + 2):
+        ra.cell(i, 1, j).font = font(); ra.cell(i, 4, fee).font = font()
+        for k in (1, 4): ra.cell(i, k).border = BOX
+    r = r + 3 + len(PERMITS)
+    ra.cell(r, 1, 'Travel by service zone').font = BOLD
+    ra.cell(r, 4, engine.ZONE_NOTE).font = GREY
+    header(ra, r + 1, ['Service Zone', 'Enter', 'Hours per person-day', ''])
+    for i, (z, v, h) in enumerate(ZONES, r + 2):
+        for k, val in enumerate((z, v, h), 1):
+            c = ra.cell(i, k, val); c.font = font(); c.border = BOX
+    for col, w in zip('ABCD', (34, 16, 20, 100)): ra.column_dimensions[col].width = w
     for nm, ref in (('MarkupCodes', 'Rates!$A$4:$A$9'), ('MarkupVals', 'Rates!$C$4:$C$9'),
                     ('LaborCost', 'Rates!$C$11'), ('RangePct', 'Rates!$C$14')):
         wb.defined_names[nm] = DefinedName(nm, attr_text=ref)

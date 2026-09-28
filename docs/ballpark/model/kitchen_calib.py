@@ -12,7 +12,7 @@ docs = {d['job']: d for d in engine.load_estimates(ROOT / 'local' / 'kitchen-est
 
 def I(**kw):
     P = {k: 0 for k in engine.defaults(km)}
-    P.update({'Kitchen Dumpster Loads': 1})
+    P.update({'Kitchen Dumpster Loads': 1, 'Kitchen Service Zone': 1, 'Kitchen Permit Fee': 190})
     for k, v in kw.items():
         name = 'Kitchen ' + k.replace('__', '-').replace('_', ' ')
         if name not in P:

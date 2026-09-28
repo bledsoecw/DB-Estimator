@@ -76,10 +76,16 @@
      "{Addition Dumpster Loads}"
     ],
     [
-     "Travel hours",
-     "_______",
-     "Only when the job is past the standard service zone. Ask the CGM for the number.",
-     "{Addition Travel Hours}"
+     "Service zone",
+     "☐ 1  ☐ 2  ☐ 3  ☐ Ext.",
+     "From the job's Service Zone in JobTread. Zone 1 adds no travel. Extended (over 50 mi): enter 4 and flag it.",
+     "{Addition Service Zone}"
+    ],
+    [
+     "Permit jurisdiction",
+     "City / township: __________",
+     "Where the permit is pulled. The estimator enters the fee.",
+     "{Addition Permit Fee}"
     ]
    ]
   ],

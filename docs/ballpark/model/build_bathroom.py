@@ -1,5 +1,5 @@
 """Build the bathroom ballpark workbook: python3 build_bathroom.py, then recalculate."""
-import model
+import engine, model
 from calib import INTAKE, TIER_OF, docs, structure_actual, structure_model
 import workbook
 from workbook import font, BOX, BOLD, H1, GREY, USD, HEAD, header
@@ -62,6 +62,8 @@ README=[
 ]
 
 
+NOTES['Permit'] = workbook.PERMIT_NOTE
+NOTES['Travel'] = engine.ZONE_NOTE + ' The one bathroom estimate with travel (an Extended-zone job) carried 30 h; zone 4 gives it 36 h.'
 INPUTS = [p for p in model.PARAMS if p[0] != model.CONT]   # site-visit inputs; the estimator sets the contingency rate
 
 

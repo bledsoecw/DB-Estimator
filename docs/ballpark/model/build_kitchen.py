@@ -31,7 +31,7 @@ NOTES = {
                  "Better = entry quartz. Best = 3 cm premium quartz; DB's other bids priced it at $117–$120 cost per SF."),
  'Backsplash': ("SF = 1.5 ft high along the wall run. Good/Better = tile set by the tile sub. Best = quartz slab to match the counters. "
                 "A full-height slab can cost twice this (one kitchen's ran $12,604)."),
- 'Appliance Allowance': 'Only appliances DB buys. Many customers supply their own; they still count toward install hours.',
+ 'Appliance Allowance': "Only appliances DB buys. DB does not supply appliances by default (decided 28 Sep 2026): count them only when the customer asks. Appliances the customer buys still count toward install hours.",
  'Appliance Labor': "2 h per appliance set. DB carried 8 h for four appliances.",
  'Flooring Material': 'Good/Better = LVP installed by DB crew. Best = tile set by the tile sub, installed price per SF.',
  'Flooring Labor': 'Good and Better only. Best has no DB flooring labor because the tile sub installs.',
@@ -73,6 +73,8 @@ README = [
 ]
 
 
+NOTES['Permit'] = workbook.PERMIT_NOTE
+NOTES['Travel'] = engine.ZONE_NOTE
 INPUTS = [p for p in km.PARAMS if p[0] != km.CONT]   # site-visit inputs; the estimator sets the contingency rate
 
 

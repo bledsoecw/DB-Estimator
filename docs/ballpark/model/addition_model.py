@@ -41,8 +41,9 @@ PARAMS = [  # name, type, default, help
  ('Addition Structure Removed', 'number', 0, 'SF of existing porch, deck, sunroom or room torn down first'),
  ('Addition Utility Trench', 'number', 0, 'Feet of trench to feed power to a detached building'),
  ('Addition Dumpster Loads', 'number', 1, 'Haul-away loads (1 for most additions; 2–3 with a tear-down)'),
- ('Addition Travel Hours', 'number', 0, 'Crew travel hours for jobs past the standard service zone'),
+ ('Addition Service Zone', 'number', 1, 'Service Zone from the job in JobTread: 1 (within ~15 mi), 2 (~15-30 mi), 3 (~30-50 mi). Zone 1 adds no travel. Extended (over 50 mi) is quoted by hand: enter 4 as a floor and flag it.'),
  ('Addition Contingency Rate', 'number', 10, 'Contingency as a % of the tier total, set by the estimator: 10 for additions and structural work'),
+ ('Addition Permit Fee', 'number', 200, 'Permit fee DB pays the city or township, in dollars (cost), from the permit table on the Rates tab. The estimator sets it from the job address.'),
 ]
 
 W, D, S, H, X = ('{Addition Width}', '{Addition Depth}', '{Addition Stories}',
@@ -61,7 +62,7 @@ P1, P2, P3, P4 = ('Phase 1 - General Requirements', 'Phase 2 - Foundation & Fram
                   'Phase 3 - Exterior & Rough-In', 'Phase 4 - Interior')
 
 COMMON = [
- (P1, 'Permits', 'Permit', 'O', 'Lump Sum', '1', 200),
+ (P1, 'Permits', 'Permit', 'O', 'Lump Sum', '{Addition Permit Fee}', 1),
  (P1, 'Project/Site Management', 'Project Management (C)', 'L', 'Hours', f'6 + {LIV}*ceil({A}/30)', LAB),
  (P1, 'Site Preparation', 'Site Prep Material', 'M', 'Each', '1', 150),
  (P1, 'Site Preparation', 'Site Prep Labor', 'L', 'Hours', f'4 + ceil({A}/200)', LAB),
@@ -70,7 +71,7 @@ COMMON = [
   f'4*(1 - {X}) + ceil({{Addition Structure Removed}}/3) + 8*{OPEN}', LAB),
  (P1, 'Site Clean Up', 'Hauling & Disposal', 'L', 'Each', '{Addition Dumpster Loads}', 250),
  (P1, 'Site Clean Up', 'Final Clean', 'L', 'Hours', f'2 + 2*{LIV}', LAB),
- (P1, 'Travel', 'Travel', 'L', 'Hours', '{Addition Travel Hours}', LAB),
+ (P1, 'Travel', 'Travel', 'L', 'Hours', None, LAB),   # formula filled in from the labor lines below
  (P1, 'Utilities', 'Utility - Electric', 'O', 'Linear Feet', '{Addition Utility Trench}', 12),
  (P2, 'Site Work', 'Excavation & Grading', 'L', 'Hours', '16*{Addition Site Excavation}', LAB),
  (P2, 'Site Work', 'Rental - Mini Excavator', 'O', 'Day', '2*{Addition Site Excavation}', 195),
@@ -131,6 +132,7 @@ TIERS = [  # name, unit, formula, {tier: (unit_cost, cost_type)}, allowance?
 ]
 
 
+COMMON = engine.with_travel(COMMON, TIERS, '{Addition Service Zone}')
 CONT = 'Addition Contingency Rate'   # the contingency line's rate parameter
 
 

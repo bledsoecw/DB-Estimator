@@ -39,9 +39,9 @@ document leans on) and `jobtread-api-field-notes.md`.
    offered only *after* the customer has accepted a budget range (±15% for bathrooms, ±20% for
    kitchens and additions to start), caps designer hours, and delivers a fixed-price proposal.
    Construction documents move into the construction contract.
-6. **Carl made the ten open decisions on 28 Sep 2026** (§9): fees and hour caps, a visible
-   contingency, allowances at customer price, a published price guide including kitchens, and
-   new terms for the eight PBAs in progress.
+6. **Carl made the open decisions on 28 Sep 2026** (§9): fees and hour caps, a visible
+   contingency, allowances at customer price, a published price guide including kitchens, new
+   terms for the eight PBAs in progress, permit fees by jurisdiction, and travel by service zone.
 
 ---
 
@@ -496,6 +496,8 @@ Changes to `Construction Project Pipeline – 2026 – Rev 1` and the July revis
 - **Estimating standards.** Allowances are stated as customer prices. Every $0 line names who
   supplies it: "(by owner)", "(by others)" or "(not included)". Designers log every session
   against the job under `Design – Concept` or `Design – Construction Drawings`.
+  Travel is charged in Service Zones 2 and 3 only; Extended jobs are quoted. Permits are
+  priced at the jurisdiction's actual fee. DB supplies kitchen appliances only when asked.
 
 ---
 
@@ -589,8 +591,34 @@ buying the garage door" disputes, and it tells the next calibration what was exc
 than forgotten. The pending garage 261094 carries its siding, roofing, garage doors and entry
 door at $0 with no note; confirm those with the customer now.
 
-**Still open:** the permit allowance by city (bathroom and addition templates), the rule for
-when travel hours apply, and whether DB supplies kitchen appliances by default.
+The three items left open were answered the same day:
+
+**11. The permit fee follows the jurisdiction.** Each template has a Permit Fee parameter, in
+dollars, that the estimator sets from the job address. DB's permit bills for the last six months:
+
+| Jurisdiction | Fee DB pays |
+|---|---|
+| Village of Convoy | $10 |
+| City of Van Wert | $20 for the first $10K of project cost, plus $2 per additional $1K (paid $20–$122, average $36) |
+| City of Lima | $63 |
+| Lucas County | $75.75 |
+| Union Township | $100 |
+| Pleasant Township Trustees | $300 |
+| Deitemeyer Brothers internal | $32–$40, average $36 |
+
+The table is also on each workbook's Rates tab. Until the estimator sets it, each template
+defaults to what DB's own estimates of that type carried: $100 bathroom, $190 kitchen, $200
+addition.
+
+**12. Travel applies in Zones 2 and 3.** Each template reads the job's Service Zone, the field
+JobTread already sets from the address (of 434 zoned jobs: 276 Zone 1, 53 Zone 2, 51 Zone 3,
+54 Extended). Travel hours are the crew's person-days times 0.5 h in Zone 2 or 1.25 h in Zone 3,
+which is DB's own Service Call zone charges ($85 / $115 / $155 cost) turned into drive time.
+Zone 1 adds none. Extended jobs, over 50 miles, are quoted by hand, with zone 4 (2.25 h per
+person-day) as a floor.
+
+**13. DB does not supply kitchen appliances by default.** The appliance allowance counts only
+appliances the customer asks DB to buy; install labor still counts every appliance.
 
 ---
 

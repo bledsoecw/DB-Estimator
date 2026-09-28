@@ -87,7 +87,7 @@
     [
      "Appliances we supply",
      "_______",
-     "Appliances DB buys for the customer. 0 if the customer buys their own.",
+     "DB doesn't supply appliances by default. Count only the ones the customer asks DB to buy; usually 0.",
      "{Kitchen Appliances Supplied}"
     ],
     [
@@ -163,7 +163,7 @@
    ]
   ],
   [
-   "Doors and travel",
+   "Doors, travel and permit",
    [
     [
      "Interior doors",
@@ -178,10 +178,10 @@
      "{Kitchen Exterior Doors}"
     ],
     [
-     "Travel hours",
-     "_______",
-     "Only when the job is past the standard service zone. Ask the CGM for the number.",
-     "{Kitchen Travel Hours}"
+     "Service zone and permit",
+     "Zone ☐1 ☐2 ☐3 ☐Ext.   Permit: __________",
+     "Zone from the job in JobTread; Zone 1 adds no travel; Extended: enter 4 and flag it. Permit: city or township; the estimator enters the fee.",
+     "{Kitchen Service Zone}  {Kitchen Permit Fee}"
     ]
    ]
   ]
@@ -226,5 +226,6 @@
   "Ceiling and lighting",
   "Electrical panel and label",
   "Access path for materials"
- ]
+ ],
+ "noteLines": 2
 }

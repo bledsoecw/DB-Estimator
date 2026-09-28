@@ -168,7 +168,7 @@
    ]
   ],
   [
-   "Doors and travel",
+   "Doors, travel and permit",
    [
     [
      "Interior doors",
@@ -183,10 +183,10 @@
      "{Bath Pocket Doors}"
     ],
     [
-     "Travel hours",
-     "_______",
-     "Only when the job is past the standard service zone. Ask the CGM for the number.",
-     "{Bath Travel Hours}"
+     "Service zone and permit",
+     "Zone ☐1 ☐2 ☐3 ☐Ext.   Permit: __________",
+     "Zone from the job in JobTread; Zone 1 adds no travel; Extended: enter 4 and flag it. Permit: city or township; the estimator enters the fee.",
+     "{Bath Service Zone}  {Bath Permit Fee}"
     ]
    ]
   ]
@@ -225,5 +225,6 @@
   "Ceiling and fan",
   "Electrical panel",
   "Access path for materials"
- ]
+ ],
+ "noteLines": 2
 }

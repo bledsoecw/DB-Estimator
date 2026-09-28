@@ -4,7 +4,7 @@
 
 > The second of the three ballpark templates proposed in `../preconstruction-redesign.md` §4.
 > It works exactly like the bathroom template (`bathroom.md`): a two-page site-visit sheet, 21
-> site-visit parameters plus the contingency rate, and a formula-driven cost group that prices the kitchen at Good,
+> site-visit parameters plus the contingency rate and permit fee, and a formula-driven cost group that prices the kitchen at Good,
 > Better and Best at once. It runs on the same pricing engine and DB's same catalog rates.
 
 | File | What it is |
@@ -102,8 +102,9 @@ tighten the band.
   by hand until DB has a second example.
 - **Complex installs.** The kitchen addition took 72 install hours for 30 feet. Crown, light
   rail, and angled or stacked uppers add time the per-foot rate does not see.
-- **Appliances.** DB supplied appliances on one of the two kitchens. The allowance is per
-  appliance DB buys, from $700 to $2,300 cost by tier. Install hours count every appliance.
+- **Appliances.** DB does not supply appliances by default (decided 28 Sep 2026). The allowance
+  line counts only appliances the customer asks DB to buy, from $700 to $2,300 cost by tier.
+  Install hours count every appliance, including ones the customer buys.
 
 ## 4. The intake sheet
 
@@ -164,7 +165,8 @@ $45,350, $60,792 and $83,927 to the dollar, with the 8% contingency.
 **A job with both a kitchen and a bathroom.** Every kitchen parameter starts with `Kitchen `
 and every bathroom parameter with `Bath `, so both groups can sit on one job without sharing a
 value. Each group carries its own general requirements, though. On a combined job, delete the
-second group's permit and site-prep lines, and set its dumpster loads and travel hours to 0.
+second group's permit and site-prep lines, and set its dumpster loads to 0. Keep both travel
+lines: each counts its own crew's days.
 
 ## 7. Decisions
 
@@ -176,9 +178,16 @@ Decided by Carl on 28 Sep 2026 (`../preconstruction-redesign.md` §9):
    backsplash for each tier and lock the grid for six months.
 4. **Price guide.** Published as above until three kitchens close.
 
-Still open:
-
-5. **Appliances.** Should DB supply appliances by default, or only when asked?
+5. **Appliances are not supplied by default.** `{Kitchen Appliances Supplied}` stays 0 unless the
+   customer asks DB to buy them.
+6. **Permit fee follows the jurisdiction.** `{Kitchen Permit Fee}` is the fee DB pays, in dollars; the
+   estimator enters it from the permit table on the workbook's Rates tab (DB's permit bills for the
+   last six months, from $10 in Convoy to $300 in Pleasant Township; Van Wert charges $20 plus $2
+   per $1K of project cost over $10K). The default, $190, is what DB's own estimates of this type carried.
+7. **Travel applies in Zones 2 and 3.** `{Kitchen Service Zone}` comes from the job's Service Zone field
+   in JobTread. Travel hours are the crew's person-days times 0.5 h (Zone 2) or 1.25 h (Zone 3),
+   which is DB's own Service Call zone charges ($85 / $115 / $155 cost) turned into drive time.
+   Zone 1 adds none. Extended jobs (over 50 miles) are quoted by hand; enter 4 as a floor.
 
 ## 8. Re-running the checks
 

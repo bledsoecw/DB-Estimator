@@ -17,7 +17,8 @@ docs = {d['job']: d for d in engine.load_estimates(ROOT / 'local' / 'addition-es
 
 def I(**kw):
     P = {k: 0 for k in engine.defaults(am)}
-    P.update({'Addition Stories': 1, 'Addition Wall Height': 8, 'Addition Dumpster Loads': 1})
+    P.update({'Addition Stories': 1, 'Addition Wall Height': 8, 'Addition Dumpster Loads': 1,
+              'Addition Service Zone': 1, 'Addition Permit Fee': 200})
     for k, v in kw.items():
         name = 'Addition ' + k.replace('__', '-').replace('_', ' ')
         if name not in P:

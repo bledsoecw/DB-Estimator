@@ -18,6 +18,26 @@ def ev(expr, P):
     return eval(e, {'ceil': math.ceil, 'round': lambda x: math.floor(x + 0.5)})
 
 
+ZONE_NOTE = ("Travel by the job's Service Zone (JobTread sets it from the address): hours = person-days x (z-1)(z+2)/8, "
+             "which is 0, 0.5 and 1.25 h per person-day for Zones 1, 2 and 3. Those are DB's own Service Call zone "
+             "charges ($85 / $115 / $155 cost) turned into travel time. Extended (over 50 mi) is quoted by hand; zone 4 "
+             "gives 2.25 h per person-day as a floor.")
+
+
+def with_travel(common, tiers, zone):
+    """Fill in the Travel line's formula from the other hourly labor lines. Person-days are the common
+    labor hours plus the Better tier's install labor, over 8. JobTread formulas cannot reference other
+    lines, so the hours are spelled out; the tiers' install labor differs by at most a couple of hours
+    of travel, so the Better tier stands in for all three."""
+    hours = [f'({f})' for g, sg, n, t, u, f, c in common if t == 'L' and u == 'Hours' and n != 'Travel']
+    for n, u, f, cs, al in tiers:
+        ff = f if isinstance(f, str) else f.get('Better', '0')
+        if cs['Better'][1] == 'L' and u == 'Hours' and ff != '0':
+            hours.append(f'({ff})')
+    formula = f'ceil(({zone} - 1)*({zone} + 2)/8*({" + ".join(hours)})/8)'
+    return [(g, sg, n, t, u, formula if n == 'Travel' else f, c) for g, sg, n, t, u, f, c in common]
+
+
 def unit_price(n, t, c):
     return PRICE_OVERRIDE.get(n, c * MARK[t])
 

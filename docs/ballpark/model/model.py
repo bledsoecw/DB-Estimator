@@ -24,20 +24,21 @@ PARAMS=[ # name, type, default, help
  ('Bath Grab Bars','number',0,'Grab bars'),
  ('Bath HVAC Work','number',0,'1 = register move or duct extension'),
  ('Bath Dumpster Loads','number',1,'Haul-away loads (1 for most baths)'),
- ('Bath Travel Hours','number',0,'Crew travel hours for jobs past the standard service zone'),
+ ('Bath Service Zone','number',1,'Service Zone from the job in JobTread: 1 (within ~15 mi), 2 (~15-30 mi), 3 (~30-50 mi). Zone 1 adds no travel. Extended (over 50 mi) is quoted by hand: enter 4 as a floor and flag it.'),
  ('Bath Contingency Rate','number',5,'Contingency as a % of the tier total, set by the estimator: 5 when everything stays in place, 8 when a fixture or wall moves'),
+ ('Bath Permit Fee','number',100,'Permit fee DB pays the city or township, in dollars (cost), from the permit table on the Rates tab. The estimator sets it from the job address.'),
 ]
 # Common scope: in every tier
 COMMON=[
  # Phase 1 - General Requirements
- ('Phase 1 - General Requirements','Permits','Permit','O','Lump Sum','1',100),
+ ('Phase 1 - General Requirements','Permits','Permit','O','Lump Sum','{Bath Permit Fee}',1),
  ('Phase 1 - General Requirements','Project/Site Management','Project Management (C)','L','Hours','4 + 2*{Bath Full Gut}',LAB),
  ('Phase 1 - General Requirements','Site Preparation','Site Prep Material','M','Each','1',150),
  ('Phase 1 - General Requirements','Site Preparation','Site Prep Labor','L','Hours','2',LAB),
  ('Phase 1 - General Requirements','Demolition','Demolition','L','Hours','6 + 10*{Bath Full Gut}',LAB),
  ('Phase 1 - General Requirements','Site Clean Up','Hauling & Disposal','L','Each','{Bath Dumpster Loads}',250),
  ('Phase 1 - General Requirements','Site Clean Up','Final Clean','L','Hours','2 + {Bath Full Gut}',LAB),
- ('Phase 1 - General Requirements','Travel','Travel','L','Hours','{Bath Travel Hours}',LAB),
+ ('Phase 1 - General Requirements','Travel','Travel','L','Hours',None,LAB),
  # Phase 2 - Rough-In
  ('Phase 2 - Rough-In','Framing Materials','Framing/Sheathing Materials','M','Lump Sum','{Bath Walk-In Shower} + 2*{Bath Walls Moved} + ceil({Bath Subfloor Repair Area}/32)',100),
  ('Phase 2 - Rough-In','Framing Materials','Framing/Sheathing Labor','L','Hours','4*{Bath Walk-In Shower} + 6*{Bath Walls Moved} + ceil({Bath Subfloor Repair Area}/8)',LAB),
@@ -87,6 +88,7 @@ TIERS=[ # name, unit, formula, {tier: (unit_cost, cost_type)}, allowance?
  ('Recessed Light','Each','{Bath Recessed Lights}',{'Good':(25,'M'),'Better':(35,'M'),'Best':(60,'M')},True),
  ('Bath Accessories','Lump Sum','1',{'Good':(100,'M'),'Better':(300,'M'),'Best':(620,'M')},True),
 ]
+COMMON = engine.with_travel(COMMON, TIERS, '{Bath Service Zone}')
 CONT = 'Bath Contingency Rate'   # the contingency line's rate parameter
 
 

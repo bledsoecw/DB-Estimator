@@ -41,7 +41,7 @@ children.push(heading(`${n++}  What the customer wants`),
   heading(`${n++}  Photos and notes`),
   p(t(spec.photos.map(x=>box+' '+x).join('   '),{size:17}),{after:60}),
   p(t('Must-haves, concerns, anything unusual:',{size:16,color:GREYTXT}),{after:0}),
-  table([W],Array.from({length:3},()=>new TableRow({height:{value:380,rule:'atLeast'},children:[new TableCell({width:{size:W,type:WidthType.DXA},borders:{top:NONE,left:NONE,right:NONE,bottom:border},children:[p(t(' ',{size:18}))]})]}))));
+  table([W],Array.from({length:spec.noteLines||3},()=>new TableRow({height:{value:380,rule:'atLeast'},children:[new TableCell({width:{size:W,type:WidthType.DXA},borders:{top:NONE,left:NONE,right:NONE,bottom:border},children:[p(t(' ',{size:18}))]})]}))));
 const foot=new Footer({children:[new Paragraph({children:[t(`DRAFT 27 Sep 2026 · After the visit, enter each value into the job’s JobTread parameters, then add the "BALLPARK — ${room}" cost group.   Page `,{size:14,color:GREYTXT}),
   new TextRun({children:[PageNumber.CURRENT],font:FONT,size:14,color:GREYTXT}),t(' of ',{size:14,color:GREYTXT}),new TextRun({children:[PageNumber.TOTAL_PAGES],font:FONT,size:14,color:GREYTXT})]})]});
 const doc=new Document({styles:{default:{document:{run:{font:FONT,size:18}}}},
