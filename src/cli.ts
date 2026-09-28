@@ -8,6 +8,7 @@
  *   npm run audit -- <documentId>              audit a live document
  *   npm run audit -- --fixture <path.json>     audit a captured fixture, no network
  *   npm run audit -- <documentId> --capture <path.json>   save a fixture while auditing
+ *   npm run audit -- <documentId> --html <path.html>      write the approver screen
  *
  * Exit code is 0 when nothing needs a human, 1 when something does — so it can
  * gate a script without anyone reading the output.
@@ -18,6 +19,7 @@ import { ZERO, formatMoney, formatPercent } from './money.ts';
 import { fromFixture, marginOf } from './domain.ts';
 import { audit } from './rules/index.ts';
 import { marginBand } from './rules/comparables.ts';
+import { renderReport } from './report.ts';
 import { clientFromEnv } from './jobtread/client.ts';
 import { captureFixture } from './jobtread/queries.ts';
 import type { AuditFixture } from './jobtread/types.ts';
@@ -63,6 +65,11 @@ async function main(argv: string[]): Promise<number> {
   const input = fromFixture(fixture);
   const result = audit(input);
   const { estimate } = input;
+
+  if (args.html) {
+    writeFileSync(args.html, renderReport(input, result));
+    process.stderr.write(`${DIM}report written to ${args.html}${OFF}\n`);
+  }
 
   if (args.json) {
     process.stdout.write(
@@ -168,6 +175,7 @@ interface Args {
   documentId: string | undefined;
   fixture: string | undefined;
   capture: string | undefined;
+  html: string | undefined;
   json: boolean;
   help: boolean;
 }
@@ -178,6 +186,7 @@ function parseArgs(argv: string[]): Args {
     documentId: undefined,
     fixture: undefined,
     capture: undefined,
+    html: undefined,
     json: false,
     help: false,
   };
@@ -188,6 +197,7 @@ function parseArgs(argv: string[]): Args {
     else if (a === '--json') args.json = true;
     else if (a === '--fixture') args.fixture = argv[++i];
     else if (a === '--capture') args.capture = argv[++i];
+    else if (a === '--html') args.html = argv[++i];
     else if (!a.startsWith('-')) args.documentId = a;
   }
   return args;
@@ -282,6 +292,7 @@ ${BOLD}db-estimator auditor v0.5${OFF} ${DIM}— read-only estimate check${OFF}
   --doctor           check the setup: grant key, org id, network
   --fixture <path>   audit a captured fixture, no network
   --capture <path>   save the fetched data as a fixture while auditing
+  --html <path>      write the approver screen as one self-contained HTML file
   --json             machine-readable output
 
 Requires JOBTREAD_GRANT_KEY and JOBTREAD_ORGANIZATION_ID unless --fixture is used.

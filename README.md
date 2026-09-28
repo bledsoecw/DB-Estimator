@@ -4,8 +4,8 @@ A private, in-house takeoff and estimating application for **Deitemeyer Brothers
 to integrate natively with JobTread. General construction first; roofing later.
 
 **Status: v0.5 auditor runs; the rest is design material.** The auditor reads one
-JobTread estimate and checks it against policy — read-only, no writes, no AI in the
-loop. Everything beyond that is still the decision material for whether — and how —
+JobTread estimate and checks it against policy, and renders the reviewer's screen —
+read-only, no writes, no AI in the loop. Everything beyond that is still the decision material for whether — and how —
 to build the larger thing. [Jump to running it](#running-the-v05-auditor).
 
 ---
@@ -16,7 +16,7 @@ to build the larger thing. [Jump to running it](#running-the-v05-auditor).
 |---|---|
 | **[`docs/ROADMAP.md`](docs/ROADMAP.md)** | The build roadmap. Phases, gates, costs, the build-vs-buy reckoning, the JobTread subsystem design, the reliability model, and the questions only Carl can answer. |
 | **[`docs/jobtread-api-field-notes.md`](docs/jobtread-api-field-notes.md)** | The JobTread Pave API, verified by direct query against the live organization. The factual baseline the integration is designed against. |
-| **[`src/`](src/)** | The v0.5 auditor. `src/money.ts` is the arithmetic everything else depends on; `src/rules/` holds the eight policy checks. |
+| **[`src/`](src/)** | The v0.5 auditor. `src/money.ts` is the arithmetic everything else depends on; `src/rules/` holds the eight policy checks; `src/report.ts` renders the approver screen. |
 
 ## The short version
 
@@ -89,11 +89,30 @@ version it wants.
 npm run doctor                                                      # check your setup
 npm run audit -- --fixture test/fixtures/jones-bath-kitchen.json   # offline, no setup
 npm run audit -- <documentId>                                       # live
+npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
-npm test                                                            # 32 tests
+npm test                                                            # 40 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
+
+### The approver screen
+
+`--html` writes the reviewer's view as one self-contained file — open it by
+double-clicking, or attach it to an email. No server, no install, nothing to fetch.
+
+It leads with the number that decides the estimate (*under policy by $2,979.07*),
+then one card per exception: what is wrong, the arithmetic behind it, and the
+choices. Clicking a choice records it and updates the tally; **Copy the notes**
+puts a plain-text summary on the clipboard to paste back to the rep.
+
+It decides nothing. Choosing an option changes no price, writes nothing to
+JobTread, and releases no estimate — the page says so where it can be seen.
+v0.5 buys review *time*, not authority.
+
+A rendered report carries the customer's name and your real pricing, so it is
+git-ignored (`*.html`) and belongs on your machine, not in a repository and not
+in anyone's cloud.
 
 **Live runs need network access to `api.jobtread.com`.** A Claude Code cloud session
 cannot reach it: outbound egress is restricted, so a request comes back `403` from the
