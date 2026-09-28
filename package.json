@@ -1,0 +1,18 @@
+{
+  "name": "db-estimator-auditor",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Deterministic estimate auditor for Deitemeyer Brothers. Reads a JobTread estimate and checks it against policy. Read-only.",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types test/*.test.ts",
+    "audit": "node --experimental-strip-types src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

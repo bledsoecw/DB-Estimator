@@ -1,0 +1,1156 @@
+{
+  "capturedAt": "2026-09-28T19:30:00.000Z",
+  "organizationId": "22PBAjem8SSC",
+  "document": {
+    "id": "22PfKxuR9Vrx",
+    "name": "Estimate",
+    "type": "customerOrder",
+    "status": "pending",
+    "price": 109304.84,
+    "cost": 72360.2,
+    "priceWithTax": 109304.84,
+    "taxRate": 0,
+    "taxName": null,
+    "externalId": null,
+    "showChildCosts": true,
+    "showQuantity": false,
+    "showProfit": false,
+    "showLinesAtDepth": null,
+    "requireSignature": true,
+    "includeInBudget": true,
+    "issueDate": "2026-09-28",
+    "createdAt": "2026-09-28T14:24:57.554Z",
+    "job": {
+      "id": "22PawufK8BzM",
+      "name": "261305 Jones_Bath/Kitchen"
+    },
+    "costGroups": {
+      "count": 13,
+      "nodes": [
+        {
+          "id": "22PfKxuReynZ",
+          "name": "NEW BUILD - BATHROOMS/KITCHEN",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": null
+        },
+        {
+          "id": "22PfKxuReyna",
+          "name": "Phase 1 - General Requirements",
+          "position": "m",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuReynZ"
+          }
+        },
+        {
+          "id": "22PfKxuReynb",
+          "name": "Project/Site Management",
+          "position": "m",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuReyna"
+          }
+        },
+        {
+          "id": "22PfKxuRfMgx",
+          "name": "Site Preparation",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuReyna"
+          }
+        },
+        {
+          "id": "22PfKxuRfMh2",
+          "name": "Site Clean Up",
+          "position": "o",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuReyna"
+          }
+        },
+        {
+          "id": "22PfKxuRfMh5",
+          "name": "Phase 3 - Interiors",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuReynZ"
+          }
+        },
+        {
+          "id": "22PfKxuRfMh6",
+          "name": "Flooring",
+          "position": "m",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuRfMh5"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhB",
+          "name": "Shower",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuRfMh5"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhF",
+          "name": "Shower Door Options",
+          "position": "o",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": 1,
+          "maxSelectionsAllowed": 1,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuRfMh5"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhG",
+          "name": "Frameless Shower Doors",
+          "position": "m",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuRfMhF"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhK",
+          "name": "Semi-Frameless Shower Doors",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuRfMhF"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhN",
+          "name": "Phase 4 - Finishes",
+          "position": "o",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuReynZ"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhP",
+          "name": "Cabinetry",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PfKxuRfMhN"
+          }
+        }
+      ]
+    },
+    "costItems": {
+      "count": 26,
+      "nodes": [
+        {
+          "id": "22PfKxuRfMhQ",
+          "name": "Cabinetry",
+          "quantity": 1,
+          "unitCost": 13482.81,
+          "unitPrice": 19550.0745,
+          "cost": 13482.81,
+          "price": 19550.07,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "j",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Lump Sum"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Cabinetry"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhP"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE43k4KM"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhR",
+          "name": "Cabinet Pulls",
+          "quantity": 74,
+          "unitCost": 7.11,
+          "unitPrice": 10.3095,
+          "cost": 526.14,
+          "price": 762.9,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "k",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Cabinetry"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhP"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE4DrVKk"
+          }
+        },
+        {
+          "id": "22PfKxuRfMh7",
+          "name": "Flooring - Main House",
+          "quantity": 1,
+          "unitCost": 10847.35,
+          "unitPrice": 15728.6575,
+          "cost": 10847.35,
+          "price": 15728.66,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "l",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Lump Sum"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMh6"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2qynkQ"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhS",
+          "name": "Cabinetry Labor",
+          "quantity": 66,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 3630,
+          "price": 6600,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "l",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Cabinetry"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhP"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE44RN7w"
+          }
+        },
+        {
+          "id": "22PfKxuReync",
+          "name": "Project Management (C)",
+          "quantity": 16,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 880,
+          "price": 1600,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Project Management"
+          },
+          "costGroup": {
+            "id": "22PfKxuReynb"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDadVavs"
+          }
+        },
+        {
+          "id": "22PfKxuRfMgy",
+          "name": "Site Prep Material",
+          "quantity": 2,
+          "unitCost": 150,
+          "unitPrice": 217.49999999999997,
+          "cost": 300,
+          "price": 435,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Site Construction"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMgx"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhe93Nh"
+          }
+        },
+        {
+          "id": "22PfKxuRfMh3",
+          "name": "Hauling & Disposal",
+          "quantity": 1,
+          "unitCost": 250,
+          "unitPrice": 450,
+          "cost": 250,
+          "price": 450,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Hauling & Disposal (Direct)"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMh2"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhhEvps"
+          }
+        },
+        {
+          "id": "22PfKxuRfMh8",
+          "name": "Flooring - Master Bathroom",
+          "quantity": 1,
+          "unitCost": 1092.02,
+          "unitPrice": 1583.4289999999999,
+          "cost": 1092.02,
+          "price": 1583.43,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Lump Sum"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMh6"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2qynkQ"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhC",
+          "name": "Walk-In Shower - Master Bathroom",
+          "quantity": 1,
+          "unitCost": 3509.95,
+          "unitPrice": 5089.4275,
+          "cost": 3509.95,
+          "price": 5089.43,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Specialites"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhB"
+          },
+          "organizationCostItem": {
+            "id": "22PLi7nfPAJu"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhH",
+          "name": "Shower Door - Master Bathroom",
+          "quantity": 1,
+          "unitCost": 1749.03,
+          "unitPrice": 2536.0935,
+          "cost": 1749.03,
+          "price": 2536.09,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Specialites"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhG"
+          },
+          "organizationCostItem": {
+            "id": "22PLi8TAdsBs"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhL",
+          "name": "Shower Door - Master Bathroom",
+          "quantity": 1,
+          "unitCost": 2938.23,
+          "unitPrice": 4260.4335,
+          "cost": 2938.23,
+          "price": 4260.43,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Specialites"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhK"
+          },
+          "organizationCostItem": {
+            "id": "22PLi8TAdsBs"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhT",
+          "name": "Vanity Countertop - Master Bathroom",
+          "quantity": 1,
+          "unitCost": 1249.05,
+          "unitPrice": 1811.1224999999997,
+          "cost": 1249.05,
+          "price": 1811.12,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Cabinetry"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhP"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE47r6S4"
+          }
+        },
+        {
+          "id": "22PfKxuReynd",
+          "name": "Logistical Management",
+          "quantity": 80,
+          "unitCost": 65,
+          "unitPrice": 94,
+          "cost": 5200,
+          "price": 7520,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Travel Related Costs"
+          },
+          "costGroup": {
+            "id": "22PfKxuReynb"
+          },
+          "organizationCostItem": {
+            "id": "22PHGSH5wSWR"
+          }
+        },
+        {
+          "id": "22PfKxuRfMgz",
+          "name": "Site Prep Labor",
+          "quantity": 4,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 220,
+          "price": 400,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Site Prep/Clean Up"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMgx"
+          },
+          "organizationCostItem": {
+            "id": "22PDa6i3zEiP"
+          }
+        },
+        {
+          "id": "22PfKxuRfMh4",
+          "name": "Final Clean",
+          "quantity": 4,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 220,
+          "price": 400,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Site Prep/Clean Up"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMh2"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhjLQ9Y"
+          }
+        },
+        {
+          "id": "22PfKxuRfMh9",
+          "name": "Flooring - Misc. Material",
+          "quantity": 2700,
+          "unitCost": 0.75,
+          "unitPrice": 1.0875,
+          "cost": 2025,
+          "price": 2936.25,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Square Foot"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMh6"
+          },
+          "organizationCostItem": {
+            "id": "22PHGY7DE6sK"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhD",
+          "name": "Walk-In Shower - Guest Bathroom",
+          "quantity": 1,
+          "unitCost": 5125.99,
+          "unitPrice": 7432.6855,
+          "cost": 5125.99,
+          "price": 7432.69,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Specialites"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhB"
+          },
+          "organizationCostItem": {
+            "id": "22PLi7nfPAJu"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhJ",
+          "name": "Shower Door - Guest Bathroom",
+          "quantity": 1,
+          "unitCost": 2006.84,
+          "unitPrice": 2909.9179999999997,
+          "cost": 2006.84,
+          "price": 2909.92,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Specialites"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhG"
+          },
+          "organizationCostItem": {
+            "id": "22PLi8TAdsBs"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhM",
+          "name": "Shower Door - Guest Bathroom",
+          "quantity": 1,
+          "unitCost": 3390.29,
+          "unitPrice": 4915.920499999999,
+          "cost": 3390.29,
+          "price": 4915.92,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Specialites"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhK"
+          },
+          "organizationCostItem": {
+            "id": "22PLi8TAdsBs"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhU",
+          "name": "Vanity Countertop - Half Bathroom",
+          "quantity": 1,
+          "unitCost": 505.95,
+          "unitPrice": 733.6274999999999,
+          "cost": 505.95,
+          "price": 733.63,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Cabinetry"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhP"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE47r6S4"
+          }
+        },
+        {
+          "id": "22PfKxuReyne",
+          "name": "Sales On-Site Support",
+          "quantity": null,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Sales On-Site Support"
+          },
+          "costGroup": {
+            "id": "22PfKxuReynb"
+          },
+          "organizationCostItem": {
+            "id": "22PNJmzSy4PK"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhA",
+          "name": "Flooring Labor",
+          "quantity": 135,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 7425,
+          "price": 13500,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Flooring"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMh6"
+          },
+          "organizationCostItem": {
+            "id": "22PLhscfQUQU"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhE",
+          "name": "Shower/Tub Labor",
+          "quantity": 48,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 2640,
+          "price": 4800,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Shower/Tub"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhB"
+          },
+          "organizationCostItem": {
+            "id": "22PLiAFwGAAy"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhV",
+          "name": "Vanity Countertop - Guest Bathroom",
+          "quantity": 1,
+          "unitCost": 579.35,
+          "unitPrice": 840.0575,
+          "cost": 579.35,
+          "price": 840.06,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Cabinetry"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhP"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE47r6S4"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhW",
+          "name": "Sink",
+          "quantity": 1,
+          "unitCost": 807.72,
+          "unitPrice": 1171.194,
+          "cost": 807.72,
+          "price": 1171.19,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "p",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Cabinetry"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhP"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE48Y2dV"
+          }
+        },
+        {
+          "id": "22PfKxuRfMhX",
+          "name": "Countertop Sub",
+          "quantity": 1,
+          "unitCost": 8088,
+          "unitPrice": 10514.400000000001,
+          "cost": 8088,
+          "price": 10514.4,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "q",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "u",
+            "name": "Lump Sum"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr8",
+            "name": "Subcontractor"
+          },
+          "costCode": {
+            "id": "cc",
+            "name": "Cabinetry"
+          },
+          "costGroup": {
+            "id": "22PfKxuRfMhP"
+          },
+          "organizationCostItem": {
+            "id": "22PLkh2iRBHD"
+          }
+        }
+      ]
+    }
+  },
+  "costTypes": [
+    {
+      "id": "22PBAjfWNQr6",
+      "name": "Labor",
+      "margin": 0.45000549994500055,
+      "isTaxable": false,
+      "isTimeTrackable": true,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr7",
+      "name": "Materials",
+      "margin": 0.3103448275862069,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr8",
+      "name": "Subcontractor",
+      "margin": 0.3,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr9",
+      "name": "Other",
+      "margin": 0.3103448275862069,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PaTg5HNX8w",
+      "name": "Clock In",
+      "margin": 0,
+      "isTaxable": false,
+      "isTimeTrackable": true,
+      "isActive": true
+    }
+  ],
+  "comparables": [
+    {
+      "price": 155764.19,
+      "cost": 103954.76,
+      "job": {
+        "name": "258410 Schaufelberger_Addition"
+      }
+    },
+    {
+      "price": 127396.93,
+      "cost": 85194.66,
+      "job": {
+        "name": "246466 Dennis Myers_Sunroom"
+      }
+    },
+    {
+      "price": 117837.88,
+      "cost": 81251.26,
+      "job": {
+        "name": "Kay Oss_House Build"
+      }
+    },
+    {
+      "price": 98096.38,
+      "cost": 71026.07,
+      "job": {
+        "name": "#25-8197 Jeremy Cox_Addition"
+      }
+    },
+    {
+      "price": 86185.81,
+      "cost": 60207.68,
+      "job": {
+        "name": "260800 Ridgeview Hospital_Roof"
+      }
+    },
+    {
+      "price": 81111.23,
+      "cost": 55799.09,
+      "job": {
+        "name": "261203 Goodwin_Roof"
+      }
+    },
+    {
+      "price": 61016.6,
+      "cost": 42002.28,
+      "job": {
+        "name": "260019 Perkins_SS Roof"
+      }
+    }
+  ]
+}
