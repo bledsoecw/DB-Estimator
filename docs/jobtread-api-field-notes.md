@@ -796,17 +796,33 @@ Strong evidence that creating a `customerOrder` has no accounting side effect �
 inference from a pattern, so **confirm in writing** before the first push rather than
 discovering otherwise on a real customer.
 
-### The current grant is shared, and expires soon
+### Grants carry a scopable action list — VERIFIED 2026-09-28
+
+`grant.allowedActions` is a **nullable array of `action`**, so a grant can be restricted to
+an explicit list of permitted operations. The exploration grant carries 130+ actions,
+including `updateCostType`, `updateCostCode` and `updateCatalog` — meaning it can change the
+markup policy itself — plus `updateRole`, `updateUser`, `updateOrganization`,
+`updateMembership` and `updateWebhook`. None of those belong on an agent's grant.
+
+Useful distinctions in the vocabulary: `readCatalogCosts` and `readCatalogPrices` are
+**separate actions**, so cost-blind access is enforceable server-side rather than by masking
+fields in a UI; `draftDocument` is distinct from `updateDocument`; and
+`readDocumentInternals` / `readJobInternals` / `readJobFinancialSummary` are separately
+gateable. `deleteDocument` is absent from the exploration grant.
+
+No explicit *send* action appeared in the vocabulary — see the open questions below.
+
+### The current grant is shared, and expires on a rolling date
 
 ```jsonc
 { "currentGrant": { "id": {}, "name": {}, "expiresAt": {}, "createdAt": {} } }
 // => id 22PXNFaV6ZW4, name "Access for claude.ai",
-//    createdAt 2026-05-15T15:34:30Z, expiresAt 2026-12-18T00:58:10Z
+//    createdAt 2026-05-15T15:34:30Z, expiresAt 2026-12-27T19:00:20Z  (rolls — read 2026-12-18 nine days earlier)
 ```
 
 All observations in this document were made through a **general-purpose grant named
-"Access for claude.ai"**, which **expires 2026-12-18** — inside the window of any first
-build phase. The integration must not inherit it. It needs its own named grant, because
+"Access for claude.ai"**, whose expiry **rolls forward** — it read 2026-12-18 on
+2026-09-19 and 2026-12-27 on 2026-09-28. It is not a fixed cliff, but it is shared. The integration must not inherit it. It needs its own named grant, because
 grant identity is also the echo-suppression key (§7a) and a shared grant makes our writes
 indistinguishable from anything else using the same credential.
 
@@ -823,6 +839,9 @@ as ours.
   token bucket, exponential backoff, batching) and confirm with JobTread support.
 - Exact semantics of `createCostCodeMapping` / `createUnitMapping` / `createCostTypeMapping`
   / `createCustomFieldMapping`.
+- Whether `sendDocument` is governed by `draftDocument`, `updateDocument`, or an action not
+  surfaced by schema search — test on a disposable document before relying on grant scoping
+  to make sending impossible (§19.2).
 - ~~Whether `globalId` on `costItem` is filterable~~ — **resolved: it is**, with a 100-char
   budget and currently null everywhere. Whether uniqueness is *server-enforced* on
   `globalId` or `externalId` remains **UNVERIFIED**; assume not and enforce it ourselves.

@@ -2001,4 +2001,167 @@ share is falling, find out why before adding features.
 
 ---
 
+## 19. Guardrails
+
+### 19.1 The principle
+
+**Prefer an absent capability to a checked capability.** A check is code that can be wrong,
+bypassed, or talked around. A capability the credential does not carry cannot be exercised
+by any prompt, any bug, or any injected instruction. Every guardrail below is pushed as far
+down this list as it will go:
+
+1. The grant cannot perform the action at all *(strongest)*
+2. Our orchestrator refuses before the call is made
+3. The platform pauses for a human
+4. The agent is instructed not to *(weakest — never the only control)*
+
+### 19.2 Grant scoping is real, and the current grant is far too broad — VERIFIED 2026-09-28
+
+`grant.allowedActions` is a **nullable array of `action`**, so a JobTread grant can be
+scoped to an explicit list. The grant used for all exploration in this document carries
+**130+ actions**. Among them:
+
+| Action on the current grant | Why it must not be on the agent's grant |
+|---|---|
+| **`updateCostType`, `updateCostCode`, `updateCatalog`** | **The self-referential hazard.** The agent could alter the markup policy the rule engine checks estimates against. A tool that can rewrite its own invariants has none. |
+| `updateRole`, `updateUser`, `updateMembership`, `updateOrganization` | Org administration. No estimating task needs it. |
+| `updateWebhook` | Could silently redirect or disable the event feed the reconciliation depends on. |
+| `createJobs`, `updateJobs` (plural) | Bulk operations. Blast radius of a mistake is the whole org rather than one job. |
+
+Useful separations the vocabulary already provides:
+
+- **`readCatalogCosts` and `readCatalogPrices` are distinct actions.** A price-only role is
+  enforceable server-side, not by stripping fields in our UI. This answers the cost-visibility
+  question §3.1 raised and could not previously resolve.
+- **`draftDocument` is distinct from `updateDocument`**, and `readDocumentInternals`,
+  `readJobInternals` and `readJobFinancialSummary` are separately gateable.
+- `deleteDocument` is **not** on the current grant. Keep it that way.
+
+**Proposed agent grant — v1 (writes off).** Reads only:
+`seeOrganization`, `seeJob`, `readJob`, `readJobBudget`, `readJobInternals`, `readDocument`,
+`readDocumentInternals`, `readCustomerOrders`, `readCostItem`, `readCostGroup`,
+`readCatalog`, `readCatalogCosts`, `readCatalogPrices`, `readCustomField`,
+`readCustomFieldValue`, `readComment`, `readFile`, `readFiles`, `readEvent`, `readPlan`,
+`readJobPlans`, `readBidRequests`, `readJobBudgetBackup`.
+
+**Stage 5 adds exactly three:** `draftDocument`, `createCustomerOrder`, `updateDocument`.
+Nothing else, and never the four rows in the table above.
+
+> **Correction:** this document previously stated the exploration grant expires 2026-12-18.
+> It now reads **2026-12-27**, so the expiry **rolls rather than sitting at a fixed cliff**.
+> The recommendation is unchanged — the agent needs its own scoped grant, and grant identity
+> is also the echo-suppression key (§7a) — but the deadline framing was wrong.
+
+**Unresolved:** no explicit *send* action appeared in the `action` vocabulary, and
+`root.sendDocument` takes `documentRecipientId` and `emailMessage`. Whether sending is
+governed by `draftDocument`, `updateDocument`, or an action not surfaced by search **must be
+determined by test on a disposable document before anyone relies on "the grant cannot send"**
+as an invariant. Until then, treat "cannot send" as a layer-2 control (the orchestrator has
+no send code path), not layer 1.
+
+### 19.3 The six named guardrails
+
+**Roles.** Rep drafts; Kristen or Carl approves; nobody else releases. Enforced in three
+places: the UI hides Approve from a rep, the orchestrator refuses an approve action from a
+non-approver identity, and the agent grant cannot send. Carl's exemption model — "every
+estimate from a rep who hasn't earned an exemption yet" — is a per-rep flag, defaulting to
+*no exemption*, that only Carl can set. Cost visibility rides on `readCatalogCosts` /
+`readCatalogPrices` rather than UI masking.
+
+**Audit trail.** Four sources, joined by our own estimate-revision id:
+
+| Source | Carries |
+|---|---|
+| Managed Agents session events + Console trace | Every tool call, message and model decision |
+| `document.events` (per-document) | Who touched the document, when, under which grant |
+| JobTread budget backups | A restore point taken automatically on every change |
+| Our approval log | Who approved, when, which exceptions they dismissed **and the reason** |
+
+The fourth is the one nothing else provides and the only one that answers "why did this
+number go out".
+
+**Nothing reaches a customer without approval.** Layered: no send code path in the
+orchestrator; the agent grant scoped away from sending once §19.2's open question is
+answered; `documentRecipients` never created by the tool; and release is a distinct action
+from approval, available only to Carl and Kristen. **The tool never emails anyone** — it
+produces a draft and a proposed message that a human sends from JobTread.
+
+**Concurrent-edit detection.** The hard one, because three obvious mechanisms do not work:
+there is **no `costItem` webhook**, `document` has **no `updatedAt`**, and
+**`createdByGrantId` does not separate humans from machines** (§7a). What does work:
+
+1. Record a **content fingerprint** of the document tree when the draft is built.
+2. Before writing, re-read and compare. Any difference halts and shows the diff.
+3. Read the `document.events` tail and **positively match our own grant id**; anything else
+   is someone else's edit.
+4. Show *who* and *when* — "Kristen edited this 4 minutes ago" — not a generic conflict error.
+
+This is exactly the situation Carl hit on Lincolnview when a coworker was editing the same
+budget. The tool must stop and fold the change in, never overwrite.
+
+**Re-read and check after every write.** Three verified gotchas set the sequence:
+
+- `updateJob` / `updateDocument` with `lineItems` **replace the entire tree** — any line
+  whose id is omitted is deleted. **Vendor pricing requests are tied to budget line ids**, so
+  those ids must be carried through explicitly.
+- `updateCostItem` on a single line **does not refresh the document's stored total**; only
+  re-sending the full tree does.
+- `isTaxable` **defaults to `true`** on create, against an org convention of false.
+
+So: snapshot → preflight (rule engine refuses a non-conforming tree) → write → **re-read the
+whole document** → compare every line's quantity, unit cost, unit price, `isTaxable` and
+`globalId` against what was sent, and the document total against the sum of line extensions
+→ any mismatch pages a human and **does not retry**. Float comparison uses an epsilon,
+because JobTread returns IEEE floats (§8).
+
+**Markup and tax enforced automatically.** Markup is solved: the rule engine reads
+`costType.margin` live from JobTread, so Carl's change to 30% on 2026-09-28 propagated with
+no code change, and the Jones estimate's $1,039.89 gap was found by comparing against it.
+**Tax is not solved.** 80,462 cost items are taxable, 60 documents carry a rate, `isTaxable`
+defaults true, and `taxRate` is a fraction in [0,1] where writing `7.25` for `0.0725` is a
+100× error. Until a CPA sets the rule, **the tool must refuse to set any taxability itself**
+and surface the decision to a human on every estimate.
+
+### 19.4 Guardrails not named, that matter
+
+**Prompt injection through job content.** The agent reads vendor quotes, owner scope
+documents, customer emails and comments — all untrusted text, some of it from outside DB. It
+cannot exfiltrate the grant credential (vaults, §3), but it can be *steered*. The controls:
+the rule engine is code and cannot be prompted; the write path is a deterministic gate the
+agent does not control; the agent has no send capability; and the approver sees the estimate,
+not the agent's reasoning about it. **Treat every document the agent reads as hostile input
+and never let a document's content decide whether something is written.**
+
+**Writing to the wrong job.** A single wrong `jobId` puts an estimate on someone else's job.
+Bind the session to one job at creation, refuse any write whose `jobId` differs, and show the
+job name and number on the diff screen.
+
+**Containment during rollout.** Until Stage 5, the write path targets a **designated
+disposable test job only**, enforced by an id allowlist in the orchestrator — not by the
+agent being told which job to use.
+
+**Runaway cost.** A session budget per estimate (`"500"` = $5.00). The session pauses rather
+than terminating, so nothing is lost when it trips.
+
+**Data handling.** Customer names, addresses, job costs and full pricing enter the model's
+context. That is a business decision to make explicitly rather than discover. The vault
+boundary protects the *credential*, not the *data*.
+
+### 19.5 What cannot be guarded
+
+**A wrong measurement.** If a rep types 24 feet where the wall is 26, every control here
+passes: the markup conforms, the tax is right, the math reconciles, the totals match, the
+comparables look plausible because the whole estimate scales together. It flows into a signed
+contract.
+
+There is no technical fix. A second model reading the same drawing is not an independent
+check (§ correlated error). The only controls are partial: cross-checks against an
+independent source where one exists — HOVER squares, a dimension printed on the plan, $/SF
+against this job type's history — and a human who knows the job.
+
+**This is why rep training says: if you do not know a dimension, leave it blank and say so
+(§18.5).** It is the one failure mode where the guardrails are people, not code.
+
+---
+
 *Conventions: every factual claim is tagged VERIFIED (confirmed by direct query against organization `22PBAjem8SSC`), REPORTED (asserted in research, spike attached), or UNVERIFIED (explicitly unknown, no design depends on an assumed answer). The verified facts in §1.1 each overturn an assumption that would otherwise have produced a defect — most consequentially the tax premise, the `_type` discriminator, and the assumption that `createdByGrantId` distinguishes machine writes from human ones. Effort is re-baselined with Phase 0 given a possible calendar, Phase 2 split in two, Phases 1, 3, 4 and 6 lengthened, and gated ML cut. Exit criteria are counts, caps and protocols rather than judgements. Five domain entities — contingency, price adjustment, duration, escalation and contract type — are added at Phase 2a, because their absence would corrupt the audit trail this project exists to create.*
