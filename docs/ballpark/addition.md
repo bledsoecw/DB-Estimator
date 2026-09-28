@@ -5,7 +5,7 @@
 > The third of the three ballpark templates proposed in `../preconstruction-redesign.md` §4.
 > It covers room additions, sunrooms and detached garages, one or two storeys. It works like the
 > bathroom and kitchen templates (`bathroom.md`, `kitchen.md`): a two-page site-visit sheet,
-> 28 JobTread job parameters, and a formula-driven cost group that prices Good, Better and
+> 28 site-visit parameters plus the contingency rate, and a formula-driven cost group that prices Good, Better and
 > Best at once. It runs on the same pricing engine, with DB's catalog rates and markup.
 
 | File | What it is |
@@ -21,7 +21,7 @@
 Every addition has a new foundation and a roof tie-in, so under the proposal's screen (§3.3)
 every addition goes on to the Design & Pricing Agreement. The ballpark's job is to come
 first: give the customer a written budget range at the site visit, **before** the designer
-spends an hour. A customer who balks at $70K–$82K for a family room has not cost DB any
+spends an hour. A customer who balks at $77K–$90K for a family room has not cost DB any
 design time. That is the loss Carl described, and it is what this template prevents.
 
 So the intake sheet's first question changes. It doesn't ask whether the addition needs the
@@ -64,7 +64,8 @@ What they showed:
    25-8197 and 261094.
 4. **The catalog's framing lumber rate is out of date.** DB's two most recent lumber quotes
    came to $22.40 and $22.80 cost per SF of floor. The catalog item is still $17.65, and
-   older estimates used it. The template uses $22.50.
+   older estimates used it. Carl decided on 28 Sep 2026 to update the catalog item to $22.50,
+   so the template uses the catalog rate.
 5. **A new HVAC unit is the largest single mechanical line.** DB's four addition HVAC subs
    ran $7,979 to $13,000. The template uses the median, about $9,750 price.
 6. **Estimates often carry lines at $0.** The pending garage priced its siding, roofing,
@@ -160,15 +161,30 @@ patio door, one opening into the house, and ductwork extended from the house sys
 
 | | Good | Better | Best |
 |---|---|---|---|
-| Ballpark | $70,257 | $74,302 | $81,977 |
-| Range shown (±20%) | $56,200–$84,300 | $59,400–$89,200 | $65,600–$98,400 |
+| Before contingency | $70,257 | $74,302 | $81,977 |
+| Ballpark, with the 10% contingency | $77,282 | $81,733 | $90,175 |
+| Range shown (±20%) | $61,800–$92,700 | $65,400–$98,100 | $72,100–$108,200 |
+
+The contingency line is set by `{Addition Contingency Rate}`, **10%** for additions and
+structural work (decided 28 Sep 2026; see `bathroom.md` §3 for how it works).
+
+### The addition price guide
+
+For the discovery call, from DB's own signed additions (before the new contingency line):
+
+- **Most additions and new structures:** $50K–$135K, the middle half of the eight signed
+  since November 2025.
+- **By type, per SF of floor:** finished rooms $250–$325, detached garages $140–$165, a
+  framed-and-dried-in shell about $115.
+
+Refresh the numbers from JobTread every quarter.
 
 ## 6. Building it in JobTread
 
 The same six steps as the bathroom (`bathroom.md` §5), using this workbook's Template tab. The
 cost group is `BALLPARK — Addition`, with four phases: General Requirements, Foundation &
 Framing, Exterior & Rough-In, and Interior. On a test job, the example values should reproduce
-$70,257, $74,302 and $81,977 to the dollar.
+$77,282, $81,733 and $90,175 to the dollar, with the 10% contingency.
 
 **Cost type U.** Lines marked `U` are labor the catalog prices per square, foot or piece:
 siding, roofing, gutters and garage-door wrap. Build them as JobTread's Labor type at the
@@ -182,17 +198,25 @@ their install labor. Delete its Phase 1 lines and its drywall, paint and floorin
 set its Full Gut, Walls Moved and Fixtures Relocated to 0. No estimate has tested this
 combination yet, so check the first one line by line.
 
-## 7. Decisions for Carl
+## 7. Decisions
 
-1. **Allowance type** for the selection lines. The draft uses `cost`, the same as the other two templates.
-2. **The products behind each tier.** Name the shingle, siding, window and patio door for
-   Good, Better and Best so sales can show them.
-3. **Framing lumber.** Update the catalog's `Framing/Sheathing Materials` to about $22.50 per
-   SF, or keep the override in this template.
-4. **Permit.** Drafted at $200 cost. DB's addition permits ranged from $58 to $1,595 depending
+Decided by Carl on 28 Sep 2026 (`../preconstruction-redesign.md` §9):
+
+1. **Allowances are stated as customer prices** (JobTread allowance type `price`).
+2. **Contingency is a named line** on every tier, at 10% (§5).
+3. **Tier products.** The estimator and the designer name the shingle, siding, window and patio
+   door for each tier and lock the grid for six months.
+4. **Framing lumber.** The estimator updates the catalog's `Framing/Sheathing Materials` to
+   $22.50 per SF and checks it against the latest lumber quote every quarter.
+5. **$0 lines name who supplies them:** "(by owner)", "(by others)" or "(not included)". Confirm
+   the pending garage 261094's $0 siding, roofing, garage doors and entry door with the
+   customer now.
+6. **Price guide.** Published as above.
+
+Still open:
+
+7. **Permit.** Drafted at $200 cost. DB's addition permits ranged from $58 to $1,595 depending
    on the city.
-5. **"By owner" lines.** Should a $0 line always name who supplies it? This matters for the
-   customer and for future calibration.
 
 ## 8. Re-running the checks
 

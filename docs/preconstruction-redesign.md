@@ -1,6 +1,6 @@
 # Pre-Construction Redesign — Budget First, Design Second, Documents After Contract
 
-**Deitemeyer Brothers · General Construction · 2026-09-27**
+**Deitemeyer Brothers · General Construction · 2026-09-27 · decisions recorded 2026-09-28 (§9)**
 
 > A proposal to replace the Preliminary Building Agreement (PBA) with a budget-first path
 > that gives customers a tight number *before* asking them to pay for design, and that
@@ -32,14 +32,16 @@ document leans on) and `jobtread-api-field-notes.md`.
    construction documents. Bathrooms, kitchens and additions can be priced at concept level
    with allowances, and construction documents produced after signing, paid for by the deposit.
 4. **A tighter ballpark is achievable inside JobTread today, without a developer.** DB already
-   runs a formula-driven assembly engine for roofing (`ROADMAP.md` §1.2). Authoring three
-   ballpark assemblies for bathrooms, kitchens and additions, driven by a one-page scope
-   intake, gives a Good/Better/Best range in an afternoon of setup per type, and can be
-   calibrated against DB's own signed contracts.
+   runs a formula-driven assembly engine for roofing (`ROADMAP.md` §1.2). The three ballpark
+   templates for bathrooms, kitchens and additions are drafted (`ballpark/`), each with a
+   two-page intake sheet, and checked against DB's own estimates (§4.4).
 5. **Replace the PBA with a small, fixed, fully credited Design & Pricing Agreement** that is
-   offered only *after* the customer has accepted a ±15% budget range, caps designer hours,
-   and delivers a fixed-price proposal. Construction documents move into the construction
-   contract.
+   offered only *after* the customer has accepted a budget range (±15% for bathrooms, ±20% for
+   kitchens and additions to start), caps designer hours, and delivers a fixed-price proposal.
+   Construction documents move into the construction contract.
+6. **Carl made the ten open decisions on 28 Sep 2026** (§9): fees and hour caps, a visible
+   contingency, allowances at customer price, a published price guide including kitchens, and
+   new terms for the eight PBAs in progress.
 
 ---
 
@@ -115,9 +117,32 @@ Time entries against the `Design` cost code: 69 entries, 142 hours, four people.
 The logged data does not show large designer losses on lost prospects: 11 hours across three
 jobs. Either design time on lost jobs is not being logged (one $8,000 signed-and-lost PBA has
 zero logged hours), or the real loss is smaller than it feels. **Either way, the measurable
-cost of the PBA is lost customers, not lost hours.** If Carl believes the hours are real, the
-first fix is to make the designers log every hour against the job, so the next version of
-this table is trustworthy.
+cost of the PBA is lost customers, not lost hours.**
+
+**Update 28 Sep 2026: the designer's own hours — VERIFIED.** Carl confirmed that every hour
+DB's designer logs is design work, so all of the designer's time entries were pulled regardless
+of cost code: 142 hours from 16 January to 22 September, of which 48 are PTO. That leaves
+**94 design hours on 11 jobs**, and the entry notes name the phase of each one:
+
+| Job | Concept and selections | Construction drawings | Total |
+|---|---|---|---|
+| 25-8538 pool house, won $190.8K | 6.8 h | 13.2 h | 20.0 h |
+| 258410 addition, won $155.8K | 8.0 h | 8.2 h | 16.3 h |
+| 258684 addition, won $186.1K | 5.5 h | 8.8 h | 14.2 h |
+| 261040 addition, won $30.7K | 4.0 h | 6.5 h | 10.5 h |
+| 258442 deck, won $59.2K | 3.0 h | 6.5 h | 9.5 h |
+| 260503 addition, PBA signed, open | 7.0 h | – | 7.0 h |
+| 260014 bathroom, won $38.9K | 4.4 h | 1.0 h | 5.4 h |
+| 260032 remodel, PBA signed, lost | 5.0 h | – | 5.0 h |
+| Three other jobs | 2.0 h | 4.0 h | 6.0 h |
+| **Total** | **45.7 h** | **48.2 h** | **94 h** |
+
+- **Half the logged time is construction drawings,** which the new process moves after the
+  contract, funded by the deposit.
+- **Concept work is small:** 3–8 hours a job. This sets the DPA hour caps (§3.2).
+- **The logging is incomplete.** 94 hours in eight months is about 2.6 hours a week, and 14 of
+  the 22 signed PBAs, including four $7,000 ones, show no hours from the designer. The fix
+  (§9, decision 4) is to log every design session against the job from now on.
 
 ### 1.4 The size of the general-construction business this is for — VERIFIED
 
@@ -188,7 +213,7 @@ draws nothing until the customer has paid for it.
 | Stage | Owner | Customer gets | Customer pays | Designer hours |
 |---|---|---|---|---|
 | 1. Discovery call | Sales | A **Price Guide range** for their project type (from §1.4 and the intake screen) | $0 | 0 |
-| 2. Site visit → **Budget Range Estimate (BRE)** | Sales, estimator | A Good / Better / Best range at **±15%**, on the existing Ballpark template, within 3 business days | $0 | 0 |
+| 2. Site visit → **Budget Range Estimate (BRE)** | Sales rep owns the 3-day clock; estimator reviews the number | A Good / Better / Best range at **±15%** (bathrooms) or **±20%** (kitchens, additions), on the existing Ballpark template, within 3 business days | $0 | 0 |
 | 3. **Design & Pricing Agreement (DPA)** | Sales, designer, estimator | Existing-conditions measure, up to two concept layouts, a selections and allowance schedule, and a **fixed-price proposal** | Small fixed fee by type, **100% credited at contract** | Capped by type |
 | 4. Construction Agreement | Sales, CGM | Fixed price + allowance schedule + named contingency; DD and CDs listed as Phase 1 deliverables | 10% deposit per existing schedule | DD + CDs, funded by the deposit |
 | 5. Pre-production and build | PM | Confirmation measurements, CDs, selections finalized, kickoff | Per existing schedule | As needed |
@@ -197,7 +222,7 @@ draws nothing until the customer has paid for it.
 
 | Today | Proposed |
 |---|---|
-| Verbal ROM ±30–50% | Written BRE ±15%, Good/Better/Best, delivered in 3 days |
+| Verbal ROM ±30–50% | Written BRE ±15–20%, Good/Better/Best, delivered in 3 days |
 | PBA before any credible number | DPA only after the customer accepts the BRE |
 | PBA fee = designer hours (median $3,500), 10%/90% terms | DPA fee fixed by type, paid in full at signing, fully credited |
 | SD + DD + CDs + rendering before contract | Concepts only before contract; DD and CDs after |
@@ -208,20 +233,22 @@ draws nothing until the customer has paid for it.
 
 ### 3.2 The Design & Pricing Agreement
 
-- **Fee.** Fixed per project type, not hourly. Proposed starting points, for Carl to set:
-  bathroom $500, kitchen $950, addition or new structure $1,500, whole-house or new home
-  quoted individually. As a sanity check these are roughly 1–2% of the median contract in
-  each type, well under the 3–5% design fees that are common in design-build. They are low
-  enough that a customer who accepted the BRE has no reason to balk, and high enough to
-  filter people who were never going to build.
+- **Fee.** Fixed per project type, not hourly. Set by Carl on 28 Sep 2026: bathroom $500,
+  kitchen $950, addition or new structure $1,500, whole-house or new home quoted individually
+  with a $2,500 minimum. These are roughly 1–2% of the median contract in each type, well
+  under the 3–5% design fees that are common in design-build. They are low enough that a
+  customer who accepted the BRE has no reason to balk, and high enough to filter people who
+  were never going to build.
 - **Paid in full at signing.** No 10/90. No deliverables held hostage. The customer keeps
   the concepts and the proposal whether or not they build with DB.
 - **Credited 100% at contract signing**, as a line on the construction estimate. DB already
   does this today via a negative change order (VERIFIED on two won bathrooms); make it a
   standard line instead.
 - **Time-boxed.** Two concept layouts, one revision round, and a hard cap on designer hours
-  by type (proposed: bathroom 6, kitchen 10, addition 16). Past the cap, the customer buys
-  more hours at $125 or moves to contract. The cap is what protects the designer.
+  by type: bathroom 6, kitchen 10, addition 12. The designer's logged concept work ran 3–8
+  hours a job (§1.3); the caps add room for a site measure and the revision. At $125 an hour
+  the addition fee covers its full cap. Past the cap, the customer buys more hours at $125 or
+  moves to contract. The cap is what protects the designer.
 - **Deliverables.** Existing-conditions measure and photo report, concept plan(s) with
   dimensions sufficient to quantify, a selections list with allowance amounts and the
   allowance type shown, and a fixed-price proposal on the Const-Med or Const-Large template
@@ -245,6 +272,9 @@ fixed-price proposal.
 | Full gut with fixtures in place | No |
 
 This is the handbook's own "typical examples" list, promoted from illustration to rule.
+Every addition has a new foundation and a roof tie-in, so every addition takes the DPA. The
+addition intake sheet asks a different screen instead: whether the job belongs on the
+exception track below.
 
 ### 3.4 Exceptions
 
@@ -277,9 +307,10 @@ built on it, each with its intake sheet and checks, are in
 
 ### 4.2 The Scope Intake sheet
 
-One page per project type, completed by the sales rep at the site visit alongside the photos
-and measurements the handbook already requires. These are the variables the ballpark
-assembly consumes.
+Two pages per project type, completed by the sales rep at the site visit alongside the photos
+and measurements the handbook already requires. The drafted sheets are in `ballpark/`: the
+bathroom sheet has 22 measurements, the kitchen 21 and the addition 28, each printed beside
+its JobTread parameter name. This was the starting outline:
 
 **Bathroom.** Floor area (SF). Fixture count. Fixtures relocated (count). Tub-to-shower
 conversion (Y/N). Shower type (Onyx or Al-Co panel / tile). Vanity length (LF). Walls moved
@@ -303,19 +334,21 @@ relocation, access. Tier.
 
 For each type, a catalog cost group (for example `BALLPARK — Bathroom`) whose lines are
 formula-driven off the intake variables, using the existing 709-item catalog for unit
-pricing where a real item exists and a stated allowance where it does not:
+pricing where a real item exists and a stated allowance where it does not. A few real lines
+from the drafted bathroom template:
 
 ```
-Demolition labor         round({Bath SF} / 8.5)                     Hours   (the existing stub, priced)
-Tile shower              {Tile Shower} * 1                          EA      allowance, tier-dependent
-Onyx / Al-Co shower      {Panel Shower} * 1                         EA      catalog item
-Fixture relocation       {Fixtures Relocated} * <hrs each>          Hours   plumbing labor
-Vanity                   {Vanity LF}                                LF      allowance by tier
-Floor tile               ceil({Bath SF} * 1.10)                     SF      allowance by tier
-Drywall / paint          {Bath SF} * <factor>                       SF
-Electrical circuits      {Circuits Added}                           EA
-General requirements     (duration-driven)                          Weeks
+Demolition               6 + 10*{Bath Full Gut}                          Hours   $55 / $100
+Plumbing Labor           3 + round(2.5*{Bath Fixtures Replaced})         Hours   $55 / $100
+                           + 4*{Bath Fixtures Relocated}
+Hauling & Disposal       {Bath Dumpster Loads}                           Each    $250 / $450
+Walk-In Shower System    {Bath Walk-In Shower}                           Each    Good $1,390 · Better $3,380 · Best $8,800 (sub)
+Contingency — Good       {Bath Contingency Rate}/100*( ...the tier's subtotal... )   $1.00 at cost
 ```
+
+Each tier carries its own **Contingency** line (§9, decision 2). JobTread formulas can
+reference job parameters but not other lines, so its formula spells out the tier's subtotal;
+the build scripts generate it.
 
 Good / Better / Best is a native JobTread selection group (`isSimpleSelection`, min/max
 selections), so the customer sees three totals on one document. The output lands on the
@@ -326,23 +359,30 @@ standard contingencies, excludes atypical structural work and unforeseen conditi
 
 Allowance lines must carry an explicit `allowanceType` (`cost`, `costAndFee` or `price`).
 `ROADMAP.md` §9.3 and Question 20 explain why: a $4,500 allowance stated as a cost budget and
-the same figure stated as a customer price differ by DB's full markup, invisibly. Decide the
-policy once, in the catalog, before the first ballpark goes out.
+the same figure stated as a customer price differ by DB's full markup, invisibly. **Decided
+28 Sep 2026: `price`** (§9, decision 3).
 
 ### 4.4 Calibrate before trusting it
 
-Run each ballpark assembly against the signed contracts in §1.4 using the intake values that
-job would have had (the sales rep or PM can reconstruct them from the photo report in an
-hour per job). Accept the assembly for live use when at least 8 of 10 land within ±15% of
-the signed price. Bathrooms have nine calibration points today, additions eight, kitchens
-none. For kitchens, calibrate against the two pending estimates and a published regional
-benchmark, state the range as ±20% until three kitchens have closed, and re-run.
+Done for all three templates, against DB's own estimates, with the intake values rebuilt
+from each estimate's lines:
+
+| | Checked against | Result (before contingency) | Band |
+|---|---|---|---|
+| Bathroom | 17 bathroom estimates, Jan–Sep 2026 | 17 of 17 inside the Good-to-Best band; everything but the finish selections within ±15% on 13 of 17 | ±15% |
+| Kitchen | 2 full kitchens (both pending), plus kitchen lines in 3 larger bids | Both within 5% at the tier quoted | ±20% |
+| Addition | 8 addition estimates, 6 signed | 7 of 7 within ±15%, median 9%; a sunroom tear-down is outside the template's scope | ±20% |
+
+All three checks are **in-sample**: the inputs were rebuilt from the same estimates, and some
+rates were set from them. Accept a template for live use when at least 8 of its next 10 jobs
+land within its band of the signed price. Re-run the kitchen check once three kitchens have
+closed.
 
 ### 4.5 Keep it honest
 
 Add two job custom fields: `BRE Mid` and `BRE Date`. When a contract is approved, the
 estimator records the variance. Review the variance table monthly. Any type drifting past
-±15% on more than a third of its jobs gets its assembly re-priced. This is the same
+its band on more than a third of its jobs gets its assembly re-priced. This is the same
 feedback loop the roadmap's Phase 8 automates; doing it by hand for three project types
 costs an hour a month and produces the calibration data that phase would otherwise wait
 two years for.
@@ -362,10 +402,11 @@ replaces "we need the full design first."
 3. **Allowance schedule** for every selection not yet made, each with amount, allowance type,
    what it includes (material only versus installed), and a selection deadline. Every
    material-only allowance has a labor line beside it. Total allowance exposure is shown as a
-   dollar figure and as a percentage of contract.
-4. **Named contingency** as its own line, not buried in markup. Proposed defaults, for Carl
-   to set: 5% replacement-in-place, 8% remodel with relocation, 10% additions and structural.
-   Customer-visible or internal is a policy choice; `ROADMAP.md` §9.7 gives the mechanics.
+   dollar figure and as a percentage of contract. Allowances are stated as **customer prices**.
+4. **Named contingency** as its own line, not buried in markup, and shown to the customer: 5%
+   replacement-in-place, 8% remodel with relocation, 10% additions and structural.
+   Unforeseen conditions draw on it first; any unused balance is credited at closeout. The
+   same line is on the ballpark, so the two never differ by a hidden 5–10%.
 5. **Unforeseen conditions** per contract §4.4, unchanged.
 6. **Material escalation** per contract §5.2, unchanged.
 7. **Change orders** for any customer-driven change after signing, unchanged.
@@ -386,10 +427,15 @@ $16K and $38K depending on tile versus panel showers and whether anything moves.
 neighborhood works, the next step is a free site visit, and within three days you'll have a
 written range with three options."
 
-**With the BRE.** "This is your budget range: Good $X, Better $Y, Best $Z. It's ±15%, it
-includes permits, labor, materials and a contingency, and it's good for 15 days. If one of
-these fits, our Design & Pricing Agreement is $500. That buys the concept layout and a fixed
-price, and the $500 comes off your contract."
+For kitchens: "A full kitchen remodel usually runs $45K to $85K. A refresh that keeps the
+layout is more like $25K to $55K, and moving the sink or a wall pushes it to $55K to $105K."
+For additions: "Most of the additions we've built this year ran $50K to $135K. Finished rooms
+come in around $250 to $325 a square foot, garages $140 to $165."
+
+**With the BRE.** "This is your budget range: Good $X, Better $Y, Best $Z. It's within 15%,
+it includes permits, labor, materials and a 5% contingency shown as its own line, and it's
+good for 15 days. If one of these fits, our Design & Pricing Agreement is $500. That buys the
+concept layout and a fixed price, and the $500 comes off your contract."
 
 **When asked why design costs money.** "The $500 covers the hours our designer spends
 turning your ideas into a layout we can price to the dollar. You keep the layout and the
@@ -398,8 +444,8 @@ price either way. If you build with us, it's credited in full."
 **When asked about the fixed price.** "The price is fixed for the scope on this proposal.
 The things you haven't picked yet, like tile and fixtures, are carried as allowances with the
 amount shown. Pick under, you get a credit; pick over, you pay the difference. Anything we
-find inside a wall that nobody could have seen is covered by the unforeseen-conditions
-clause at the rates in the contract."
+find inside a wall that nobody could have seen comes out of the contingency first, and
+whatever contingency is left at the end comes back to you."
 
 ---
 
@@ -407,10 +453,10 @@ clause at the rates in the contract."
 
 | Week | Work | Who |
 |---|---|---|
-| 1 | ~~Answer the variable-entry question~~ (answered: job parameters). Set DPA fees, hour caps, contingency defaults, and the allowance-type policy. Draft the three intake sheets. | Carl, estimator, designer |
-| 2 | Author `BALLPARK — Bathroom / Kitchen / Addition` in the catalog with Good/Better/Best selection groups. Rename catalog group `22PPB363cpwn` to `Design & Pricing Agreement`, replace its four hourly lines with fixed-fee items by type, and move `Designer – Con Docs` to a construction-phase catalog item. Retire the `PAR` template. Rewrite the PBA template as the DPA (paid in full, credited, no 10/90). | Estimator, designer, CGM |
-| 3 | Calibrate each assembly against the §1.4 contracts. Adjust. Add `BRE Mid` / `BRE Date` custom fields. Replace the four unused PBA statuses with BRE Out / DPA Out / DPA Signed / Proposal Out. | Estimator, Carl |
-| 4 | Train sales on the driver screen, the intake sheets and the scripts in §6. Go live on all new construction leads. Keep the current PBA only for the 8 signed ones already in progress. | Sales, Carl |
+| 1 | ~~Answer the variable-entry question~~ (answered: job parameters). ~~Set fees, caps, contingency and allowance policy~~ (decided, §9). ~~Draft the three intake sheets and templates~~ (done, `ballpark/`). Fill in the tier-product grid in one sitting (§9, decision 8). Start logging every design session. Offer the 8 signed PBAs the new terms. | Carl, estimator, designer |
+| 2 | Author `BALLPARK — Bathroom / Kitchen / Addition` in the catalog from the build workbooks, and check each reproduces its example to the dollar on a test job. Add a `Contingency` cost code, the `Design – Concept` and `Design – Construction Drawings` items, and update `Framing/Sheathing Materials` to $22.50 per SF. Rename catalog group `22PPB363cpwn` to `Design & Pricing Agreement`, replace its four hourly lines with fixed-fee items by type, and move `Designer – Con Docs` to a construction-phase catalog item. Retire the `PAR` template. Rewrite the PBA template as the DPA (paid in full, credited, no 10/90). | Estimator, designer, CGM |
+| 3 | Price live site visits with the templates alongside the current process. Add `BRE Mid` / `BRE Date` custom fields. Replace the four unused PBA statuses with BRE Out / DPA Out / DPA Signed / Proposal Out. Publish the price guide (§9, decision 5). | Estimator, Carl |
+| 4 | Train sales on the driver screen, the intake sheets and the scripts in §6. Go live on all new construction leads. | Sales, Carl |
 
 **Measure from day one**, in JobTread, monthly:
 
@@ -419,7 +465,7 @@ clause at the rates in the contract."
 | Prospects who accept the paid design step | 46% signed a PBA | > 65% sign a DPA |
 | Paid design step → contract | 64% | ≥ 65% (hold it while doubling the top of the funnel) |
 | Designer hours per lost prospect | ~3.6 h logged (under-logged) | < 2 h, fully logged |
-| Ballpark within ±15% of signed price | not measured | ≥ 80% of jobs |
+| Ballpark within its band of the signed price (±15% bathroom, ±20% kitchen and addition) | not measured | ≥ 80% of jobs |
 | Lead to contract, calendar days | not measured | measure, then cut |
 
 Cost: 30–50 hours of Carl's, an estimator's and a designer's time. No software, no
@@ -444,27 +490,107 @@ Changes to `Construction Project Pipeline – 2026 – Rev 1` and the July revis
 - **Payment schedule.** Delete the PBA 10% / 90% terms. Add "DPA fee paid in full at signing,
   credited on the construction contract." Construction schedules by tier are unchanged.
 - **Glossary.** Retire PBA and FB Study; add BRE and DPA.
-- **Client communication.** Replace the ROM disclaimer (±30–50%) with the BRE language (±15%,
-  15-day validity, three tiers).
+- **Client communication.** Replace the ROM disclaimer (±30–50%) with the BRE language (±15%
+  for bathrooms, ±20% for kitchens and additions, 15-day validity, three tiers, contingency
+  shown as its own line).
+- **Estimating standards.** Allowances are stated as customer prices. Every $0 line names who
+  supplies it: "(by owner)", "(by others)" or "(not included)". Designers log every session
+  against the job under `Design – Concept` or `Design – Construction Drawings`.
 
 ---
 
-## 9. Questions only Carl can answer
+## 9. Decisions — made 28 Sep 2026
 
-1. DPA fee levels and designer hour caps by type. The proposal's numbers are starting points.
-2. Contingency: customer-visible line, or internal? And the default rate by type.
-3. Allowance type policy: are stated allowances cost budgets, customer prices, or cost plus
-   fee? This one question decides the margin on every selection (`ROADMAP.md` Q20).
-4. Are designers logging every hour against the job? If not, the §1.3 table understates the
-   loss and needs a month of clean data before it can be used in a decision.
-5. Publish the Price Guide ranges on the website, or keep them for the discovery call only?
-   Publishing reduces unqualified site visits and pre-empts the sticker shock that the PBA
-   currently absorbs.
-6. For the 8 signed PBAs in progress: finish them under the old terms, or offer the DPA
-   terms retroactively? The latter costs nothing and buys goodwill on jobs like the $278K
-   remodel currently out for decision.
-7. Who owns the BRE turnaround commitment of three business days: the sales rep or the
-   estimator?
+Carl accepted all ten recommendations and asked for a kitchen price guide as well.
+
+**1. DPA fees and designer hour caps.**
+
+| Project type | Fee | Designer cap |
+|---|---|---|
+| Bathroom | $500 | 6 h |
+| Kitchen | $950 | 10 h |
+| Addition or new structure | $1,500 | 12 h |
+| Whole-house or new home | Quoted, $2,500 minimum | Quoted |
+
+The designer's logged concept work ran 3–8 hours a job (§1.3). The fee's job is to filter out
+people who won't build and be credited to those who do, so it need not cover every hour.
+
+**2. Contingency is a visible line, on the ballpark and the proposal.** 5% for replacement in
+place, 8% for a remodel where anything moves, 10% for additions and structural work.
+Unforeseen conditions draw on it first, and any unused balance is credited at closeout. A
+hidden contingency with the unforeseen-conditions clause on top would look like charging
+twice. The ballpark templates now carry it as one line per tier, with the rate as a job
+parameter the estimator sets.
+
+**3. Allowances are stated as customer prices** (JobTread allowance type `price`). "Tile
+allowance $4,500: spend less and you get a credit, spend more and you pay the difference."
+No total changes, only how overages and credits are figured (`ROADMAP.md` Q20).
+
+**4. Designer logging.** Not every hour is logged today (§1.3). From now on the designer logs
+every session against the job under two catalog items, `Design – Concept` and
+`Design – Construction Drawings`, and keeps writing the phase notes. Review after one month.
+This does not hold up the launch; the caps are set from the hours already logged.
+
+**5. Publish the price guide** on the website, and use the same numbers on the discovery
+call. Refresh it from JobTread every quarter.
+
+| Project | Price guide | Basis |
+|---|---|---|
+| Bathroom | $16K–$38K | Middle half of the 9 bathrooms signed since November 2025 |
+| Kitchen, full remodel | $45K–$85K | Kitchen template, Good to Best: 180 SF gutted, 26 ft run with a 6 ft island, 8% contingency |
+| Kitchen, refresh that keeps the layout | $25K–$55K | Template: 150 SF, 20 ft of new cabinets and counters, walls stay, 5% contingency |
+| Kitchen, sink or a wall moves | $55K–$105K | Template: 210 SF, 32 ft run with an 8 ft island, 8% contingency |
+| Addition or new structure | $50K–$135K | Middle half of the 8 signed since November 2025 |
+| Finished room addition | $250–$325 per SF | DB's three finished-room estimates |
+| Detached garage | $140–$165 per SF | DB's two garage estimates |
+
+DB has no signed kitchen, so the kitchen guide comes from the kitchen template, rounded outward
+to the nearest $5K. Replace it with DB's own signed-contract ranges once three kitchens close.
+DB's two pending premium kitchens, at $91K and $99K, sit at the top of the layout-change
+range. The bathroom and addition guides are DB's past prices, before the new contingency
+line; expect them to drift up 5–10% as contracts with contingency close.
+
+**6. The eight signed PBAs get the new terms now:** 260503, 261050, 261081, 261089, 261107,
+261211, 261268 and 261269. Credit what each has paid in full at contract, drop the
+90%-if-you-don't-build balance, and give a written Good / Better / Best range to any without
+an estimate. Carl calls the $278K remodel (261268) himself.
+
+**7. Three-day turnaround: the sales rep owns the clock, the estimator owns the number.** The
+rep enters the intake sheet into JobTread the same day, the estimator reviews within one
+business day, and the rep delivers by day three. Once bathrooms pass 8 of their next 10 jobs,
+a bathroom with an all-No design screen skips the review.
+
+**8. Tier products.** The estimator and the designer fill in this grid in one sitting and lock
+it for six months, one real product and a photo per cell. The starting grid is what DB's own
+estimates used; cells marked *name it* are open.
+
+| Template | Line | Good | Better | Best |
+|---|---|---|---|---|
+| Bathroom | Walk-in shower | Acrylic or fiberglass kit | Onyx / Al-Co panel system | Tile or large panel, set by the sub |
+| Bathroom | Glass | Framed bypass | Semi-frameless | Frameless |
+| Bathroom | Vanity | Stock, cultured-marble top | Semi-custom, quartz top | Custom, premium top: *name it* |
+| Bathroom | Floor | LVP | Upgraded LVP: *name it* | Tile, set by the sub |
+| Kitchen | Cabinets | Stock builder line: *name it* | DB's $600-per-foot line: *name it* | KraftMaid plywood or painted |
+| Kitchen | Countertops | Laminate | Entry quartz: *name it* | 3 cm premium quartz |
+| Kitchen | Backsplash | Standard tile: *name it* | Upgraded tile: *name it* | Quartz slab to match |
+| Addition | Roofing | OC Duration | OC Duration FLEX | Standing-seam steel |
+| Addition | Siding | Norandex Cedar Knolls | Horizontal lap (catalog) | Vinyl shake or board and batten: *name it* |
+| Addition | Windows | Polaris double-hung | Upgraded vinyl or casement: *name it* | Fiberglass or wood-clad: *name it* |
+| Addition | Patio door | Catalog sliding door | Catalog patio door | Premium patio door: *name it* |
+
+**9. Framing lumber.** The estimator updates the catalog's `Framing/Sheathing Materials` from
+$17.65 to $22.50 per SF, matching DB's two latest lumber quotes, and checks it against the
+latest quote every quarter. The addition template uses the catalog rate. The contract's
+escalation clause (§5.2) protects DB only if the starting rate is current.
+
+**10. Every $0 line names who supplies it:** "(by owner)", "(by others)" or "(not included)",
+ideally in one *Owner-supplied / not included* group on the estimate. It prevents "who's
+buying the garage door" disputes, and it tells the next calibration what was excluded rather
+than forgotten. The pending garage 261094 carries its siding, roofing, garage doors and entry
+door at $0 with no note; confirm those with the customer now.
+
+**Still open:** the permit allowance by city (bathroom and addition templates), the rule for
+when travel hours apply, and whether DB supplies kitchen appliances by default.
 
 ---
 
@@ -537,7 +663,8 @@ All reads were against the Pave API with read-only queries; no mutation was exec
 - Approved contracts: `organization.documents` where `type = customerOrder` and
   `status = approved`, sorted by price, joined to the job's `Project Type`
   (custom field `22PC7idvhRzp`). Documents under $6,000 were not classified.
-- Designer time: `organization.timeEntries` where `costItem.costCode.name = "Design"`.
+- Designer time: `organization.timeEntries` where `costItem.costCode.name = "Design"`, and
+  (28 Sep) all of the designer's time entries grouped by job and cost code, with each entry's notes.
 - Pipeline statuses: counts of `customFieldValues` on the job `Status` field (`22PBAjfWVVv9`).
 - Templates: `documentTemplate` for Ballpark (`22PHqjjFH3XC`), PBA (`22PNaehdnUPp`),
   PAR (`22PXfJenFSwM`) and Const-Med (`22PBz28funCv`).

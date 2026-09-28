@@ -41,7 +41,7 @@ NOTES = {
 
 README = [
  ('Kitchen Ballpark Template — DRAFT for review', 'h1'),
- ('Deitemeyer Brothers · General Construction · drafted 27 Sep 2026', 'g'),
+ ('Deitemeyer Brothers · General Construction · drafted 27 Sep 2026 · decisions applied 28 Sep 2026', 'g'),
  ('', None),
  ('What this is', 'b'),
  ('The build sheet for a formula-driven kitchen ballpark in JobTread, plus a working calculator so the numbers can be checked before anything is built.', None),
@@ -50,7 +50,7 @@ README = [
  ('How to use it', 'b'),
  ('1. Calculator tab: type the site-visit numbers into the yellow cells. The three totals and ranges update.', None),
  ('2. Template tab: every JobTread line with its cost group, cost code, unit, exact quantity formula, and unit cost and price per tier.', None),
- ("3. Parameters tab: the 21 JobTread job parameters. Each starts with 'Kitchen ' so a job with a kitchen and a bath never shares one.", None),
+ ("3. Parameters tab: the 21 site-visit parameters plus the contingency rate, which the estimator sets. Each starts with 'Kitchen ' so a job with a kitchen and a bath never shares one.", None),
  ('4. Rates tab: markup by cost type, and the ± band. It is set to ±20% for kitchens.', None),
  ('5. Calibration tab: how the template compares with every kitchen DB has estimated.', None),
  ('', None),
@@ -63,13 +63,17 @@ README = [
  ('The Good tier rests on one source, DB\'s apartment-kitchen bid. Better cabinets use DB\'s standard $600-per-foot allowance.', None),
  ('So the ballpark is quoted at ±20%, as the proposal planned, until three kitchens have closed. Then re-run the calibration and tighten it to ±15%.', None),
  ('', None),
- ('Decisions still open (for Carl)', 'b'),
- ('Allowance type on the selection lines: cost (marked up like other materials, as drafted), price, or cost plus fee.', None),
- ('Name the cabinet line, countertop material and backsplash for each tier so sales can show them.', None),
- ('Whether DB supplies appliances by default or only on request.', None),
+ ('Decided 28 Sep 2026', 'b'),
+ ("Contingency is its own line on each tier: 8% for a remodel where anything moves, 5% for a refresh that keeps the layout. The estimator sets the Kitchen Contingency Rate. The checks compare prices before contingency, because DB's past estimates carried none.", None),
+ ('Allowances are stated as customer prices (JobTread allowance type: price). No total changes; an overage or a credit is simply the difference in price.', None),
+ ('Products per tier: the estimator and the designer name one product per Good / Better / Best cell and lock the grid for six months (draft in the proposal, §9).', None),
+ ('Still open: whether DB supplies appliances by default or only on request.', None),
  ('', None),
  ("Source for every rate: kitchen estimates read from DB's JobTread account (read-only) on 27 Sep 2026. See Calibration tab.", 'g'),
 ]
+
+
+INPUTS = [p for p in km.PARAMS if p[0] != km.CONT]   # site-visit inputs; the estimator sets the contingency rate
 
 
 def calibration(wb, ctx):
@@ -81,7 +85,7 @@ def calibration(wb, ctx):
     cb['A3'] = "Structure = everything except the finish selections (labor, rough-in, demo, drywall, general requirements)."; cb['A3'].font = GREY
     cb['A5'] = 'Full kitchen estimates'; cb['A5'].font = BOLD
     hdr = ['Job', 'Status', 'Actual total', 'Model Good', 'Model Better', 'Model Best', 'Model at the tier quoted', 'Error at tier',
-           'Structure actual', 'Structure model', 'Structure error'] + [n for n, _, _, _ in km.PARAMS]
+           'Structure actual', 'Structure model', 'Structure error'] + [n for n, _, _, _ in INPUTS]
     header(cb, 6, hdr)
     r = 7
     for j, P in INTAKE.items():
@@ -89,8 +93,8 @@ def calibration(wb, ctx):
         vals = [j, d['status'], round(a, 2)] + [round(km.price(P, t), 2) for t in engine.T] + [round(km.price(P, TIER_OF[j]), 2)]
         for k, v in enumerate(vals, 1): cb.cell(r, k, v)
         cb.cell(r, 8, f'=(G{r}-C{r})/C{r}'); cb.cell(r, 9, round(sa, 2)); cb.cell(r, 10, round(sm, 2)); cb.cell(r, 11, f'=(J{r}-I{r})/I{r}')
-        for k, (n, _, _, _) in enumerate(km.PARAMS, 12): cb.cell(r, k, P[n])
-        for k in range(1, 12 + len(km.PARAMS)):
+        for k, (n, _, _, _) in enumerate(INPUTS, 12): cb.cell(r, k, P[n])
+        for k in range(1, 12 + len(INPUTS)):
             c = cb.cell(r, k); c.border = BOX; c.font = font()
             if k in (3, 4, 5, 6, 7, 9, 10): c.number_format = USD
             if k in (8, 11): c.number_format = '+0%;-0%;0%'

@@ -34,8 +34,8 @@ NOTES = {
  'Concrete Foundation - 6" Stem': 'DB catalog item: 3 ft footing, 6 in stem wall, 4 in slab. The 14x24 garage\'s sub ran $45.60 per SF; small slabs cost more per foot.',
  'Concrete Foundation - Basement': 'DB catalog item. No basement addition in the data; this line is untested.',
  'Concrete Piers': 'Per pier or post, with the labor line beside it. From the porch-type addition on three piers.',
- 'Framing/Sheathing Materials': ("$22.50 cost per SF of floor, from DB's two most recent lumber quotes ($22.8 and $22.4). "
-                                 "The catalog item is still $17.65, which older estimates used."),
+ 'Framing/Sheathing Materials': ("DB catalog item, updated to $22.50 cost per SF of floor (from $17.65) to match DB's two most recent "
+                                 "lumber quotes ($22.8 and $22.4). Check it against the latest quote every quarter."),
  'Framing/Sheathing Labor': ("1 h per 6 SF of floor, plus 8 h per wall opening and per tie-in level. Matched DB's hours on "
                              "258410 (84 against 86) and 258551 (60 against 62). A framing sub costs about the same: $19 per SF price."),
  'Roofing Material': ("Per square, including underlayment, ice and water, starter, ridge and drip edge. Good matches OC Duration "
@@ -50,7 +50,7 @@ NOTES = {
  'Windows': "Good = catalog Polaris double-hung ($475). 258410's casements ran $579 cost each.",
  'Patio Door': 'Good = catalog Sliding Door ($1,750). Better = catalog Patio Door ($2,500).',
  'Exterior Door & Lockset': "Same as the kitchen template. 258410's entry door and lockset were $1,834 price.",
- 'Garage Door': 'Catalog Garage Door, installed by the sub. Neither garage estimate priced its overhead doors.',
+ 'Garage Door': 'Catalog Garage Door, installed by the sub. Neither garage estimate priced its overhead doors; if the owner supplies them, keep the line at $0 and name it (by owner).',
  'Interior Door': 'Same as the kitchen template: $400 plus 3 h each.',
  'Plumbing Materials': ("Rough-in only: $250 and 9 h per fixture, from 258410's bathroom (37 h and $914 for four fixtures). "
                         "The fixtures and finishes come from the bathroom or kitchen template."),
@@ -65,7 +65,7 @@ NOTES = {
 
 README = [
  ('Addition Ballpark Template — DRAFT for review', 'h1'),
- ('Deitemeyer Brothers · General Construction · drafted 27 Sep 2026', 'g'),
+ ('Deitemeyer Brothers · General Construction · drafted 27 Sep 2026 · decisions applied 28 Sep 2026', 'g'),
  ('', None),
  ('What this is', 'b'),
  ('The build sheet for a formula-driven addition ballpark in JobTread, plus a working calculator so the numbers can be checked before anything is built.', None),
@@ -75,7 +75,7 @@ README = [
  ('How to use it', 'b'),
  ('1. Calculator tab: type the site-visit numbers into the yellow cells. The three totals and ranges update.', None),
  ('2. Template tab: every JobTread line with its cost group, cost code, unit, exact quantity formula, and unit cost and price per tier.', None),
- ("3. Parameters tab: the 28 JobTread job parameters. Each starts with 'Addition ' so it never collides with a bath or kitchen on the same job.", None),
+ ("3. Parameters tab: the 28 site-visit parameters plus the contingency rate, which the estimator sets. Each starts with 'Addition ' so it never collides with a bath or kitchen on the same job.", None),
  ('4. Rates tab: markup by cost type, and the ± band. It is set to ±20% for additions.', None),
  ('5. Calibration tab: how the template compares with DB\'s addition estimates, total and block by block.', None),
  ('', None),
@@ -88,13 +88,18 @@ README = [
  ('This is an in-sample check. The inputs were rebuilt from those same estimates, and three rates were set against them. Block by block the errors are much larger (often 30–60% either way) and cancel in the total.', None),
  ('Additions also vary more than bathrooms: foundation, roof and siding choices move the price more than the finish tier does. So the ballpark is quoted at ±20%, and every addition goes on to the Design & Pricing Agreement.', None),
  ('', None),
- ('Decisions still open (for Carl)', 'b'),
- ('Allowance type on the selection lines: cost (marked up like other materials, as drafted), price, or cost plus fee.', None),
- ('Name the shingle, siding, window and patio-door product for each tier so sales can show them.', None),
- ('Framing lumber: update the catalog to about $22.50 per SF, or keep the override in this template.', None),
+ ('Decided 28 Sep 2026', 'b'),
+ ("Contingency is its own line on each tier at 10%. The estimator sets the Addition Contingency Rate. The checks compare prices before contingency, because DB's past estimates carried none.", None),
+ ('Allowances are stated as customer prices (JobTread allowance type: price). No total changes; an overage or a credit is simply the difference in price.', None),
+ ('Products per tier: the estimator and the designer name one product per Good / Better / Best cell and lock the grid for six months (draft in the proposal, §9).', None),
+ ("Framing lumber: the catalog item Framing/Sheathing Materials is updated to $22.50 per SF (from $17.65), so this template uses the catalog rate.", None),
+ ('Every $0 line on an estimate names who supplies it: (by owner), (by others) or (not included).', None),
  ('', None),
  ("Source for every rate: DB's catalog and addition estimates, read from JobTread (read-only) on 27 Sep 2026. See Calibration tab.", 'g'),
 ]
+
+
+INPUTS = [p for p in am.PARAMS if p[0] != am.CONT]   # site-visit inputs; the estimator sets the contingency rate
 
 
 def calibration(wb, ctx):
@@ -107,7 +112,7 @@ def calibration(wb, ctx):
     cb['A3'] = "258684 is shown but not counted: a tear-down and rebuild with deck work, stone and a PVC roof deck."; cb['A3'].font = GREY
     cb['A5'] = 'Totals'; cb['A5'].font = BOLD
     hdr = (['Job', 'Status', 'What it is', 'Floor SF', 'Actual (same scope)', 'Model at its tier', 'Error', 'Actual $/SF',
-            'Model Good', 'Model Better', 'Model Best', '|Error|'] + [n for n, _, _, _ in am.PARAMS])
+            'Model Good', 'Model Better', 'Model Best', '|Error|'] + [n for n, _, _, _ in INPUTS])
     header(cb, 6, hdr)
     r = 7
     for x in ac.results():
@@ -117,8 +122,8 @@ def calibration(wb, ctx):
         for k, v in enumerate(vals, 1):
             if v is not None: cb.cell(r, k, v)
         cb.cell(r, 7, f'=(F{r}-E{r})/E{r}'); cb.cell(r, 8, f'=E{r}/D{r}'); cb.cell(r, 12, f'=ABS(G{r})')
-        for k, (n, _, _, _) in enumerate(am.PARAMS, 13): cb.cell(r, k, ac.INTAKE[j][n])
-        for k in range(1, 13 + len(am.PARAMS)):
+        for k, (n, _, _, _) in enumerate(INPUTS, 13): cb.cell(r, k, ac.INTAKE[j][n])
+        for k in range(1, 13 + len(INPUTS)):
             c = cb.cell(r, k); c.border = BOX; c.font = font(color='808080' if j in ac.OUTLIER else None)
             if k in (5, 6, 8, 9, 10, 11): c.number_format = USD
             if k == 7: c.number_format = '+0%;-0%;0%'

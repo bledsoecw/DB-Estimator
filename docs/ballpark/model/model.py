@@ -25,6 +25,7 @@ PARAMS=[ # name, type, default, help
  ('Bath HVAC Work','number',0,'1 = register move or duct extension'),
  ('Bath Dumpster Loads','number',1,'Haul-away loads (1 for most baths)'),
  ('Bath Travel Hours','number',0,'Crew travel hours for jobs past the standard service zone'),
+ ('Bath Contingency Rate','number',5,'Contingency as a % of the tier total, set by the estimator: 5 when everything stays in place, 8 when a fixture or wall moves'),
 ]
 # Common scope: in every tier
 COMMON=[
@@ -86,5 +87,8 @@ TIERS=[ # name, unit, formula, {tier: (unit_cost, cost_type)}, allowance?
  ('Recessed Light','Each','{Bath Recessed Lights}',{'Good':(25,'M'),'Better':(35,'M'),'Best':(60,'M')},True),
  ('Bath Accessories','Lump Sum','1',{'Good':(100,'M'),'Better':(300,'M'),'Best':(620,'M')},True),
 ]
-def price(P, tier, detail=False):
-    return engine.price(__import__(__name__), P, tier, detail)
+CONT = 'Bath Contingency Rate'   # the contingency line's rate parameter
+
+
+def price(P, tier, detail=False, contingency=False):
+    return engine.price(__import__(__name__), P, tier, detail, contingency)

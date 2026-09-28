@@ -42,6 +42,7 @@ PARAMS = [  # name, type, default, help
  ('Addition Utility Trench', 'number', 0, 'Feet of trench to feed power to a detached building'),
  ('Addition Dumpster Loads', 'number', 1, 'Haul-away loads (1 for most additions; 2–3 with a tear-down)'),
  ('Addition Travel Hours', 'number', 0, 'Crew travel hours for jobs past the standard service zone'),
+ ('Addition Contingency Rate', 'number', 10, 'Contingency as a % of the tier total, set by the estimator: 10 for additions and structural work'),
 ]
 
 W, D, S, H, X = ('{Addition Width}', '{Addition Depth}', '{Addition Stories}',
@@ -130,5 +131,8 @@ TIERS = [  # name, unit, formula, {tier: (unit_cost, cost_type)}, allowance?
 ]
 
 
-def price(P, tier, detail=False):
-    return engine.price(__import__(__name__), P, tier, detail)
+CONT = 'Addition Contingency Rate'   # the contingency line's rate parameter
+
+
+def price(P, tier, detail=False, contingency=False):
+    return engine.price(__import__(__name__), P, tier, detail, contingency)

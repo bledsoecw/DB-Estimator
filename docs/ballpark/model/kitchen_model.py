@@ -31,6 +31,7 @@ PARAMS = [  # name, type, default, help
  ('Kitchen HVAC Work', 'number', 0, '1 = register or duct moved'),
  ('Kitchen Dumpster Loads', 'number', 1, 'Haul-away loads (1 for most kitchens; 2-3 when walls come out)'),
  ('Kitchen Travel Hours', 'number', 0, 'Crew travel hours for jobs past the standard service zone'),
+ ('Kitchen Contingency Rate', 'number', 8, 'Contingency as a % of the tier total, set by the estimator: 5 for a refresh that keeps the layout, 8 when anything moves'),
 ]
 
 A, G, R = '{Kitchen Floor Area}', '{Kitchen Full Gut}', '{Kitchen Cabinet Run}'
@@ -110,5 +111,8 @@ TIERS = [  # name, unit, formula (or per-tier formulas), {tier: (unit_cost, cost
 ]
 
 
-def price(P, tier, detail=False):
-    return engine.price(__import__(__name__), P, tier, detail)
+CONT = 'Kitchen Contingency Rate'   # the contingency line's rate parameter
+
+
+def price(P, tier, detail=False, contingency=False):
+    return engine.price(__import__(__name__), P, tier, detail, contingency)

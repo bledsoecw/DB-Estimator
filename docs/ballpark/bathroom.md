@@ -34,7 +34,8 @@ test job before the build** (§5, step 3).
 
 ## 2. How the template works
 
-- **22 parameters**, all numbers. Yes/no items are 1 or 0. The full list, with how to measure
+- **22 site-visit parameters**, all numbers, plus the contingency rate the estimator sets.
+  Yes/no items are 1 or 0. The full list, with how to measure
   each, is on the workbook's Parameters tab and printed beside every field on the intake sheet.
   Every name starts with `Bath ` (for example `{Bath Full Gut}`), so a job that also carries the
   kitchen template never shares a parameter between rooms.
@@ -114,13 +115,17 @@ These findings set the rates, and several contradict the first draft of the temp
 6. **Demolition is 16 hours for a gutted bathroom** on 8 of 13 full-gut estimates (range 8–20),
    and 4–10 hours for shower-only work.
 
-### A change from the proposal
+### Contingency — decided 28 Sep 2026
 
-`preconstruction-redesign.md` §4.3 showed a 10% contingency line in the ballpark. **This
-template has none.** DB's estimates carry no contingency line, and the template is calibrated
-to them. Adding 10% would push every ballpark above the price DB actually quotes. The ±15%
-band already covers the uncertainty at this stage. The named contingency belongs on the
-fixed-price proposal, as §5 of the proposal describes.
+Each tier carries a named **Contingency** line, the same line the fixed-price proposal will
+carry, so the ballpark and the contract never differ by a hidden 5–10%. The estimator sets
+`{Bath Contingency Rate}`: **5%** when everything stays in place, **8%** when a fixture or a
+wall moves. The customer is told that unforeseen conditions draw on it first and any unused
+balance is credited at closeout.
+
+The checks above compare prices **before** contingency, because DB's past estimates carried
+none. From now on the signed price includes it, so the acceptance test (8 of the next 10
+within ±15%) compares like with like.
 
 ## 4. The intake sheet
 
@@ -147,24 +152,35 @@ read-only discipline.
    phase groups, then a *Finish Level* group set as a simple selection (one required, show
    price deltas) holding Good, Better and Best option groups. Rows marked "[each tier]" become one
    item in each option at that tier's cost. Rows named for one tier go only in that option.
-3. **Add the group to a test job** and check whether JobTread creates the 22 parameters
+   Each option also gets its **Contingency** row: unit Lump Sum at $1.00, cost type Other with
+   the markup set to 0, and a new cost code `Contingency`. JobTread formulas can't reference other
+   lines, so its formula spells out the tier's subtotal; paste it whole, and regenerate it
+   (`python3 build_bathroom.py`) after any rate change.
+3. **Add the group to a test job** and check whether JobTread creates the 23 parameters
    automatically. If not, add them to the job by hand. Either way, write down which.
 4. **Enter the Calculator tab's example values** as the test job's parameters. The Good, Better
-   and Best totals should match the Calculator to the dollar: $18,489, $27,693 and $39,571.
-   If they differ, one formula or price was mistyped.
-5. **Set the allowance type** on the selection lines once Carl decides it (§6, item 1).
+   and Best totals, with the 5% contingency, should match the Calculator to the dollar:
+   $19,413, $29,078 and $41,550. If they differ, one formula or price was mistyped.
+5. **Set the allowance type to `price`** on every line the Template tab marks "Price" (§6).
 6. **Price the next 10 bathroom site visits** with it alongside the normal process and record
    the ballpark midpoint on each job.
 
-## 6. Decisions for Carl
+## 6. Decisions
 
-1. **Allowance type for selection lines.** Drafted as `cost`, marked up ×1.45 like every other
-   material line. The alternatives are `price` or `costAndFee`. This decides the margin on
-   every selection (`ROADMAP.md` Q20).
-2. **Tier contents.** The drafted allowances are medians of what DB charged. Name the actual
-   products for each tier (which shower system, which vanity line) so sales can show them.
-3. **Permit amount.** Drafted at $100 cost. DB's estimates ranged $29–$435 depending on city.
-4. **Travel.** One estimate carried 30 hours of travel. Set the rule for when travel hours apply.
+Decided by Carl on 28 Sep 2026 (`../preconstruction-redesign.md` §9):
+
+1. **Allowances are stated as customer prices** (JobTread allowance type `price`). No total
+   changes. An overage or a credit is simply the difference in price, which is what the
+   customer script promises.
+2. **Contingency is a named line** on every tier, 5% or 8% (above).
+3. **Tier products.** The estimator and the designer name one product per Good / Better / Best
+   cell in one sitting and lock the grid for six months. The drafted allowances are medians of
+   what DB charged; the proposal's §9 has the starting grid.
+
+Still open:
+
+4. **Permit amount.** Drafted at $100 cost. DB's estimates ranged $29–$435 depending on city.
+5. **Travel.** One estimate carried 30 hours of travel. Set the rule for when travel hours apply.
 
 ## 7. Re-running the calibration
 

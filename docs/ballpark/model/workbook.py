@@ -46,25 +46,26 @@ def build(spec):
     ra = wb.create_sheet('Rates')
     ra['A1'] = 'Markup by cost type'; ra['A1'].font = H1
     header(ra, 3, ['Cost type code', 'Cost type', 'Price ÷ cost', 'Note'])
-    rates = [('L', 'Labor', '=C10/C9', "DB catalog labor: $55 cost / $100 price per hour (a 45% margin)."),
+    rates = [('L', 'Labor', '=C12/C11', "DB catalog labor: $55 cost / $100 price per hour (a 45% margin)."),
              ('M', 'Materials', 1.45, 'DB catalog materials: ×1.45 with zero variance across the catalog (field notes §9).'),
              ('S', 'Subcontractor', 1.30, "Countertop, tile and flooring subs in DB's estimates were marked up ×1.30."),
              ('O', 'Other', 1.45, 'Permits and misc. fees: ×1.45.'),
-             ('U', 'Labor, per unit', 1.45, "Labor the catalog prices per square or foot (siding, roofing, gutters). JobTread cost type Labor, marked up ×1.45 like the catalog.")]
+             ('U', 'Labor, per unit', 1.45, "Labor the catalog prices per square or foot (siding, roofing, gutters). JobTread cost type Labor, marked up ×1.45 like the catalog."),
+             ('C', 'Contingency', 1.00, "Its own line, carried at cost so it can be reported and credited. JobTread cost type Other with the markup set to 0, cost code Contingency.")]
     for i, (code, name, v, note) in enumerate(rates, 4):
         ra.cell(i, 1, code).font = font(); ra.cell(i, 2, name).font = font()
         c = ra.cell(i, 3, v); c.number_format = '0.000'
         if not str(v).startswith('='): c.font = BLUE; c.fill = YEL
         ra.cell(i, 4, note).font = GREY
         for j in range(1, 5): ra.cell(i, j).border = BOX
-    for cell, lab, v, fmt in (('9', 'Labor cost per hour', 55, USD2), ('10', 'Labor price per hour', 100, USD2),
-                              ('12', 'Budget range accuracy (±)', spec.get('range', 0.15), '0%')):
+    for cell, lab, v, fmt in (('11', 'Labor cost per hour', 55, USD2), ('12', 'Labor price per hour', 100, USD2),
+                              ('14', 'Budget range accuracy (±)', spec.get('range', 0.15), '0%')):
         ra['A' + cell] = lab; ra['C' + cell] = v; ra['C' + cell].font = BLUE; ra['C' + cell].fill = YEL; ra['C' + cell].number_format = fmt
-    ra['D9'] = 'Used as the unit cost of every labor line on the Template tab.'; ra['D9'].font = GREY
-    ra['D12'] = spec.get('range_note', 'The range shown to the customer around each tier total.'); ra['D12'].font = GREY
+    ra['D11'] = 'Used as the unit cost of every labor line on the Template tab.'; ra['D11'].font = GREY
+    ra['D14'] = spec.get('range_note', 'The range shown to the customer around each tier total.'); ra['D14'].font = GREY
     for col, w in zip('ABCD', (26, 16, 14, 100)): ra.column_dimensions[col].width = w
-    for nm, ref in (('MarkupCodes', 'Rates!$A$4:$A$8'), ('MarkupVals', 'Rates!$C$4:$C$8'),
-                    ('LaborCost', 'Rates!$C$9'), ('RangePct', 'Rates!$C$12')):
+    for nm, ref in (('MarkupCodes', 'Rates!$A$4:$A$9'), ('MarkupVals', 'Rates!$C$4:$C$9'),
+                    ('LaborCost', 'Rates!$C$11'), ('RangePct', 'Rates!$C$14')):
         wb.defined_names[nm] = DefinedName(nm, attr_text=ref)
 
     # ---------- Calculator inputs ----------
@@ -105,12 +106,12 @@ def build(spec):
                 "Rows marked [each tier] become one item in each of the Good, Better and Best option groups, at that tier's cost. "
                 "Rows marked with a single tier go only in that option. All other rows are common scope."); tp['A2'].font = GREY
     header(tp, 4, ['#', 'JobTread cost group path', 'Line item', 'Cost code', 'Unit', 'JobTread quantity formula', 'Qty (live)']
-           + [f'{t} {x}' for t in T for x in ('cost', 'type', 'unit price', 'total')] + ['Allowance line?', 'Note'])
+           + [f'{t} {x}' for t in T for x in ('cost', 'type', 'unit price', 'total')] + ['Allowance type', 'Note'])
     st = {'r': 5, 'n': 0}
 
-    def add(path, name, unit, f, costs, types, allow):
+    def add(path, name, unit, f, costs, types, allow, note=None):
         r = st['r']; st['n'] += 1; base_name = name.split(' — ')[0]
-        vals = [st['n'], path, name, spec['codes'].get(base_name, ''), unit]
+        vals = [st['n'], path, name, spec['codes'].get(base_name, 'Contingency' if base_name == 'Contingency' else ''), unit]
         for j, v in enumerate(vals, 1): tp.cell(r, j, v).font = font()
         tp.cell(r, 6, f).font = font(**MONO)
         tp.cell(r, 7, '=' + xl(f)).number_format = NUM
@@ -126,8 +127,8 @@ def build(spec):
                 tp.cell(r, b + 2, f'={L(b)}{r}*INDEX(MarkupVals,MATCH({L(b + 1)}{r},MarkupCodes,0))')
             tp.cell(r, b + 2).number_format = USD2
             tp.cell(r, b + 3, f'=G{r}*{L(b + 2)}{r}').number_format = USD
-        tp.cell(r, 20, 'Yes' if allow else '')
-        tp.cell(r, 21, spec['notes'].get(base_name, '')).font = GREY
+        tp.cell(r, 20, 'Price' if allow else '')
+        tp.cell(r, 21, note or spec['notes'].get(base_name, '')).font = GREY
         for j in range(1, 22): tp.cell(r, j).border = BOX
         st['r'] += 1
 
@@ -142,6 +143,14 @@ def build(spec):
             for t, ft in f.items():
                 add(f'{root} > Finish Level (select one) > {t}', f'{n} — {t}', u, ft,
                     {x: (cs[t][0] if x == t else 0) for x in T}, {x: cs[t][1] for x in T}, al)
+    last_sel = st['r'] - 1
+    cont_note = ("Contingency: the rate times this tier's whole price before contingency. JobTread formulas cannot reference "
+                 "other lines, so the subtotal is spelled out; regenerate this formula (run the build script) after any rate change. "
+                 "Unit price $1.00, cost type Other with markup 0, cost code Contingency.")
+    for t in T:
+        add(f'{root} > Finish Level (select one) > {t}', f'Contingency — {t}', 'Lump Sum', engine.contingency_formula(m, t),
+            {x: (1.0 if x == t else 0) for x in T}, {x: 'C' for x in T}, False, cont_note)
+        tp.cell(st['r'] - 1, 6).alignment = Alignment(wrap_text=True, vertical='top')
     last_row = st['r'] - 1; tot_row = st['r']
     tp.cell(tot_row, 3, 'TOTAL').font = BOLD
     for k in range(3):
@@ -156,12 +165,13 @@ def build(spec):
     for j, t in enumerate(T):
         c = ca.cell(4, 7 + j, t); c.font = BOLD; c.fill = HEAD; c.alignment = Alignment(horizontal='center')
     phases = spec.get('phases', ('Phase 1 - General Requirements', 'Phase 2 - Rough-In', 'Phase 3 - Interior', 'Phase 4 - Finishes'))
-    rowsout = [(p, p.split(' -')[0]) for p in phases] + [('Finish selections (tier)', None)]
+    rowsout = [(p, p.split(' -')[0]) for p in phases] + [('Finish selections (tier)', None), (f"Contingency (the {spec['prefix'].strip()} Contingency Rate)", 'C')]
     for i, (label, ph) in enumerate(rowsout, 5):
         ca.cell(i, 6, label).font = font()
         for k in range(3):
             col = L(11 + 4 * k)
-            f = (f'=SUM(Template!{col}{first_sel}:{col}{last_row})' if ph is None else
+            f = (f'=SUM(Template!{col}{first_sel}:{col}{last_sel})' if ph is None else
+                 f'=SUM(Template!{col}{last_sel + 1}:{col}{last_row})' if ph == 'C' else
                  f'=SUMIFS(Template!{col}5:{col}{first_sel - 1},Template!B5:B{first_sel - 1},"*{ph} -*")')
             ca.cell(i, 7 + k, f).number_format = USD
     tr = 5 + len(rowsout)

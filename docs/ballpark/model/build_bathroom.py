@@ -28,7 +28,7 @@ NOTES={'Permit':'City permits in the 17 estimates ran $29–$435. Adjust per cit
 
 README=[
  ('Bathroom Ballpark Template — DRAFT for review','h1'),
- ('Deitemeyer Brothers · General Construction · drafted 27 Sep 2026','g'),
+ ('Deitemeyer Brothers · General Construction · drafted 27 Sep 2026 · decisions applied 28 Sep 2026','g'),
  ('',None),
  ('What this is','b'),
  ('The build sheet for a formula-driven bathroom ballpark in JobTread, plus a working calculator so the numbers can be checked before anything is built.',None),
@@ -37,7 +37,7 @@ README=[
  ('How to use it','b'),
  ('1. Calculator tab: type the site-visit numbers into the yellow cells. The three totals and ±15% ranges update.',None),
  ('2. Template tab: every JobTread line, its cost group, cost code, unit, the exact quantity formula to paste into JobTread, and unit cost and price per tier.',None),
- ('3. Parameters tab: the 22 JobTread job parameters the formulas read. Names must match exactly, including spaces and capitals.',None),
+ ('3. Parameters tab: the 22 site-visit parameters plus the contingency rate, which the estimator sets. Names must match exactly, including spaces and capitals.',None),
  ('4. Rates tab: the markup by cost type. Change a rate there and every price follows.',None),
  ('5. Calibration tab: how the template compares with 17 bathroom estimates DB sent between Jan and Sep 2026.',None),
  ('',None),
@@ -52,13 +52,17 @@ README=[
  ('Guessing one tier for everyone ("Better") is within 15% on only 5 of 17. Always show all three tiers.',None),
  ('These rates were set from the same 17 estimates, so this is an in-sample check. The real test is the next 10 bathroom jobs: accept for live use when 8 of 10 land within ±15%.',None),
  ('',None),
- ('Decisions still open (for Carl)','b'),
- ('Allowance type on the selection lines: cost (marked up ×1.45 like every other material, as drafted), price, or cost plus fee.',None),
- ('Tier allowance amounts: the drafted values are medians of what DB actually priced. Adjust to the products DB wants to sell at each level.',None),
- ('Permit: drafted at $100 cost. DB\'s estimates ranged $29–$435 by city.',None),
+ ('Decided 28 Sep 2026','b'),
+ ('Contingency is its own line on each tier: 5% when everything stays in place, 8% when a fixture or wall moves. The estimator sets the Bath Contingency Rate. The calibration compares prices before contingency, because DB\'s past estimates carried none.',None),
+ ('Allowances are stated as customer prices (JobTread allowance type: price). No total changes; an overage or a credit is simply the difference in price.',None),
+ ('Products per tier: the estimator and the designer name one product per Good / Better / Best cell and lock the grid for six months (draft in the proposal, §9).',None),
+ ('Still open: the permit amount. Drafted at $100 cost; DB\'s estimates ranged $29–$435 by city.',None),
  ('',None),
  ('Source for every rate: line items of 17 bathroom estimates read from DB\'s JobTread account (read-only) on 27 Sep 2026. See Calibration tab.','g'),
 ]
+
+
+INPUTS = [p for p in model.PARAMS if p[0] != model.CONT]   # site-visit inputs; the estimator sets the contingency rate
 
 
 def calibration(wb, ctx):
@@ -66,7 +70,7 @@ def calibration(wb, ctx):
     cb['A1']='Calibration against 17 bathroom estimates DB sent, Jan–Sep 2026'; cb['A1'].font=H1
     cb['A2']='Actual = the estimate total from JobTread, less any design-fee lines. Intake values were reconstructed from each estimate\'s own lines; room sizes are estimates where the estimate had no SF line. Model columns are values from the repo\'s Python model, which mirrors the Template tab.'; cb['A2'].font=GREY
     cb['A3']='Structure = everything except the finish selections (labor, rough-in, demo, drywall, general requirements). It tests the formulas; the selections are the customer\'s choice.'; cb['A3'].font=GREY
-    hdr=['Job','Status','Actual total','Model Good','Model Better','Model Best','Inside Good−15% to Best+15%?','Structure actual','Structure model','Structure error','Absolute error','Shower tier used']+[n for n,_,_,_ in model.PARAMS]
+    hdr=['Job','Status','Actual total','Model Good','Model Better','Model Best','Inside Good−15% to Best+15%?','Structure actual','Structure model','Structure error','Absolute error','Shower tier used']+[n for n,_,_,_ in INPUTS]
     for j,h in enumerate(hdr,1):
         c=cb.cell(5,j,h); c.font=BOLD; c.fill=HEAD; c.border=BOX; c.alignment=Alignment(wrap_text=True,vertical='center')
     for i,(j,P) in enumerate(INTAKE.items(),6):
@@ -80,8 +84,8 @@ def calibration(wb, ctx):
         cb.cell(i,8,round(a-sel,2)); cb.cell(i,9,round(sm,2)); cb.cell(i,10,f'=(I{i}-H{i})/H{i}')
         cb.cell(i,11,f'=ABS(J{i})')
         cb.cell(i,12,TIER_OF.get(j,{}).get('Shower/Tub Labor','Better'))
-        for k,(n,_,_,_) in enumerate(model.PARAMS,13): cb.cell(i,k,P[n])
-        for k in range(1,13+len(model.PARAMS)):
+        for k,(n,_,_,_) in enumerate(INPUTS,13): cb.cell(i,k,P[n])
+        for k in range(1,13+len(INPUTS)):
             c=cb.cell(i,k); c.border=BOX; c.font=font()
             if k in (3,4,5,6,8,9): c.number_format=USD
             if k==10: c.number_format='+0%;-0%;0%'
@@ -98,7 +102,7 @@ def calibration(wb, ctx):
     cb.cell(s+5,1,'Excluded: 258657 (two bathrooms priced as cost-group totals), 258797 (bathroom plus three exterior doors), 260097 (door job tagged as bathroom), 258668 (bedroom remodel tagged as bathroom).').font=GREY
     cb.column_dimensions['A'].width=10; cb.column_dimensions['B'].width=9
     for k in range(3,13): cb.column_dimensions[L(k)].width=12
-    for k in range(13,13+len(model.PARAMS)): cb.column_dimensions[L(k)].width=9
+    for k in range(13,13+len(INPUTS)): cb.column_dimensions[L(k)].width=9
     cb.freeze_panes='C6'
 
 

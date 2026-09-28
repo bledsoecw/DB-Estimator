@@ -4,7 +4,7 @@
 
 > The second of the three ballpark templates proposed in `../preconstruction-redesign.md` §4.
 > It works exactly like the bathroom template (`bathroom.md`): a two-page site-visit sheet, 21
-> JobTread job parameters, and a formula-driven cost group that prices the kitchen at Good,
+> site-visit parameters plus the contingency rate, and a formula-driven cost group that prices the kitchen at Good,
 > Better and Best at once. It runs on the same pricing engine and DB's same catalog rates.
 
 | File | What it is |
@@ -132,26 +132,53 @@ under-cabinet lights and 180 SF of new floor:
 
 | | Good | Better | Best |
 |---|---|---|---|
-| Ballpark | $41,991 | $56,289 | $77,711 |
-| Range shown (±20%) | $33,600–$50,400 | $45,000–$67,500 | $62,200–$93,300 |
+| Before contingency | $41,991 | $56,289 | $77,711 |
+| Ballpark, with the 8% contingency | $45,350 | $60,792 | $83,927 |
+| Range shown (±20%) | $36,300–$54,400 | $48,600–$73,000 | $67,100–$100,700 |
+
+The contingency line is set by `{Kitchen Contingency Rate}`: **8%** for a remodel where
+anything moves, **5%** for a refresh that keeps the layout (decided 28 Sep 2026; see
+`bathroom.md` §3 for how it works).
+
+### The kitchen price guide
+
+DB has no signed kitchens to quote a history from, so the discovery-call price guide comes from
+this template, priced for three typical kitchens with the contingency included. Rounded outward
+to the nearest $5K:
+
+| Kitchen | What it assumes | Good | Best | Price guide |
+|---|---|---|---|---|
+| Refresh | 150 SF, 20 ft of new cabinets and counters, walls and layout stay | $26,948 | $53,900 | **$25K–$55K** |
+| Full remodel | The Calculator example above | $45,350 | $83,927 | **$45K–$85K** |
+| Layout change | 210 SF gutted, 32 ft run with an 8 ft island, sink moved, one wall moved | $57,529 | $104,673 | **$55K–$105K** |
+
+DB's two pending premium kitchens, at $91K and $99K, sit in the top of the layout-change range.
+Replace these ranges with DB's own signed-contract ranges once three kitchens close.
 
 ## 6. Building it in JobTread
 
 The same six steps as the bathroom (`bathroom.md` §5), using this workbook's Template tab. The
 cost group is `BALLPARK — Kitchen`. On a test job, the example values should reproduce
-$41,991, $56,289 and $77,711 to the dollar.
+$45,350, $60,792 and $83,927 to the dollar, with the 8% contingency.
 
 **A job with both a kitchen and a bathroom.** Every kitchen parameter starts with `Kitchen `
 and every bathroom parameter with `Bath `, so both groups can sit on one job without sharing a
 value. Each group carries its own general requirements, though. On a combined job, delete the
 second group's permit and site-prep lines, and set its dumpster loads and travel hours to 0.
 
-## 7. Decisions for Carl
+## 7. Decisions
 
-1. **Allowance type** for the selection lines. The draft uses `cost`, the same as the bathroom.
-2. **The products behind each tier.** Name the cabinet line, the countertop material and the
-   backsplash for Good, Better and Best so sales can show them.
-3. **Appliances.** Should DB supply appliances by default, or only when asked?
+Decided by Carl on 28 Sep 2026 (`../preconstruction-redesign.md` §9):
+
+1. **Allowances are stated as customer prices** (JobTread allowance type `price`).
+2. **Contingency is a named line** on every tier, 8% or 5% (§5).
+3. **Tier products.** The estimator and the designer name the cabinet line, countertop and
+   backsplash for each tier and lock the grid for six months.
+4. **Price guide.** Published as above until three kitchens close.
+
+Still open:
+
+5. **Appliances.** Should DB supply appliances by default, or only when asked?
 
 ## 8. Re-running the checks
 
