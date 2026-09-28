@@ -1877,4 +1877,128 @@ The phase plan is superseded; the findings are not. Still authoritative and stil
 
 ---
 
+## 18. Rollout, training, and how we know it worked
+
+### 18.1 The baseline, measured — VERIFIED 2026-09-28
+
+100 jobs created 6–31 July 2026. Every one has had two-plus months, so this is settled data,
+not work in flight. Bucketed by trade from the job name.
+
+| Bucket | Jobs | No estimate | Median days to first estimate | Mean | p90 | Over 30 days |
+|---|---|---|---|---|---|---|
+| **Roofing / exterior** | 57 | 19 (33%) | **6** | 9.6 | 29 | 2 |
+| **General construction** | 35 | 12 (34%) | **13** | 24.6 | 50 | **9** |
+
+**General construction takes 2.4× longer to a first estimate than roofing** — the trade that
+already has the parametric assembly pipeline (§1.2). Same company, same reps, same
+JobTread. The difference is that one side has assemblies and the other does not.
+
+The tail is where the damage is. Nine of 35 GC jobs took over a month:
+
+| Days | Job |
+|---|---|
+| 75 | 261305 Jones_Bath/Kitchen |
+| 74 | 261273 Dewitt_Interior |
+| 50 | 261257 Reynolds_Remodel |
+| 49 | 261332 Shanks_Windows |
+| 44 | 261335 Abram_Bathroom |
+| 43 | 261275 Craig_Door |
+| 35 | 261280 Ricker_Bathroom |
+
+**The "no estimate" rate is the same in both buckets (33% vs 34%)** — those are dead leads,
+not a GC-specific failure. The GC-specific failure is elapsed time on the jobs that do get
+priced.
+
+**Rework, as currently measurable, is not the differentiator.** Estimate documents per job,
+among jobs with at least one: roofing mean 1.45 (34% need more than one), GC mean 1.48
+(30%). Nearly identical. See §18.3 — the metric needs redefining.
+
+### 18.2 The metric that cannot be measured today
+
+Carl named **estimated vs. actual margin** as a success measure. It is the right measure and
+it is currently unavailable: only **18 jobs** carry a `Final Margin %`, `Reconciled Est
+Margin` has **2** values, and all 18 are small service work averaging $7,777 (§2.5). There
+is no general-construction realized-margin baseline to compare against.
+
+This is not a reporting gap to work around. **Either reconciliation starts happening on GC
+jobs, or this metric is unavailable for a year**, and the build's central economic claim
+stays unproven. Reconciling 15–20 completed GC jobs retrospectively is the cheapest way to
+create the baseline, and it needs Carl and a project manager, not a developer.
+
+### 18.3 What to measure instead, and why
+
+| Metric | Baseline | Target | Source |
+|---|---|---|---|
+| **Kristen's review minutes per estimate** | **unmeasured — get it in week 0** | −60% | Stopwatch, then the tool's own timestamps |
+| GC lead → first estimate, median | **13 days** | under 5 | JobTread `createdAt` deltas, same query as §18.1 |
+| GC estimates over 30 days | **9 of 35 (26%)** | under 5% | Same |
+| Defects caught before release | Jones: **$2,979** on one estimate | Track $ and count | Rule engine log |
+| Defects reaching a customer | unmeasured | zero | Change orders coded as corrections |
+| Estimated vs. actual margin | **unavailable** (§18.2) | ±5 pts | Requires GC reconciliation first |
+
+**Rework needs a sharper definition than "more than one estimate document."** A second
+estimate is usually a legitimate option or an added scope, not an error — which is why the
+figure is identical across trades. Measure instead: **estimates revised after being sent to
+a customer**, and **defects the auditor catches that a human had already approved**. Those
+are errors. Multiple options are not.
+
+**Watch for the bottleneck moving rather than lifting.** If drafting gets faster and
+Kristen's review time holds, the queue has shifted from the rep to her and nothing has been
+gained. Her minutes are the primary metric; everything else is secondary.
+
+### 18.4 Rollout
+
+Each stage has an entry condition, a measurement, and an exit gate. No stage starts before
+the previous one exits.
+
+| Stage | Weeks | What runs | Exit gate |
+|---|---|---|---|
+| **0 · Baseline** | 0 | Nothing. Kristen times 5 reviews with a stopwatch; §18.1 query re-run and recorded | The review-minutes number exists in writing |
+| **1 · Auditor, shadow** | 1–2 | v0.5 runs against estimates already in JobTread. No process change — Kristen may ignore it | ≥20 estimates audited; **≥80% of findings Kristen judges real**; every false positive logged |
+| **2 · Auditor, in the loop** | 3–4 | Kristen reviews *through* the auditor screen instead of the raw estimate | **Median review time down ≥40%**; no estimate released carrying a defect she dismissed in error |
+| **3 · Drafter, one rep** | 5–8 | v1. Robert drafts 5 GC estimates. Kristen reviews as usual. **Writes off** — a human enters into JobTread | 5 estimates delivered; lead time and Kristen's edit count recorded per estimate |
+| **4 · Drafter, all reps** | 9–12 | Remaining reps added one at a time, a week apart | 20 estimates; **GC median lead time under 5 days**; no defect reaching a customer |
+| **5 · Writes on** | later | One rep, one job type, behind the diff screen | A separate decision, not automatic. Requires Stage 4 clean and a Managed Agents beta re-assessment |
+
+**Stage 1 is deliberately useless-looking.** The auditor changes nothing about how anyone
+works; it only proves the rule engine is right before anyone depends on it. Skipping it
+means discovering the false-positive rate after Kristen has started trusting it.
+
+### 18.5 Training
+
+The reps are not technical and the training is not about the software. It is about who owns
+what, because the one failure that matters is a rep assuming the tool owns something it does
+not.
+
+| Who | Time | Content |
+|---|---|---|
+| **Kristen** | 90 min | The four exception types and what each means. How to dismiss with a reason. That "Approve" is a release decision, not an acknowledgement. Where the audit trail lives |
+| **Reps, each** | 60 min + 1 supervised estimate | **You own the measurements and the scope. The tool owns the arithmetic. Kristen owns the release.** How to enter driver quantities. When to stop and ask rather than guess |
+| **Carl** | 30 min | Policy changes propagate from JobTread's cost types — change a margin there, not in the tool. Reading the defect log |
+
+**One rule stated explicitly in rep training:** if you do not know a dimension, leave it
+blank and say so. A guessed measurement is the one error neither the rule engine nor a
+second model will catch (§ the correlated-error problem), and it flows straight into a
+contract.
+
+### 18.6 When to stop
+
+Stop and reconsider if any of these holds:
+
+- Stage 1 shows a false-positive rate above 20% and it does not fall with tuning. The rule
+  engine is the foundation; if it cries wolf, Kristen will stop reading it and the project
+  has no value.
+- Stage 2 does not cut her review time by 40%. That was the entire business case.
+- Any defect reaches a customer that the tool should have caught. Halt, root-cause, and do
+  not resume until the rule exists and is tested.
+- Stage 3 estimates need more of Kristen's editing than hand-built ones did. The tool is
+  generating work rather than removing it.
+- Twelve weeks in, GC median lead time has not moved from 13 days.
+
+**"Nobody used it" is the most likely failure**, not a wrong number. Watch adoption weekly
+from week 5: estimates drafted through the tool as a share of GC estimates created. If that
+share is falling, find out why before adding features.
+
+---
+
 *Conventions: every factual claim is tagged VERIFIED (confirmed by direct query against organization `22PBAjem8SSC`), REPORTED (asserted in research, spike attached), or UNVERIFIED (explicitly unknown, no design depends on an assumed answer). The verified facts in §1.1 each overturn an assumption that would otherwise have produced a defect — most consequentially the tax premise, the `_type` discriminator, and the assumption that `createdByGrantId` distinguishes machine writes from human ones. Effort is re-baselined with Phase 0 given a possible calendar, Phase 2 split in two, Phases 1, 3, 4 and 6 lengthened, and gated ML cut. Exit criteria are counts, caps and protocols rather than judgements. Five domain entities — contingency, price adjustment, duration, escalation and contract type — are added at Phase 2a, because their absence would corrupt the audit trail this project exists to create.*
