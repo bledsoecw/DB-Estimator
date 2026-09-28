@@ -11,6 +11,18 @@
 
 ## 0. Headline recommendation
 
+> ### ⚠ Superseded — read §17 first
+>
+> This section and the entire phase plan in §6 describe a **build** of a takeoff and
+> estimating application. On 2026-09-28 that approach was set aside. DB is building an
+> **agent-driven estimating assistant on Claude Managed Agents**, with JobTread keeping
+> both the system of record *and* the assembly engine it already runs.
+>
+> The reasoning below is kept because it is how the decision was reached, and because its
+> verified facts (§1.1, §1.2), the JobTread subsystem design (§7), the money and markup
+> rules (§8.2), and the build-vs-buy analysis (§2) all still hold. **The phase plan, the
+> costs and the timeline do not.** §17 gives the disposition of every phase.
+
 **Approve Phase 0 only — 10 weeks, ~$50K — and make the real decision at Gate 0 on 2026-11-30.**
 
 Phase 0 is a decision phase: eight ranked spikes, a 30-day STACK trial as the control arm, and a Togal trial on DB's own plan sets. It ends with a costed three-way memo — full build, hybrid, or buy — that Carl signs. It commits ~$50K and forecloses nothing.
@@ -1771,6 +1783,97 @@ db-estimator/
                             cassette · e2e · projection-rebuild ·
                             package-boundary · deploy-window-guard
 ```
+
+---
+
+## 17. Revision 5 — what the Managed Agents decision changes
+
+**Decided 2026-09-28.** Architecture: **Claude Managed Agents** (harness *and* deployment
+hosted by Anthropic) driving a thin approval UI, with a deterministic rule engine in
+ordinary code. JobTread stays the system of record, keeps its own assembly engine (§1.2),
+and renders the customer document. Scope: **homeowner remodels and additions**. Writes to
+JobTread are **built but disabled** in v1.
+
+Two findings, both verified after this document's phase plan was written, are what collapse it:
+
+1. **JobTread already runs a working parametric assembly engine** — ~95 roofing assemblies,
+   4,684 computed lines across 185 live jobs, flowing through to customer estimates
+   automatically (§1.2). The plan's largest build item was a second one.
+2. **Managed Agents supplies the agent loop, state, sandbox and deployment.** There is no
+   harness to write, no scheduler, no session store, and credentials never enter the model's
+   reach.
+
+### 17.1 Phase disposition
+
+| # | Phase | Was | Now | Why |
+|---|---|---|---|---|
+| −1 | Hire | Senior full-stack, 15+ months | **Contractor, ~6–8 weeks** | No CAD viewport, no geometry kernel, no sync state machine. The project's #1 named risk is retired by not needing that hire. |
+| 0 | Decide & Prove | 10 wks, 6.2 dev-wks, ~$50K | **~2–3 wks, mostly Carl's time** | Most spikes existed to decide the canvas. Spike 6 (markup) is **done** — cost-type margins are now set and machine-readable. Spike 1 (revenue, win rate, margin) is **partly done** (§2.5). |
+| 0b | Deferred spikes | 4.6 dev-wks | **~1 dev-wk** | PDF engine bake-off and room polygonization deleted. Webhook/QBO audit and reading the 101 catalog formulas survive. |
+| C | Catalog reconciliation | 6 wks, 16 + 40 hrs, parallel | **Unchanged — and now critical path** | Proven by the Jones job: the Countertop Sub underpriced by $1,039.89 because a catalog item still carried the old ×1.30. The rule engine finds these; only a person fixes them. |
+| 1 | Cost Intelligence | 13 cal wks, 11 dev-wks | **~3–5 dev-wks** | No taxonomy mirror to build — the agent queries JobTread live. Comparables are a query, not a pipeline. The replay harness survives as the rule engine's test suite. |
+| 2a | Estimate Core | 11 cal wks, 10 dev-wks | **~3–4 dev-wks** | Assembly engine, worksheet and revisions are JobTread's. The decimal money engine shrinks to decimal *comparison* with an epsilon, because we check arithmetic rather than perform it. Dimensional typing becomes a check, not a type system. |
+| 2b | Bridge, COs & Allowances | 11 cal wks, 10 dev-wks | **~4–6 dev-wks, off in v1** | The write path survives intact and is still the most dangerous code in the system (replace semantics, pricing-request line IDs, idempotency, template hydration). Change orders and allowances are JobTread-native — configure, don't build. |
+| 3 | Parallel Run & Cutover | 9 dev-wks, **130 estimator hrs** | **~2–3 dev-wks, far less estimator time** | We are adding an assistant, not replacing the system of record — estimates live in JobTread under both arms. The auditor can be replayed against historical estimates at zero estimator cost. |
+| 4a/4b/4c | **Takeoff canvas** | **24 dev-wks, ~$137K** | **Deleted** | The largest single deletion. Re-decided separately as a buy: two or three STACK or Bluebeam seats. |
+| 5 | Change Under Pressure | 8 dev-wks | **~1–2 dev-wks** | With no canvas there are no stale takeoffs to invalidate. What survives is the agent re-reading a changed scope. |
+| 6 | Deterministic Extraction | 18 cal wks, 16 dev-wks | **Mostly deleted** | OCR adapters, table extraction, symbol counting and XObject walking were canvas-era infrastructure. Reading drawings and schedules is what the model does natively. |
+| 8 | Actuals Loop | 6 dev-wks | **Unchanged — now the most valuable phase left** | Only 18 jobs carry a realized margin and all are small service work (§2.5). This is still the compounding asset and still nobody else's to sell. |
+| 9 | Roofing | 8 dev-wks | **Largely already built** | §1.2. What remains is pointing the agent at assemblies that already run. |
+
+### 17.2 The new shape
+
+| | Original plan | Revision 5 |
+|---|---|---|
+| Time to first real use | ~month 11 | **~6–8 weeks** |
+| Engineering to a usable tool | 13–15 months | **6–8 dev-weeks** |
+| Cost to that point | $250–290K (P80 ~$370K) | **~$40–60K** |
+| Staffing | Senior full-stack FTE, 15+ months | Contractor ~2 months, then part-time |
+| Run cost | $6–8.4K/yr + $43–75K/yr maintenance | **~$1–3K/yr model + minimal hosting** |
+| Takeoff canvas | 24 dev-wks, ~$137K | Rented, or not bought at all |
+
+Roughly **an 80% reduction in cost and time**, and the deletions are concentrated exactly
+where the risk was.
+
+### 17.3 What this buys, and what it does not
+
+**Buys:** a tool in weeks rather than a year; no bespoke agent loop, state store or
+scheduler to maintain; JobTread grant credentials that never enter the model's context;
+a hard dollar cap per estimate; and relief for the reviewer bottleneck (§2.5) without
+touching the system of record.
+
+**Does not buy:** a takeoff tool. The interior measurement gap is untouched — roofing works
+because HOVER supplies the numbers, and there is no interior equivalent. A rep still walks
+the job and types the driver quantities. That gap is real, it is the reason CANVAS was
+tried and did not stick, and this plan does not close it.
+
+### 17.4 Risks specific to the new plan
+
+| Risk | Note |
+|---|---|
+| **Managed Agents is beta** | Bounded in v1 because writes are off — the worst failure is a wasted draft, not a bad contract. Re-assess before enabling writes. |
+| **Deeper coupling to JobTread** | The assembly engine, the worksheet and the customer document are all theirs now. A JobTread change lands harder than it would have. **Keep the $10–15K/yr reactive integration reserve** from §2.2. |
+| **The rule engine becomes load-bearing** | It is what makes an agent-drafted estimate safe. It needs golden tests against real historical documents — that is what survives of the Phase 1 replay harness, and it is not optional. |
+| **Catalog hygiene moves onto the critical path** | Every stale catalog item silently underprices work. It was a parallel nicety in the old plan; it is a dependency now. |
+| **Correlated AI error on measurement** | An AI reviewing an AI's reading of a drawing is not an independent check. Quantities are guarded by comparables, HOVER cross-checks and a human — not by a second model. |
+
+### 17.5 What Revision 1–4 got right, and kept
+
+The phase plan is superseded; the findings are not. Still authoritative and still load-bearing:
+
+- **§1.1** — the verified JobTread facts, including the `_type` discriminator, the tax
+  premise, and that `createdByGrantId` does not separate humans from machines.
+- **§1.2** — the existing assembly engine.
+- **§2** — the build-vs-buy analysis. Its conclusion now holds *more* strongly: buying was
+  2.3–5.2× cheaper than the build, and the build just got 80% smaller by buying more.
+- **§7** — the JobTread integration subsystem. The write path, idempotency via `externalId`
+  and `globalId`, the three-tier reconciliation forced by the missing `costItem` webhook,
+  and the conflict policy are unchanged and are exactly what Phase 2b implements.
+- **§8.2** — money and markup. The markup/margin ambiguity it identified was real; it was
+  resolved on 2026-09-28 by setting Subcontractor to 30% margin, and the rule engine now
+  reads that policy live from the API rather than hardcoding it.
+- **§8.5** — the trust ladder. Unchanged in principle: earn autonomy in stages, with
+  evidence at each one.
 
 ---
 
