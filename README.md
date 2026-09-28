@@ -3,8 +3,10 @@
 A private, in-house takeoff and estimating application for **Deitemeyer Brothers**, designed
 to integrate natively with JobTread. General construction first; roofing later.
 
-**Status: pre-build. Nothing here is code yet.** This repository currently holds the
-decision material for whether — and how — to build it.
+**Status: v0.5 auditor runs; the rest is design material.** The auditor reads one
+JobTread estimate and checks it against policy — read-only, no writes, no AI in the
+loop. Everything beyond that is still the decision material for whether — and how —
+to build the larger thing. [Jump to running it](#running-the-v05-auditor).
 
 ---
 
@@ -14,6 +16,7 @@ decision material for whether — and how — to build it.
 |---|---|
 | **[`docs/ROADMAP.md`](docs/ROADMAP.md)** | The build roadmap. Phases, gates, costs, the build-vs-buy reckoning, the JobTread subsystem design, the reliability model, and the questions only Carl can answer. |
 | **[`docs/jobtread-api-field-notes.md`](docs/jobtread-api-field-notes.md)** | The JobTread Pave API, verified by direct query against the live organization. The factual baseline the integration is designed against. |
+| **[`src/`](src/)** | The v0.5 auditor. `src/money.ts` is the arithmetic everything else depends on; `src/rules/` holds the eight policy checks. |
 
 ## The short version
 
@@ -46,14 +49,27 @@ successful outcome, not a failed one.
 
 Read-only. It checks one JobTread estimate against policy and writes nothing.
 
+### Getting it onto your machine
+
+The auditor is on the branch `claude/gifted-keller-prgxh5`. It is not on `main`.
+
 ```bash
+cd /c/dev                                              # wherever you keep repos
+git clone https://github.com/bledsoecw/DB-Estimator.git
+cd DB-Estimator
+git checkout claude/gifted-keller-prgxh5
 npm install
-npm run audit -- --fixture test/fixtures/jones-bath-kitchen.json   # offline, no setup
-npm run doctor                                                      # check your setup
-npm run audit -- <documentId>                                       # live
-npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
-npm test                                                            # 32 tests
 ```
+
+Run those one line at a time and read each result. If the clone fails, the `cd`
+fails too, and every command after it runs against whatever repository you were
+already sitting in — which looks like `Missing script: "doctor"` or
+`cp: cannot stat '.env.example'` and sends you hunting for the wrong bug. Before
+going on, `pwd` should end in `/DB-Estimator` and `git branch --show-current`
+should print `claude/gifted-keller-prgxh5`.
+
+Needs Node 22.9 or newer; `npm install` refuses an older one and names the
+version it wants.
 
 ### Setup for live runs
 
@@ -62,15 +78,28 @@ npm test                                                            # 32 tests
    **Scope it to reads only** — see §19.2 of the roadmap. It must not carry
    `updateCostType`, `updateCostCode` or `updateCatalog`: an auditor that can rewrite the
    policy it audits against has no invariants.
-2. `cp .env.example .env` and put the key in it. `.env` is git-ignored.
+2. `cp .env.example .env`, then open `.env` and replace the placeholder key with
+   yours. `.env` is git-ignored and never leaves your machine.
 3. `npm run doctor` — it checks the key, the org id, and whether JobTread is actually
    reachable from where you are.
 
-**This has to run somewhere with network access to `api.jobtread.com`.** A Claude Code
-cloud session cannot reach it: outbound egress is restricted, so a request there comes back
-`403` from the proxy rather than from JobTread. `npm run doctor` tells the two apart — it
-checks whether the response body is JSON, because JobTread always returns JSON and a proxy
-does not. Run it on your own machine, or anywhere with normal outbound access.
+### Commands
+
+```bash
+npm run doctor                                                      # check your setup
+npm run audit -- --fixture test/fixtures/jones-bath-kitchen.json   # offline, no setup
+npm run audit -- <documentId>                                       # live
+npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
+npm test                                                            # 32 tests
+```
+
+The `--` is required. Without it npm eats the arguments instead of passing them on.
+
+**Live runs need network access to `api.jobtread.com`.** A Claude Code cloud session
+cannot reach it: outbound egress is restricted, so a request comes back `403` from the
+proxy rather than from JobTread. `npm run doctor` tells the two apart — it checks whether
+the response body is JSON, because JobTread always returns JSON and a proxy does not. Run
+it on your own machine, or anywhere with normal outbound access.
 
 Offline work needs none of this: the fixture path exercises every rule with no network and
 no credential.

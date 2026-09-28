@@ -4,7 +4,7 @@
   "private": true,
   "description": "Deterministic estimate auditor for Deitemeyer Brothers. Reads a JobTread estimate and checks it against policy. Read-only.",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": { "node": ">=22.9.0" },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
