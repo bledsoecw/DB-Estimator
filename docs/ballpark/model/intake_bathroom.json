@@ -1,0 +1,230 @@
+{
+ "room": "Bathroom",
+ "filename": "bathroom-intake-sheet.docx",
+ "which": "Bathroom (which one)",
+ "intro": "Fill this in at the site visit. Every number feeds the bathroom ballpark in JobTread, which prices Good, Better and Best at once. Write 0 when something does not apply; do not leave it blank.",
+ "screen": [
+  "A structural wall is removed or opened",
+  "A plumbing fixture moves to a new location (drain or supply moves)",
+  "New foundation, footing or roof tie-in",
+  "HVAC extended or relocated beyond a register move",
+  "Cabinet layout or the room footprint changes"
+ ],
+ "sections": [
+  [
+   "Room",
+   [
+    [
+     "Bath floor area",
+     "___ ft × ___ ft = ____ SF",
+     "Wall to wall, the whole bathroom. Include a closet only if it is being remodeled.",
+     "{Bath Floor Area}"
+    ],
+    [
+     "Full gut?",
+     "☐ Whole room   ☐ Shower only",
+     "Whole room to studs = 1. Shower or tub area only = 0.",
+     "{Bath Full Gut}"
+    ],
+    [
+     "Walls moved",
+     "_______",
+     "Walls framed, removed or relocated. Count each wall.",
+     "{Bath Walls Moved}"
+    ],
+    [
+     "Dumpster loads",
+     "_______",
+     "1 for almost every bathroom. 2 when other rooms are included.",
+     "{Bath Dumpster Loads}"
+    ]
+   ]
+  ],
+  [
+   "Shower and tub",
+   [
+    [
+     "New walk-in shower",
+     "☐ Yes (1)   ☐ No (0)",
+     "Any new walk-in shower, including a tub-to-shower conversion.",
+     "{Bath Walk-In Shower}"
+    ],
+    [
+     "New tub with shower",
+     "☐ Yes (1)   ☐ No (0)",
+     "Tub and surround replaced as a tub/shower combo.",
+     "{Bath Tub Shower Combo}"
+    ],
+    [
+     "Grab bars",
+     "_______",
+     "Count requested by the customer.",
+     "{Bath Grab Bars}"
+    ],
+    [
+     "Existing shower or tub",
+     "________________",
+     "Size and type today, e.g. \"60 in tub, fiberglass\". For the estimator; not a formula input.",
+     null
+    ]
+   ]
+  ],
+  [
+   "Plumbing",
+   [
+    [
+     "Fixtures replaced in place",
+     "_______",
+     "Count the shower valve, each sink and the toilet when each stays where it is.",
+     "{Bath Fixtures Replaced}"
+    ],
+    [
+     "Fixtures relocated",
+     "_______",
+     "Count each fixture whose drain or supply moves. Anything above 0 means the design step.",
+     "{Bath Fixtures Relocated}"
+    ],
+    [
+     "HVAC work",
+     "☐ Yes (1)   ☐ No (0)",
+     "Register moved or duct extended.",
+     "{Bath HVAC Work}"
+    ],
+    [
+     "Supply pipe seen",
+     "Copper / PEX / Galv.",
+     "Circle one. Galvanized often adds repipe work; flag it in notes.",
+     null
+    ]
+   ]
+  ],
+  [
+   "Vanity and toilet",
+   [
+    [
+     "Vanity length",
+     "_______ ft",
+     "Width of the new vanity in feet. 0 if keeping the vanity.",
+     "{Bath Vanity Length}"
+    ],
+    [
+     "Sinks",
+     "_______",
+     "Sinks in the new vanity.",
+     "{Bath Vanity Sinks}"
+    ],
+    [
+     "New toilets",
+     "_______",
+     "0 if the existing toilet is only pulled and reset.",
+     "{Bath Toilets}"
+    ]
+   ]
+  ],
+  [
+   "Floor",
+   [
+    [
+     "New flooring area",
+     "_______ SF",
+     "All new flooring, including any past the bathroom door.",
+     "{Bath New Flooring Area}"
+    ],
+    [
+     "Subfloor or joist repair",
+     "_______ SF",
+     "Soft or damaged area you can see or feel today. Hidden damage is handled by the contract’s unforeseen-conditions clause.",
+     "{Bath Subfloor Repair Area}"
+    ]
+   ]
+  ],
+  [
+   "Electrical",
+   [
+    [
+     "Exhaust fan",
+     "☐ Yes (1)   ☐ No (0)",
+     "New or replaced fan with venting.",
+     "{Bath Exhaust Fan}"
+    ],
+    [
+     "Light fixtures",
+     "_______",
+     "Vanity or ceiling fixtures being replaced.",
+     "{Bath Light Fixtures}"
+    ],
+    [
+     "Recessed lights",
+     "_______",
+     "New recessed cans.",
+     "{Bath Recessed Lights}"
+    ],
+    [
+     "Circuits added",
+     "_______",
+     "New circuits, GFCI runs, or outlets that need new wire.",
+     "{Bath Circuits Added}"
+    ]
+   ]
+  ],
+  [
+   "Doors, travel and permit",
+   [
+    [
+     "Interior doors",
+     "_______",
+     "Swing doors replaced.",
+     "{Bath Interior Doors}"
+    ],
+    [
+     "Pocket doors",
+     "_______",
+     "Pocket doors added.",
+     "{Bath Pocket Doors}"
+    ],
+    [
+     "Service zone and permit",
+     "Zone ☐1 ☐2 ☐3 ☐Ext.   Permit: __________",
+     "Zone from the job in JobTread; Zone 1 adds no travel; Extended: enter 4 and flag it. Permit: city or township; the estimator enters the fee.",
+     "{Bath Service Zone}  {Bath Permit Fee}"
+    ]
+   ]
+  ]
+ ],
+ "tiers": [
+  [
+   "Shower",
+   "Acrylic or fiberglass kit, framed glass",
+   "Onyx / Al-Co solid-surface panels, semi-frameless glass",
+   "Tile or large-format panels set by our sub, frameless glass"
+  ],
+  [
+   "Vanity",
+   "Stock cabinet, cultured-marble top",
+   "Semi-custom cabinet, quartz top",
+   "Custom cabinet, premium top"
+  ],
+  [
+   "Floor",
+   "Standard LVP",
+   "Upgraded LVP",
+   "Tile, set by our sub"
+  ],
+  [
+   "Fixtures",
+   "Builder-grade toilet, fan, lights",
+   "Mid-range",
+   "Designer"
+  ]
+ ],
+ "photos": [
+  "Each wall",
+  "Shower/tub",
+  "Floor and any soft spots",
+  "Vanity and toilet",
+  "Ceiling and fan",
+  "Electrical panel",
+  "Access path for materials"
+ ],
+ "noteLines": 2
+}
