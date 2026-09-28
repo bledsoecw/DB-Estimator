@@ -82,6 +82,7 @@ async function main(argv: string[]): Promise<number> {
             impact: f.impact === undefined ? undefined : formatMoney(f.impact),
           })),
           passed: result.passed,
+          notes: result.notes,
           totalUnderpriced: formatMoney(result.totalUnderpriced),
         },
         null,
@@ -128,6 +129,13 @@ async function main(argv: string[]): Promise<number> {
   if (result.passed.length > 0) {
     out(`${BOLD}CHECKED AND CLEAN — ${result.passed.length}${OFF}`);
     for (const p of result.passed) out(`  ${GREEN}✓${OFF} ${DIM}${p.message}${OFF}`);
+    out('');
+  }
+
+  // ---- suppressed ----
+  if (result.notes.length > 0) {
+    out(`${BOLD}NOT RAISED${OFF}`);
+    for (const n of result.notes) out(`  ${DIM}· ${n.message}${OFF}`);
     out('');
   }
 

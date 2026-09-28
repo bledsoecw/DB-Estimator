@@ -36,11 +36,23 @@ export interface Rule {
   run(input: AuditInput): Finding[];
   /** Rendered in the passed-checks list when the rule finds nothing. */
   passMessage?(input: AuditInput): string | null;
+  /**
+   * What the rule saw and deliberately did not raise, shown even when it DID
+   * raise something else.
+   *
+   * Rules suppress on purpose — a deviation under a materiality floor, a line
+   * within a cent of policy. Without this the suppression is invisible, and an
+   * auditor that quietly drops findings is not one anybody should trust. If a
+   * rule holds something back, it says so here.
+   */
+  suppressed?(input: AuditInput): string | null;
 }
 
 export interface AuditResult {
   findings: Finding[];
   passed: { rule: string; message: string }[];
+  /** What the rules chose not to raise. Always reported, never silent. */
+  notes: { rule: string; message: string }[];
   /** Sum of negative impacts — what the estimate is underpriced by. */
   totalUnderpriced: Money;
 }

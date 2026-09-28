@@ -8,48 +8,85 @@
 
 import {
   type Money, ZERO,
-  abs, add, formatMoney, formatPercent, moneyEquals, rateToNumber, sub,
+  abs, add, formatMoney, formatPercent, moneyEquals, mulRate, rateToNumber, sub,
 } from '../money.ts';
-import { ancestorsOf, sumLinePrices, type Estimate, type Group } from '../domain.ts';
+import { ancestorsOf, sumLinePrices, type Estimate, type Group, type Line } from '../domain.ts';
 import type { Finding, Rule } from './types.ts';
 
-/** A line with no quantity and no money on it is either unfinished or should be removed. */
+/**
+ * Lines carrying no quantity, or no money, or neither.
+ *
+ * One card per kind, not one per line. 258761 Wright_Roof carries 22 measured
+ * but unpriced lines in a roof system the customer did not take — as 22 cards
+ * that buried the four findings on the estimate that mattered. The three kinds
+ * are kept apart because the answer differs: a blank quantity is someone's
+ * unfinished work, a quantity with no cost is an alternative that was measured
+ * and never priced, and a line with neither is usually deliberate — a warranty
+ * shown as included at no charge.
+ *
+ * The rule does not try to guess which zero was intended. It groups them so a
+ * reviewer can dismiss the whole set with one glance instead of twenty-two.
+ */
 export const emptyLineRule: Rule = {
   id: 'line.empty',
   describes: 'No line is left with a blank quantity or zero cost',
 
   run({ estimate }) {
-    const findings: Finding[] = [];
+    const blankQty: typeof estimate.lines = [];
+    const unpriced: typeof estimate.lines = [];
+    const neither: typeof estimate.lines = [];
+
     for (const line of estimate.lines) {
+      // A specification line legitimately carries no money — it describes scope.
+      if (line.isSpecification) continue;
       const noQty = line.quantity === null || line.quantity === 0n;
       const noMoney = line.unitCost === ZERO && line.unitPrice === ZERO;
       if (!noQty && !noMoney) continue;
-      // A specification line legitimately carries no money — it describes scope.
-      if (line.isSpecification) continue;
 
-      const what =
-        noQty && noMoney
-          ? 'has no quantity and no cost'
-          : noQty
-            ? 'has no quantity'
-            : 'has no cost or price';
+      if (line.quantity === null) blankQty.push(line);
+      else if (noMoney && noQty) neither.push(line);
+      else if (noMoney) unpriced.push(line);
+      else blankQty.push(line);
+    }
 
-      findings.push({
-        rule: 'line.empty',
-        severity: 'data',
-        title: `${line.name} ${what}`,
-        detail:
-          line.quantity === null
-            ? 'The quantity field is blank, not zero. Either hours were meant to go in, or the line should come off before the customer sees it.'
-            : 'Zero quantity at zero cost contributes nothing to the estimate and reads as an omission to a reviewer.',
-        lineIds: [line.id],
-        math: [
-          { label: 'quantity', value: line.quantity === null ? '(blank)' : String(Number(line.quantity) / 1e6) },
-          { label: 'unit cost', value: formatMoney(line.unitCost) },
-          { label: 'extension', value: formatMoney(line.price) },
-        ],
-        actions: ['Remove the line', 'Send back for a quantity'],
-      });
+    const findings: Finding[] = [];
+
+    if (blankQty.length > 0) {
+      findings.push(
+        emptyFinding(
+          'blank quantity',
+          blankQty,
+          estimate,
+          'The quantity field is blank, not zero. Either a measurement was meant to go in, ' +
+            'or the line should come off before the customer sees it.',
+          ['Send back for a quantity', 'Remove the line'],
+        ),
+      );
+    }
+    if (unpriced.length > 0) {
+      findings.push(
+        emptyFinding(
+          'measured but not priced',
+          unpriced,
+          estimate,
+          'These lines carry a quantity but no cost and no price. That is the shape of an ' +
+            'alternative that was taken off but left in, or of an assembly that never picked ' +
+            'up its pricing. Either way the customer sees the line at $0.',
+          ['Price them', 'Remove them', 'Accept — an option the customer did not take'],
+        ),
+      );
+    }
+    if (neither.length > 0) {
+      findings.push(
+        emptyFinding(
+          'no quantity and no cost',
+          neither,
+          estimate,
+          'No quantity, no cost, no price. Often deliberate — a warranty or inclusion shown ' +
+            'at no charge — but it reads to a reviewer as something left undone.',
+          ['Accept — included at no charge', 'Remove the line'],
+        ),
+      );
     }
     return findings;
   },
@@ -59,6 +96,48 @@ export const emptyLineRule: Rule = {
   },
 };
 
+function emptyFinding(
+  kind: string,
+  lines: Line[],
+  estimate: Estimate,
+  detail: string,
+  actions: string[],
+): Finding {
+  const single = lines.length === 1;
+  const groupName = (l: Line) => estimate.groupsById.get(l.groupId ?? '')?.name;
+  const groups = new Set(lines.map((l) => groupName(l)).filter(Boolean));
+  const where = groups.size === 1 ? ` in ${[...groups][0]}` : '';
+
+  return {
+    rule: 'line.empty',
+    severity: 'data',
+    title: single
+      ? `${lines[0]!.name} has ${kind === 'blank quantity' ? 'no quantity' : kind}`
+      : `${lines.length} lines${where} — ${kind}`,
+    detail,
+    lineIds: lines.map((l) => l.id),
+    math: single
+      ? [
+          {
+            label: 'quantity',
+            value: lines[0]!.quantity === null ? '(blank)' : formatQuantity(lines[0]!.quantity!),
+          },
+          { label: 'unit cost', value: formatMoney(lines[0]!.unitCost) },
+          { label: 'extension', value: formatMoney(lines[0]!.price) },
+        ]
+      : lines.slice(0, 8).map((l) => ({
+          label: l.name,
+          value: l.quantity === null ? '(blank quantity)' : `${formatQuantity(l.quantity)} ${l.unitName ?? ''}`.trim(),
+        })),
+    actions,
+  };
+}
+
+function formatQuantity(millionths: bigint): string {
+  const n = Number(millionths) / 1e6;
+  return Number.isInteger(n) ? String(n) : n.toFixed(2);
+}
+
 /**
  * The document total must equal the sum of what is actually included.
  *
@@ -67,9 +146,14 @@ export const emptyLineRule: Rule = {
  * is false on every line of the observed estimate including the branch that IS
  * counted, so it cannot be trusted to say which branch won.
  *
- * So this rule reconciles rather than assumes. If the shortfall is exactly the
- * price of one branch of a selection group, that is the expected shape and the
- * check passes with an explanation. Anything else is a real discrepancy.
+ * So this rule reconciles rather than assumes: it searches for a set of option
+ * branches whose combined price is exactly the shortfall. One branch is not
+ * enough — 258761 Wright_Roof is short by $12,758.56, which is Full Shingle
+ * Roof Removal ($8,996.86) plus the Platinum warranty ($2,220.00) plus an
+ * unselected upgrade ($1,541.70), three separate groups. Matching on a single
+ * branch reported that estimate as double-counted when it reconciles exactly.
+ *
+ * Anything the branches cannot explain is a real discrepancy.
  */
 export const totalsRule: Rule = {
   id: 'totals.reconcile',
@@ -82,8 +166,7 @@ export const totalsRule: Rule = {
     if (moneyEquals(sumAll, estimate.statedPrice)) return [];
 
     const branches = selectionBranches(estimate);
-    const match = branches.find((b) => moneyEquals(b.total, diff));
-    if (match) return []; // expected shape — explained in passMessage
+    if (explainedBy(branches, diff)) return []; // expected shape — see passMessage
 
     return [
       {
@@ -91,8 +174,9 @@ export const totalsRule: Rule = {
         severity: 'pricing',
         title: 'Document total does not match the sum of its lines',
         detail:
-          'The stored total and the sum of line extensions disagree by an amount that is not ' +
-          'explained by an unselected option branch. Something is either double-counted or missing.',
+          'The stored total and the sum of line extensions disagree by an amount that no ' +
+          'combination of unselected option branches accounts for. Something is either ' +
+          'double-counted or missing.',
         impact: diff,
         math: [
           { label: 'sum of all line extensions', value: formatMoney(sumAll) },
@@ -114,27 +198,111 @@ export const totalsRule: Rule = {
       return `Total matches the sum of line extensions (${formatMoney(estimate.statedPrice)})`;
     }
     const diff = sub(sumAll, estimate.statedPrice) as Money;
-    const match = selectionBranches(estimate).find((b) => moneyEquals(b.total, diff));
-    return match
-      ? `Option alternates counted once — "${match.name}" correctly excluded (${formatMoney(match.total)})`
-      : null;
+    const excluded = explainedBy(selectionBranches(estimate), diff);
+    if (!excluded) return null;
+    const names = excluded.map((b) => `"${b.name}"`).join(', ');
+    return (
+      `Option alternates counted once — ${names} correctly excluded ` +
+      `(${formatMoney(diff)} of ${formatMoney(sumAll)})`
+    );
   },
 };
 
-/** Each immediate child branch of a selection group, with its total price. */
-function selectionBranches(estimate: Estimate): { name: string; total: Money }[] {
-  const selectionGroupIds = new Set(
-    estimate.groups.filter((g) => g.isSelectionGroup).map((g) => g.id),
-  );
-  if (selectionGroupIds.size === 0) return [];
+/**
+ * The set of branches whose prices sum to `diff`, or null if none does.
+ *
+ * Exhaustive over subsets, which is only safe because the count is small: the
+ * largest real document seen carries nine branches. Above BRANCH_LIMIT the
+ * search is abandoned rather than allowed to run 2^n — an auditor that hangs
+ * on a big estimate is worse than one that says it cannot tell.
+ *
+ * Prefers the smallest explanation: with two subsets summing to the same
+ * amount, the one naming fewer groups is likelier to be what happened, and is
+ * the one a reviewer can check by eye.
+ */
+const BRANCH_LIMIT = 16;
 
-  const branches: { name: string; total: Money }[] = [];
-  for (const g of estimate.groups) {
-    if (!g.parentId || !selectionGroupIds.has(g.parentId)) continue;
-    const total = estimate.lines
-      .filter((l) => isUnder(estimate, l.groupId, g.id))
-      .reduce((acc, l) => add(acc, l.price), ZERO);
-    if (total !== ZERO) branches.push({ name: g.name, total });
+interface Branch {
+  name: string;
+  total: Money;
+  lines: Line[];
+}
+
+/**
+ * The lines JobTread left out of the document total.
+ *
+ * Derived from the reconciliation rather than from `isSelected`, which reads
+ * false on every line of every document sampled — including the branches that
+ * ARE counted — and so says nothing. What the totals prove is what gets used.
+ *
+ * Empty when the difference cannot be explained: better to compute tax against
+ * everything and be visibly wrong than to silently exclude a guess.
+ */
+export function excludedLines(estimate: Estimate): Set<string> {
+  const diff = sub(sumLinePrices(estimate.lines), estimate.statedPrice) as Money;
+  if (diff === ZERO) return new Set();
+  const match = explainedBy(selectionBranches(estimate), diff);
+  if (!match) return new Set();
+  return new Set(match.flatMap((b) => b.lines.map((l) => l.id)));
+}
+
+function explainedBy(branches: Branch[], diff: Money): Branch[] | null {
+  if (diff === ZERO) return [];
+  if (branches.length === 0 || branches.length > BRANCH_LIMIT) return null;
+
+  let best: Branch[] | null = null;
+  for (let mask = 1; mask < 1 << branches.length; mask++) {
+    let sum = ZERO;
+    let count = 0;
+    for (let i = 0; i < branches.length; i++) {
+      if (mask & (1 << i)) {
+        sum = add(sum, branches[i]!.total);
+        count++;
+      }
+    }
+    if (!moneyEquals(sum, diff)) continue;
+    if (best === null || count < best.length) {
+      best = branches.filter((_, i) => mask & (1 << i));
+    }
+  }
+  return best;
+}
+
+/**
+ * The things a selection group chooses between, each with its price.
+ *
+ * A selection group offers its alternatives in one of two shapes, and both
+ * occur on the same document:
+ *
+ *   - as child GROUPS  — "Shingle Removal" picks between "Partial Shingle Roof
+ *                        Removal" and "Full Shingle Roof Removal"
+ *   - as direct LINES  — "Standing Seam Roof Warranties" picks between two
+ *                        warranty lines; "Upgrades" (min 0) offers one line
+ *                        that may simply not be taken
+ *
+ * Walking only the child groups missed two of the three branches excluded from
+ * Wright_Roof, so the document read as un-reconcilable. Zero-priced branches
+ * are dropped: they explain no difference and double the search space.
+ */
+function selectionBranches(estimate: Estimate): Branch[] {
+  const selectionGroups = estimate.groups.filter((g) => g.isSelectionGroup);
+  if (selectionGroups.length === 0) return [];
+
+  const branches: Branch[] = [];
+  for (const g of selectionGroups) {
+    const children = estimate.groups.filter((c) => c.parentId === g.id);
+
+    for (const child of children) {
+      const lines = estimate.lines.filter((l) => isUnder(estimate, l.groupId, child.id));
+      const total = lines.reduce((acc, l) => add(acc, l.price), ZERO);
+      if (total !== ZERO) branches.push({ name: child.name, total, lines });
+    }
+
+    for (const line of estimate.lines.filter((l) => l.groupId === g.id)) {
+      if (line.price !== ZERO) {
+        branches.push({ name: line.name, total: line.price, lines: [line] });
+      }
+    }
   }
   return branches;
 }
@@ -173,6 +341,91 @@ export const catalogLinkRule: Rule = {
     return `Every line tied to a catalog item (${n}/${n})`;
   },
 };
+
+/**
+ * The tax charged must equal the rate times what is actually being sold.
+ *
+ * Verified against 258761 Wright_Roof, which is the reason this rule can
+ * exist: 57 of its 101 lines are taxable and total $30,491.21, but JobTread
+ * charges $1,958.35 rather than the $2,088.65 that base implies. The $130.30
+ * difference is tax on $1,902.11 of taxable lines sitting in option branches
+ * the customer did not take. Against the selected base the arithmetic closes
+ * to the cent.
+ *
+ * So this is a real check and not a restatement of JobTread's own sum: a
+ * taxable flag out of step with what is charged, or a rate that changed after
+ * the lines were priced, shows up here and nowhere else. It was the shape of
+ * the Lincolnview problem — taxable flags left on for a tax-exempt customer.
+ */
+export const taxReconcileRule: Rule = {
+  id: 'tax.reconcile',
+  describes: 'Tax charged matches the rate applied to the taxable lines',
+
+  run({ estimate }) {
+    const charged = sub(estimate.statedPriceWithTax, estimate.statedPrice) as Money;
+    const { base, expected } = taxBasis(estimate);
+
+    // No rate and no charge is the org's normal case, not a finding.
+    if (estimate.taxRate === 0n && charged === ZERO) return [];
+    if (moneyEquals(expected, charged, 2)) return [];
+
+    const overcharged = charged > expected;
+    return [
+      {
+        rule: 'tax.reconcile',
+        severity: 'pricing',
+        title: overcharged
+          ? 'The customer is charged more tax than the taxable lines come to'
+          : 'The customer is charged less tax than the taxable lines come to',
+        detail:
+          `Tax on this document is ${formatMoney(charged)}, but ${formatPercent(estimate.taxRate)} ` +
+          `of the taxable lines that are actually being sold comes to ${formatMoney(expected)}. ` +
+          'Either a line is flagged taxable that should not be, or the rate changed after the ' +
+          'lines were priced.',
+        impact: sub(expected, charged) as Money,
+        math: [
+          { label: 'taxable base (selected lines)', value: formatMoney(base) },
+          { label: `× rate ${formatPercent(estimate.taxRate)}`, value: formatMoney(expected) },
+          { label: 'tax actually charged', value: formatMoney(charged) },
+          {
+            label: 'difference',
+            value: formatMoney(abs(sub(expected, charged) as Money)),
+            emphasis: true,
+          },
+        ],
+        actions: ['Check the taxable flags', 'Check the tax rate', 'Open in JobTread'],
+      },
+    ];
+  },
+
+  passMessage({ estimate }) {
+    const charged = sub(estimate.statedPriceWithTax, estimate.statedPrice) as Money;
+    if (estimate.taxRate === 0n && charged === ZERO) return null; // the tax rule says this
+    const { base } = taxBasis(estimate);
+    // A rate set with nothing taxable charges nothing. That is the normal shape
+    // for roofing labor on real property, but it is worth saying out loud
+    // rather than reporting as a reconciliation of zero against zero.
+    if (base === ZERO) {
+      return (
+        `Rate of ${formatPercent(estimate.taxRate)} is set but no line is taxable, ` +
+        `so no tax is charged`
+      );
+    }
+    return (
+      `Tax reconciles: ${formatPercent(estimate.taxRate)} of ${formatMoney(base)} ` +
+      `is ${formatMoney(charged)}`
+    );
+  },
+};
+
+/** The taxable base actually being sold, and the tax it implies. */
+function taxBasis(estimate: Estimate): { base: Money; expected: Money } {
+  const excluded = excludedLines(estimate);
+  const base = estimate.lines
+    .filter((l) => l.isTaxable && !excluded.has(l.id))
+    .reduce((acc, l) => add(acc, l.price), ZERO);
+  return { base, expected: mulRate(base, estimate.taxRate) };
+}
 
 /**
  * Tax.

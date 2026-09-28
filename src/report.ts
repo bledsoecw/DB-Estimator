@@ -134,6 +134,15 @@ export function renderReport(input: AuditInput, result: AuditResult): string {
       : ''
   }
 
+  ${
+    result.notes.length > 0
+      ? `<section class="notes">
+    <h2>Not raised</h2>
+    <ul>${result.notes.map((n) => `<li>${esc(n.message)}</li>`).join('')}</ul>
+  </section>`
+      : ''
+  }
+
   ${needsHuman.length > 0 ? `<div class="actions-bar no-print">
     <button type="button" id="copy">Copy the notes</button>
     <span class="hint">Paste into JobTread or an email to the rep.</span>
@@ -289,6 +298,11 @@ h2 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .09e
   letter-spacing: .09em; color: var(--dim); }
 .passed ul { margin: 10px 0 0; padding-left: 20px; color: var(--dim); font-size: 13.5px; }
 .passed li { margin: 3px 0; }
+
+.notes { margin-top: 26px; }
+.notes h2 { margin-bottom: 8px; }
+.notes ul { margin: 0; padding-left: 20px; color: var(--dim); font-size: 13px; }
+.notes li { margin: 3px 0; }
 
 .actions-bar { display: flex; align-items: center; gap: 12px; margin-top: 28px; }
 #copy { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 6px;

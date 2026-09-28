@@ -518,6 +518,40 @@ and `showChildDeltas`; `costItem` carries `isSelected` and `isSpecification`;
 `document.isSimpleSelection` and `updateSelectionAssignment` exist. "Give the customer three
 options" is a built-in, not something to rebuild.
 
+#### `isSelected` does not tell you what is selected — **VERIFIED**
+
+Read back on three documents, `isSelected` is `false` on **every** cost item and **every**
+cost group, including the branches whose money is plainly in the document total:
+
+| Document | Items | `isSelected: false` | Groups | `isSelected: false` |
+|---|---|---|---|---|
+| `22PfKxuR9Vrx` Jones_Bath/Kitchen | 26 | 26 | 13 | 13 |
+| `22PNhaVC26Ma` Wright_Roof | 101 | 101 | 11 | 11 |
+| `22PPQD68bhaX` Daeger_Roof | 67 | 0 | 7 | 0 |
+
+Daeger has no selection groups at all, so nothing is ever marked — which is why its count
+is zero rather than sixty-seven. Where selections *do* exist the field is uniformly false,
+so it distinguishes nothing. A rule that trusts it either counts every branch or counts
+none.
+
+**What is reliable is the arithmetic.** The document's stored `price` is the sum of the
+lines that count, so the branches left out are whichever combination makes up the
+difference. On Wright_Roof the lines total $93,310.80 against a stored $80,552.24, and the
+$12,758.56 gap is exactly `Full Shingle Roof Removal` ($8,996.86) + `Platinum Metals 20
+Warranty` ($2,220.00) + `SS Steel Roof Texture` ($1,541.70) — three branches in three
+separate groups, not one.
+
+Two consequences worth stating, because both were wrong in the first implementation:
+
+- **Alternatives appear as child groups OR as lines.** `Shingle Removal` picks between two
+  child *groups*; `Standing Seam Roof Warranties` picks between two *lines* in the group
+  itself; `Upgrades` (`minSelectionsRequired: 0`) offers a single line that may just not be
+  taken. Enumerating only child groups misses two of Wright's three.
+- **Tax is charged on the selected base only.** Wright has 57 taxable lines totalling
+  $30,491.21, which at 6.85% would be $2,088.65 — but JobTread charges $1,958.35. The
+  $130.30 difference is tax on $1,902.11 of taxable lines inside branches the customer did
+  not take. Against the selected base it closes to the cent.
+
 ### `references` for change-order lineage
 
 `createDocument.$.references` (≤1000) feeds `document.referencedDocuments` and

@@ -33,7 +33,7 @@ test('renders the figures that drive the decision', () => {
   assert.match(html, /\$109,304\.84/, 'stated price');
   assert.match(html, /\$72,360\.20/, 'stated cost');
   assert.match(html, /33\.80%/, 'margin');
-  assert.match(html, /Under policy by <strong>\$2,979\.07<\/strong>/, 'the headline number');
+  assert.match(html, /Under policy by <strong>\$2,974\.52<\/strong>/, 'the headline number');
   assert.match(html, /22PfKxuR9Vrx/, 'the document id, so it can be found again');
 });
 

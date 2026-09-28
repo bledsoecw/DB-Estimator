@@ -32,14 +32,26 @@ const fixture = JSON.parse(
 const input = fromFixture(fixture);
 const result = audit(input);
 
-test('finds the three known off-policy lines', () => {
+test('finds the two material off-policy lines, and accounts for the third', () => {
   const markup = result.findings.filter((f) => f.rule === 'markup.off-policy');
   const titles = markup.map((f) => f.title);
-  assert.equal(markup.length, 3, `expected 3 markup findings, got ${markup.length}: ${titles.join(' | ')}`);
+  assert.equal(markup.length, 2, `expected 2 markup findings, got ${markup.length}: ${titles.join(' | ')}`);
 
   assert.ok(titles.some((t) => t.includes('Logistical Management')));
   assert.ok(titles.some((t) => t.includes('Countertop Sub')));
-  assert.ok(titles.some((t) => t.includes('Hauling & Disposal')));
+
+  // Hauling & Disposal is off policy by $4.55 and deliberately does not get a
+  // card: the materiality floor is $25. It was a finding until the roofing
+  // fixtures showed what that costs — 42 cards on an estimate that had already
+  // been approved and sold, most of them worth less than a dollar.
+  //
+  // But it is NOT dropped. A rule that quietly stops reporting is the failure
+  // mode this whole project exists to prevent, so the money has to still be
+  // somewhere a reviewer sees it.
+  assert.ok(!titles.some((t) => t.includes('Hauling & Disposal')), 'raised a $4.55 card');
+  const note = result.notes.find((n) => n.rule === 'markup.off-policy');
+  assert.ok(note, 'the suppressed $4.55 is not reported anywhere');
+  assert.match(note.message, /\$4\.55/);
 });
 
 test('Countertop Sub is short by $1,039.89 under the 30% margin policy', () => {
@@ -68,10 +80,13 @@ test('Logistical Management is short by $1,934.63 under the labor policy', () =>
   assert.equal(formatMoney(f.impact!), '$1,934.63');
 });
 
-test('total underpriced is $2,979.07 across the three off-policy lines', () => {
-  // $1,934.63 + $1,039.89 + $4.55. The hand figure was $2,978.98, computed
-  // against a Labor margin of exactly 0.45; the stored margin differs slightly.
-  assert.equal(formatMoney(result.totalUnderpriced), '$2,979.07');
+test('total underpriced is $2,974.52 across the two raised lines', () => {
+  // $1,934.63 + $1,039.89. The hand figure for all three lines was $2,978.98,
+  // computed against a Labor margin of exactly 0.45; the stored margin differs
+  // slightly, giving $2,979.07. The $4.55 Hauling & Disposal line now sits
+  // under the materiality floor and is reported as a note rather than a card,
+  // so the raised total is $4.55 lower.
+  assert.equal(formatMoney(result.totalUnderpriced), '$2,974.52');
 });
 
 test('the stored Labor margin is not exactly 45%', () => {

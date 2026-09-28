@@ -14,6 +14,7 @@ import {
   displayRule,
   duplicateRule,
   emptyLineRule,
+  taxReconcileRule,
   taxRule,
   totalsRule,
 } from './integrity.ts';
@@ -25,6 +26,7 @@ export const RULES: Rule[] = [
   emptyLineRule,
   totalsRule,
   taxRule,
+  taxReconcileRule,
   duplicateRule,
   catalogLinkRule,
   displayRule,
@@ -41,6 +43,7 @@ const SEVERITY_ORDER: Record<Severity, number> = {
 export function audit(input: AuditInput, rules: Rule[] = RULES): AuditResult {
   const findings: Finding[] = [];
   const passed: { rule: string; message: string }[] = [];
+  const notes: { rule: string; message: string }[] = [];
 
   for (const rule of rules) {
     let produced: Finding[];
@@ -64,6 +67,15 @@ export function audit(input: AuditInput, rules: Rule[] = RULES): AuditResult {
       const msg = rule.passMessage?.(input) ?? rule.describes;
       if (msg) passed.push({ rule: rule.id, message: msg });
     }
+
+    // Evaluated whether or not the rule found anything: suppression has to be
+    // visible on a noisy estimate, which is exactly where it is easiest to hide.
+    try {
+      const note = rule.suppressed?.(input);
+      if (note) notes.push({ rule: rule.id, message: note });
+    } catch {
+      // A broken note must not cost the findings that ran fine.
+    }
   }
 
   findings.sort((a, b) => {
@@ -79,7 +91,7 @@ export function audit(input: AuditInput, rules: Rule[] = RULES): AuditResult {
     ZERO,
   ) as Money;
 
-  return { findings, passed, totalUnderpriced };
+  return { findings, passed, notes, totalUnderpriced };
 }
 
 const absBig = (v: bigint): bigint => (v < 0n ? -v : v);

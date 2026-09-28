@@ -91,7 +91,7 @@ npm run audit -- --fixture test/fixtures/jones-bath-kitchen.json   # offline, no
 npm run audit -- <documentId>                                       # live
 npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
-npm test                                                            # 40 tests
+npm test                                                            # 50 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -121,7 +121,13 @@ the response body is JSON, because JobTread always returns JSON and a proxy does
 it on your own machine, or anywhere with normal outbound access.
 
 Offline work needs none of this: the fixture path exercises every rule with no network and
-no credential.
+no credential. Three real estimates are captured in `test/fixtures/`:
+
+| Fixture | Why it is there |
+|---|---|
+| `jones-bath-kitchen.json` | A GC remodel, 26 lines, zero-rated. The original golden case. |
+| `daeger-roof.json` | Roofing, 67 lines, 7.25% rate, **approved and sold** — the baseline for what a clean estimate must not be flagged as. |
+| `wright-roof.json` | Roofing, 101 lines, 6.85% rate. Crosses JobTread's 100-item page cap and reconciles through three unselected option branches. |
 
 ## Working conventions
 

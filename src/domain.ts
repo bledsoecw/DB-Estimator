@@ -60,6 +60,8 @@ export interface Estimate {
   createdAt: string;
   /** Totals as JobTread stores them. */
   statedPrice: Money;
+  /** Stored total including tax. The difference from statedPrice is the tax charged. */
+  statedPriceWithTax: Money;
   statedCost: Money;
   taxRate: Rate;
   externalId: string | null;
@@ -163,6 +165,7 @@ export function toEstimate(doc: ApiDocument): Estimate {
     jobName: doc.job.name,
     createdAt: doc.createdAt,
     statedPrice: moneyFromApi(doc.price),
+    statedPriceWithTax: moneyFromApi(doc.priceWithTax),
     statedCost: moneyFromApi(doc.cost),
     taxRate: rateFromApi(doc.taxRate),
     externalId: doc.externalId,
