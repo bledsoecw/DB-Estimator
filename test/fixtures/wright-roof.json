@@ -1,0 +1,3762 @@
+{
+  "capturedAt": "2026-09-28T20:37:54.340Z",
+  "organizationId": "22PBAjem8SSC",
+  "document": {
+    "id": "22PNhaVC26Ma",
+    "name": "Estimate",
+    "type": "customerOrder",
+    "status": "denied",
+    "price": 80552.24,
+    "cost": 53939.51,
+    "priceWithTax": 82510.59,
+    "taxRate": 0.0685,
+    "taxName": null,
+    "externalId": null,
+    "showChildCosts": false,
+    "showQuantity": false,
+    "showProfit": false,
+    "showLinesAtDepth": null,
+    "requireSignature": true,
+    "includeInBudget": true,
+    "issueDate": "2026-02-12",
+    "createdAt": "2025-12-18T19:39:40.107Z",
+    "job": {
+      "id": "22PNJwS8KhpM",
+      "name": "258761 Wright_Roof"
+    },
+    "costGroups": {
+      "count": 11,
+      "nextPage": null,
+      "nodes": [
+        {
+          "id": "22PNhaVC9BR4",
+          "name": "SELECTION",
+          "position": "b",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": null
+        },
+        {
+          "id": "22PNhaVC9BR5",
+          "name": "Shingle Removal",
+          "position": "b",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": 1,
+          "maxSelectionsAllowed": 1,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BR4"
+          }
+        },
+        {
+          "id": "22PNhaVC9BR6",
+          "name": "Partial Shingle Roof Removal",
+          "position": "b",
+          "isSelected": true,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BR5"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRH",
+          "name": "Full Shingle Roof Removal",
+          "position": "c",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BR5"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRT",
+          "name": "Standing Seam Metal Roof System (Shingle Slopes Only)",
+          "position": "c",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BR4"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRx",
+          "name": "Upgrades",
+          "position": "bc",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": 0,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BRT"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRz",
+          "name": "Standing Seam Roof Warranties",
+          "position": "bd",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": 1,
+          "maxSelectionsAllowed": 1,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BRT"
+          }
+        },
+        {
+          "id": "22PNhaVC9BS4",
+          "name": "6\" Gutter System (only on strapped gutters) (pricing tentative)",
+          "position": "d",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BR4"
+          }
+        },
+        {
+          "id": "22PNhaVC9BS8",
+          "name": "Exposed Fastener Steel Roof System",
+          "position": "e",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BR4"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSa",
+          "name": "Exposed Fastener Roof Warranty",
+          "position": "ba",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BS8"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSc",
+          "name": "Replace Existing Steel Roofs with Standing Seam (Removal and Install)",
+          "position": "f",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PNhaVC9BR4"
+          }
+        }
+      ]
+    },
+    "costItems": {
+      "count": 101,
+      "nextPage": "5HPLUJeJMdxBGnshtjxzpsgMvUp7",
+      "nodes": [
+        {
+          "id": "22PNhaVC9BRU",
+          "name": "Permit",
+          "quantity": 1,
+          "unitCost": 10,
+          "unitPrice": 14.499999999999998,
+          "cost": 10,
+          "price": 14.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ab",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": null,
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PEjZMRaX6W"
+          }
+        },
+        {
+          "id": "22PNhaVC9BS9",
+          "name": "Permit",
+          "quantity": 1,
+          "unitCost": 19625.89,
+          "unitPrice": 28457.540499999996,
+          "cost": 19625.89,
+          "price": 28457.54,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ab",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": null,
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PEjZMRaX6W"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRV",
+          "name": "Install SS Steel Panel <= 7/12",
+          "quantity": 14,
+          "unitCost": 175,
+          "unitPrice": 253.74999999999997,
+          "cost": 2450,
+          "price": 3552.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ac",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHfU7V6sRk"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSA",
+          "name": "Install EF Steel Panel <= 7/12",
+          "quantity": 14,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ac",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHeyjcdiuf"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRW",
+          "name": "Install SS Steel Panel 8/12",
+          "quantity": 6,
+          "unitCost": 190,
+          "unitPrice": 275.5,
+          "cost": 1140,
+          "price": 1653,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ad",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHfUD9CizY"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSB",
+          "name": "Install EF Steel Panel 8/12",
+          "quantity": 6,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ad",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHeyjzuGq3"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRX",
+          "name": "Install SS Steel Panel 12/12",
+          "quantity": 14,
+          "unitCost": 250,
+          "unitPrice": 450,
+          "cost": 3500,
+          "price": 6300,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ae",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHfUQpgKvT"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSC",
+          "name": "Install EF Steel Panel 12/12",
+          "quantity": 14,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ae",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHezBTgdUc"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRY",
+          "name": "SS 26 Gauge Steel Panel",
+          "quantity": 2855,
+          "unitCost": 2.4,
+          "unitPrice": 3.4799999999999995,
+          "cost": 6852,
+          "price": 9935.4,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "af",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHfUX8CuYt"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSD",
+          "name": "EF 28 Gauge Steel Panel",
+          "quantity": 20,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "af",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHezMMBMsT"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRZ",
+          "name": "Bubble Underlayment",
+          "quantity": 5,
+          "unitCost": 150,
+          "unitPrice": 217.49999999999997,
+          "cost": 750,
+          "price": 1087.5,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ag",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhwdcWMA9"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSE",
+          "name": "Purlins",
+          "quantity": 20,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ag",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDkuSHvS"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRa",
+          "name": "SS Hip & Ridge Cap",
+          "quantity": 173,
+          "unitCost": 7.06,
+          "unitPrice": 10.236999999999998,
+          "cost": 1221.38,
+          "price": 1771,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ah",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvE4wtii"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSF",
+          "name": "EF Hip & Ridge Cap",
+          "quantity": 173,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ah",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfHdRDpY2"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRb",
+          "name": "Z-Mold Closure (Vented)",
+          "quantity": 314,
+          "unitCost": 4.07,
+          "unitPrice": 5.9015,
+          "cost": 1277.98,
+          "price": 1853.07,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ai",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BSG",
+          "name": "EF Eave Trim",
+          "quantity": 254,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ai",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfHmefSGN"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRc",
+          "name": "Z-Mold Closure (Standard)",
+          "quantity": 53,
+          "unitCost": 4.07,
+          "unitPrice": 5.9015,
+          "cost": 215.71,
+          "price": 312.78,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "aj",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BSH",
+          "name": "EF Rake Trim",
+          "quantity": 190,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "aj",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfJ3tAyDc"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRd",
+          "name": "SS Eave Trim",
+          "quantity": 254,
+          "unitCost": 4.29,
+          "unitPrice": 6.2204999999999995,
+          "cost": 1089.66,
+          "price": 1580.01,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ak",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvTwpagA"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSJ",
+          "name": "EF Transition Trim",
+          "quantity": 15,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ak",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfJCE9v9i"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRe",
+          "name": "SS Rake Trim",
+          "quantity": 190,
+          "unitCost": 4.97,
+          "unitPrice": 7.206499999999999,
+          "cost": 944.3,
+          "price": 1369.24,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "al",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvYPAxrV"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSK",
+          "name": "EF Valley Flashing",
+          "quantity": 86,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "al",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfJLjUYqm"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRf",
+          "name": "SS Transition Trim",
+          "quantity": 15,
+          "unitCost": 8.22,
+          "unitPrice": 11.919,
+          "cost": 123.3,
+          "price": 178.79,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "am",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvd4jM4R"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSL",
+          "name": "EF Sidewall Flashing",
+          "quantity": 53,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "am",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfJWzvDN9"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRg",
+          "name": "SS Valley Flashing",
+          "quantity": 86,
+          "unitCost": 6.94,
+          "unitPrice": 10.063,
+          "cost": 596.84,
+          "price": 865.42,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "an",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvhNDG97"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSM",
+          "name": "EF Endwall Flashing",
+          "quantity": 19,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "an",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfJdUExKu"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRh",
+          "name": "SS Sidewall Flashing",
+          "quantity": 53,
+          "unitCost": 10.45,
+          "unitPrice": 15.152499999999998,
+          "cost": 553.85,
+          "price": 803.08,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ao",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvnrLHTM"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSN",
+          "name": "J Channel",
+          "quantity": 6,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ao",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC97J5hG6",
+            "name": "Piece"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BRi",
+          "name": "SS Endwall Flashing",
+          "quantity": 19,
+          "unitCost": 10.97,
+          "unitPrice": 15.9065,
+          "cost": 208.43,
+          "price": 302.22,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ap",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvtZJmJh"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSP",
+          "name": "EF Counter Flashing",
+          "quantity": 10,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ap",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfJstTzCv"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRj",
+          "name": "J Channel",
+          "quantity": 6,
+          "unitCost": 12.82,
+          "unitPrice": 18.589,
+          "cost": 76.92,
+          "price": 111.53,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "aq",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC97J5hG6",
+            "name": "Piece"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BSQ",
+          "name": "EF Snow Rail",
+          "quantity": 254,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "aq",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfK6KMAYv"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRk",
+          "name": "SS Counter Flashing",
+          "quantity": 10,
+          "unitCost": 8.22,
+          "unitPrice": 11.919,
+          "cost": 82.2,
+          "price": 119.19,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ar",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhw3bNrmY"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSR",
+          "name": "Titebond Roof Sealant",
+          "quantity": 8,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ar",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfLgPHRae"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRm",
+          "name": "SS Snow Rail",
+          "quantity": 254,
+          "unitCost": 2.76,
+          "unitPrice": 4.002,
+          "cost": 701.04,
+          "price": 1016.51,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "as",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHhwAZLxVi"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSS",
+          "name": "Uniseal Foam Closure",
+          "quantity": 19,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "as",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfLrAWekw"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRn",
+          "name": "Titebond Roof Sealant",
+          "quantity": 8,
+          "unitCost": 9.59,
+          "unitPrice": 13.905499999999998,
+          "cost": 76.72,
+          "price": 111.24,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "at",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHfLgPHRae"
+          }
+        },
+        {
+          "id": "22PNhaVC9BST",
+          "name": "Univent Closure",
+          "quantity": 314,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "at",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfM5FfiAJ"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRp",
+          "name": "Butyl Tape",
+          "quantity": 8,
+          "unitCost": 8,
+          "unitPrice": 11.6,
+          "cost": 64,
+          "price": 92.8,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "au",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHfMF4RaxP"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSU",
+          "name": "Butyl Tape",
+          "quantity": 8,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "au",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfMF4RaxP"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRq",
+          "name": "High Temp Pipe Boot",
+          "quantity": 2,
+          "unitCost": 70.38,
+          "unitPrice": 102.05099999999999,
+          "cost": 140.76,
+          "price": 204.1,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "av",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHfMmcCAUM"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSV",
+          "name": "High Temp Pipe Boot",
+          "quantity": 2,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "av",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfMmcCAUM"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRr",
+          "name": "SS Clips",
+          "quantity": 4,
+          "unitCost": 150,
+          "unitPrice": 270,
+          "cost": 600,
+          "price": 1080,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "aw",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8sWMVry",
+            "name": "Box"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BSW",
+          "name": "EF Steel Panel Fasteners",
+          "quantity": 8,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "aw",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8sWMVry",
+            "name": "Box"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHfMuEfx6G"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRs",
+          "name": "SS Panhead Screws",
+          "quantity": 13,
+          "unitCost": 12,
+          "unitPrice": 21.599999999999998,
+          "cost": 156,
+          "price": 280.8,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ax",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8rFijPG",
+            "name": "Bag"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BSX",
+          "name": "Hauling & Disposal (R)",
+          "quantity": 1,
+          "unitCost": 110,
+          "unitPrice": 198,
+          "cost": 110,
+          "price": 198,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ax",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC92RWpGq",
+            "name": "Ton"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHGT6pPSp8"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRt",
+          "name": "SS Pop Rivets",
+          "quantity": 4,
+          "unitCost": 70,
+          "unitPrice": 101.5,
+          "cost": 280,
+          "price": 406,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ay",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8sWMVry",
+            "name": "Box"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHfMuEfx6G"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSY",
+          "name": "Project Management (R)",
+          "quantity": 8,
+          "unitCost": 52.5,
+          "unitPrice": 94.5,
+          "cost": 420,
+          "price": 756,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ay",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PHGS5xkMnj"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRu",
+          "name": "Hauling & Disposal (R)",
+          "quantity": 1,
+          "unitCost": 110,
+          "unitPrice": 159.5,
+          "cost": 110,
+          "price": 159.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "az",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC92RWpGq",
+            "name": "Ton"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHGT6pPSp8"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSZ",
+          "name": "Sales On-Site Support",
+          "quantity": null,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "az",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PNJn5ZYvzq",
+            "name": "Sales On-Site Support"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS8"
+          },
+          "organizationCostItem": {
+            "id": "22PNJmzSy4PK"
+          }
+        },
+        {
+          "id": "22PNhaVC9BR7",
+          "name": "Roof Removal",
+          "quantity": 9,
+          "unitCost": 65,
+          "unitPrice": 117,
+          "cost": 585,
+          "price": 1053,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "b",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PHexRsW9fT"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRJ",
+          "name": "Roof Removal",
+          "quantity": 37,
+          "unitCost": 65,
+          "unitPrice": 117,
+          "cost": 2405,
+          "price": 4329,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "b",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRH"
+          },
+          "organizationCostItem": {
+            "id": "22PHexRsW9fT"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRy",
+          "name": "SS Steel Roof Texture",
+          "quantity": 2855,
+          "unitCost": 0.3,
+          "unitPrice": 0.5399999999999999,
+          "cost": 856.5,
+          "price": 1541.7,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "b",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRx"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BS2",
+          "name": "DB 10 YR Wrkmnshp Warranty",
+          "quantity": 37,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "b",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": null,
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22PMwDzwgkvy",
+            "name": "Warranty Work"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRz"
+          },
+          "organizationCostItem": {
+            "id": "22PHfRuTnaxF"
+          }
+        },
+        {
+          "id": "22PNhaVC9BS5",
+          "name": "Gutter Removal",
+          "quantity": 85,
+          "unitCost": 1.5,
+          "unitPrice": 2.6999999999999997,
+          "cost": 127.5,
+          "price": 229.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "b",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS4"
+          },
+          "organizationCostItem": {
+            "id": "22PHfT4QJfhr"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSb",
+          "name": "DB 10 YR Wrkmnshp Warranty",
+          "quantity": null,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "b",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": null,
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22PMwDzwgkvy",
+            "name": "Warranty Work"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSa"
+          },
+          "organizationCostItem": {
+            "id": "22PHfRuTnaxF"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSd",
+          "name": "Roof Removal",
+          "quantity": 8,
+          "unitCost": 65,
+          "unitPrice": 117,
+          "cost": 520,
+          "price": 936,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "b",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHexRsW9fT"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRv",
+          "name": "Project Management (R)",
+          "quantity": 9,
+          "unitCost": 52.5,
+          "unitPrice": 94.5,
+          "cost": 472.5,
+          "price": 850.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "ba",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PHGS5xkMnj"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRw",
+          "name": "Sales On-Site Support",
+          "quantity": null,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "bb",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PNJn5ZYvzq",
+            "name": "Sales On-Site Support"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRT"
+          },
+          "organizationCostItem": {
+            "id": "22PNJmzSy4PK"
+          }
+        },
+        {
+          "id": "22PNhaVC9BR8",
+          "name": "Remove Addtl Layer 9/12",
+          "quantity": 6,
+          "unitCost": 20,
+          "unitPrice": 28.999999999999996,
+          "cost": 120,
+          "price": 174,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "c",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PGAYqFXSsA"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRK",
+          "name": "Remove Addtl Layer 9/12",
+          "quantity": 6,
+          "unitCost": 20,
+          "unitPrice": 28.999999999999996,
+          "cost": 120,
+          "price": 174,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "c",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRH"
+          },
+          "organizationCostItem": {
+            "id": "22PGAYqFXSsA"
+          }
+        },
+        {
+          "id": "22PNhaVC9BS3",
+          "name": "Platinum Metals 20 Warranty",
+          "quantity": 37,
+          "unitCost": 25,
+          "unitPrice": 60.00000000000001,
+          "cost": 925,
+          "price": 2220,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "c",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22PMwDzwgkvy",
+            "name": "Warranty Work"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRz"
+          },
+          "organizationCostItem": {
+            "id": "22PHhxLkhKaS"
+          }
+        },
+        {
+          "id": "22PNhaVC9BS6",
+          "name": "6\" Gutters",
+          "quantity": 85,
+          "unitCost": 10,
+          "unitPrice": 12.999999999999998,
+          "cost": 850,
+          "price": 1105,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "c",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr8",
+            "name": "Subcontractor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS4"
+          },
+          "organizationCostItem": {
+            "id": "22PHfT7PbATr"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSe",
+          "name": "RhinoRoof Underlayment",
+          "quantity": 1,
+          "unitCost": 80.45,
+          "unitPrice": 116.6525,
+          "cost": 80.45,
+          "price": 116.65,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "c",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8zEgYN8",
+            "name": "Roll"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDtMEWM8"
+          }
+        },
+        {
+          "id": "22PNhaVC9BR9",
+          "name": "Fill Box Vent(s)",
+          "quantity": 3,
+          "unitCost": 10,
+          "unitPrice": 14.499999999999998,
+          "cost": 30,
+          "price": 43.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "d",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PGAa67tPp7"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRL",
+          "name": "Fill Box Vent(s)",
+          "quantity": 3,
+          "unitCost": 25,
+          "unitPrice": 36.25,
+          "cost": 75,
+          "price": 108.75,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "d",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRH"
+          },
+          "organizationCostItem": {
+            "id": "22PGAa67tPp7"
+          }
+        },
+        {
+          "id": "22PNhaVC9BS7",
+          "name": "3x4 Downspouts",
+          "quantity": 6,
+          "unitCost": 100,
+          "unitPrice": 130,
+          "cost": 600,
+          "price": 780,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "d",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC97J5hG6",
+            "name": "Piece"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr8",
+            "name": "Subcontractor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BS4"
+          },
+          "organizationCostItem": {
+            "id": "22PHfTLJd6jq"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSf",
+          "name": "Install SS Steel Panel <= 7/12",
+          "quantity": 8,
+          "unitCost": 175,
+          "unitPrice": 253.74999999999997,
+          "cost": 1400,
+          "price": 2030,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "d",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHfU7V6sRk"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRA",
+          "name": "Fill Box Vent(s)",
+          "quantity": 3,
+          "unitCost": 15,
+          "unitPrice": 21.75,
+          "cost": 45,
+          "price": 65.25,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "e",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PGAa67tPp7"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRM",
+          "name": "Hauling & Disposal (R)",
+          "quantity": 5,
+          "unitCost": 110,
+          "unitPrice": 159.5,
+          "cost": 550,
+          "price": 797.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "e",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC92RWpGq",
+            "name": "Ton"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRH"
+          },
+          "organizationCostItem": {
+            "id": "22PHGT6pPSp8"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSg",
+          "name": "SS 26 Gauge Steel Panel",
+          "quantity": 630,
+          "unitCost": 2.1,
+          "unitPrice": 3.045,
+          "cost": 1323,
+          "price": 1918.35,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "e",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHfUX8CuYt"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRB",
+          "name": "Hauling & Disposal (R)",
+          "quantity": 2,
+          "unitCost": 110,
+          "unitPrice": 159.5,
+          "cost": 220,
+          "price": 319,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "f",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC92RWpGq",
+            "name": "Ton"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PHGT6pPSp8"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRN",
+          "name": "Decking/Sheeting",
+          "quantity": 1,
+          "unitCost": 90,
+          "unitPrice": 130.5,
+          "cost": 90,
+          "price": 130.5,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "f",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRH"
+          },
+          "organizationCostItem": {
+            "id": "22PGARyppfR4"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSh",
+          "name": "Bubble Underlayment",
+          "quantity": 1,
+          "unitCost": 150,
+          "unitPrice": 217.49999999999997,
+          "cost": 150,
+          "price": 217.5,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "f",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHhwdcWMA9"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRC",
+          "name": "Decking/Sheeting",
+          "quantity": 1,
+          "unitCost": 90,
+          "unitPrice": 130.5,
+          "cost": 90,
+          "price": 130.5,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "g",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC923mrKC",
+            "name": "Square"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PGARyppfR4"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRP",
+          "name": "RhinoRoof Underlayment",
+          "quantity": 4,
+          "unitCost": 80.45,
+          "unitPrice": 116.6525,
+          "cost": 321.8,
+          "price": 466.61,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "g",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8zEgYN8",
+            "name": "Roll"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRH"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDtMEWM8"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSi",
+          "name": "SS Hip & Ridge Cap",
+          "quantity": 20,
+          "unitCost": 7.06,
+          "unitPrice": 10.236999999999998,
+          "cost": 141.2,
+          "price": 204.74,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "g",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvE4wtii"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRD",
+          "name": "RhinoRoof Underlayment",
+          "quantity": 1,
+          "unitCost": 80.45,
+          "unitPrice": 116.6525,
+          "cost": 80.45,
+          "price": 116.65,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "h",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8zEgYN8",
+            "name": "Roll"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDtMEWM8"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRQ",
+          "name": "Ice & Water Underlayment",
+          "quantity": 9,
+          "unitCost": 100,
+          "unitPrice": 145,
+          "cost": 900,
+          "price": 1305,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "h",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8zEgYN8",
+            "name": "Roll"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRH"
+          },
+          "organizationCostItem": {
+            "id": "22PHexDHa63X"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSj",
+          "name": "Z-Mold Closure (Vented)",
+          "quantity": 40,
+          "unitCost": 4.07,
+          "unitPrice": 5.9015,
+          "cost": 162.8,
+          "price": 236.06,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "h",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BRE",
+          "name": "Ice & Water Underlayment",
+          "quantity": 3,
+          "unitCost": 100,
+          "unitPrice": 145,
+          "cost": 300,
+          "price": 435,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "i",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8zEgYN8",
+            "name": "Roll"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PHexDHa63X"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRR",
+          "name": "Logistical Management",
+          "quantity": 1,
+          "unitCost": 250,
+          "unitPrice": 362.5,
+          "cost": 250,
+          "price": 362.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "i",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRH"
+          },
+          "organizationCostItem": {
+            "id": "22PHGSH5wSWR"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSk",
+          "name": "SS Eave Trim",
+          "quantity": 55,
+          "unitCost": 4.29,
+          "unitPrice": 6.2204999999999995,
+          "cost": 235.95,
+          "price": 342.13,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "i",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvTwpagA"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRF",
+          "name": "Logistical Management",
+          "quantity": 1,
+          "unitCost": 250,
+          "unitPrice": 362.5,
+          "cost": 250,
+          "price": 362.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "j",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PHGSH5wSWR"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRS",
+          "name": "Project Management (R)",
+          "quantity": 14,
+          "unitCost": 52.5,
+          "unitPrice": 94.5,
+          "cost": 735,
+          "price": 1323,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "j",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BRH"
+          },
+          "organizationCostItem": {
+            "id": "22PHGS5xkMnj"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSm",
+          "name": "SS Rake Trim",
+          "quantity": 52,
+          "unitCost": 4.97,
+          "unitPrice": 7.206499999999999,
+          "cost": 258.44,
+          "price": 374.74,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "j",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvYPAxrV"
+          }
+        },
+        {
+          "id": "22PNhaVC9BRG",
+          "name": "Project Management (R)",
+          "quantity": 8,
+          "unitCost": 52.5,
+          "unitPrice": 94.5,
+          "cost": 420,
+          "price": 756,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "k",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwCzxYZ5J",
+            "name": "Project Management"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BR6"
+          },
+          "organizationCostItem": {
+            "id": "22PHGS5xkMnj"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSn",
+          "name": "SS Transition Trim",
+          "quantity": 20,
+          "unitCost": 8.22,
+          "unitPrice": 11.919,
+          "cost": 164.4,
+          "price": 238.38,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "k",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvd4jM4R"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSp",
+          "name": "SS Sidewall Flashing",
+          "quantity": 32,
+          "unitCost": 10.45,
+          "unitPrice": 15.152499999999998,
+          "cost": 334.4,
+          "price": 484.88,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "l",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvnrLHTM"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSq",
+          "name": "SS Endwall Flashing",
+          "quantity": 18,
+          "unitCost": 10.97,
+          "unitPrice": 15.9065,
+          "cost": 197.46,
+          "price": 286.32,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHhvtZJmJh"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSr",
+          "name": "J Channel",
+          "quantity": 50,
+          "unitCost": 12.82,
+          "unitPrice": 18.589,
+          "cost": 641,
+          "price": 929.45,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC97J5hG6",
+            "name": "Piece"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BSs",
+          "name": "SS Snow Rail",
+          "quantity": 55,
+          "unitCost": 2.76,
+          "unitPrice": 4.002,
+          "cost": 151.8,
+          "price": 220.11,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqQ",
+            "name": "Linear Feet"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHhwAZLxVi"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSt",
+          "name": "Titebond Roof Sealant",
+          "quantity": 2,
+          "unitCost": 9.59,
+          "unitPrice": 13.905499999999998,
+          "cost": 19.18,
+          "price": 27.81,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "p",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHfLgPHRae"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSu",
+          "name": "Butyl Tape",
+          "quantity": 2,
+          "unitCost": 8,
+          "unitPrice": 11.6,
+          "cost": 16,
+          "price": 23.2,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "q",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHfMF4RaxP"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSv",
+          "name": "High Temp Pipe Boot",
+          "quantity": 0,
+          "unitCost": 70.38,
+          "unitPrice": 102.05099999999999,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "r",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHfMmcCAUM"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSw",
+          "name": "SS Clips",
+          "quantity": 1,
+          "unitCost": 150,
+          "unitPrice": 270,
+          "cost": 150,
+          "price": 270,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "s",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8sWMVry",
+            "name": "Box"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BSx",
+          "name": "SS Panhead Screws",
+          "quantity": 3,
+          "unitCost": 12,
+          "unitPrice": 21.599999999999998,
+          "cost": 36,
+          "price": 64.8,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "t",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8rFijPG",
+            "name": "Bag"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqW",
+            "name": "Uncategorized"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": null
+        },
+        {
+          "id": "22PNhaVC9BSy",
+          "name": "SS Pop Rivets",
+          "quantity": 1,
+          "unitCost": 70,
+          "unitPrice": 101.5,
+          "cost": 70,
+          "price": 101.5,
+          "isTaxable": true,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "u",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8sWMVry",
+            "name": "Box"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHfMuEfx6G"
+          }
+        },
+        {
+          "id": "22PNhaVC9BSz",
+          "name": "Hauling & Disposal (R)",
+          "quantity": 1,
+          "unitCost": 110,
+          "unitPrice": 159.5,
+          "cost": 110,
+          "price": 159.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "v",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC92RWpGq",
+            "name": "Ton"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHGT6pPSp8"
+          }
+        },
+        {
+          "id": "22PNhaVC9BT2",
+          "name": "Project Management (R)",
+          "quantity": 4,
+          "unitCost": 52.5,
+          "unitPrice": 94.5,
+          "cost": 210,
+          "price": 378,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "w",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PHGS5xkMnj"
+          }
+        },
+        {
+          "id": "22PNhaVC9BT3",
+          "name": "Sales On-Site Support",
+          "quantity": null,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "x",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PNJn5ZYvzq",
+            "name": "Sales On-Site Support"
+          },
+          "costGroup": {
+            "id": "22PNhaVC9BSc"
+          },
+          "organizationCostItem": {
+            "id": "22PNJmzSy4PK"
+          }
+        }
+      ]
+    }
+  },
+  "costTypes": [
+    {
+      "id": "22PBAjfWNQr6",
+      "name": "Labor",
+      "margin": 0.45000549994500055,
+      "isTaxable": false,
+      "isTimeTrackable": true,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr7",
+      "name": "Materials",
+      "margin": 0.3103448275862069,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr8",
+      "name": "Subcontractor",
+      "margin": 0.3,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr9",
+      "name": "Other",
+      "margin": 0.3103448275862069,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PaTg5HNX8w",
+      "name": "Clock In",
+      "margin": 0,
+      "isTaxable": false,
+      "isTimeTrackable": true,
+      "isActive": true
+    }
+  ],
+  "comparables": [
+    {
+      "price": 117837.88,
+      "cost": 81251.26,
+      "job": {
+        "name": "Kay Oss_House Build"
+      }
+    },
+    {
+      "price": 98096.38,
+      "cost": 71026.07,
+      "job": {
+        "name": "#25-8197 Jeremy Cox_Addition"
+      }
+    },
+    {
+      "price": 86185.81,
+      "cost": 60207.68,
+      "job": {
+        "name": "260800 Ridgeview Hospital_Roof"
+      }
+    },
+    {
+      "price": 81111.23,
+      "cost": 55799.09,
+      "job": {
+        "name": "261203 Goodwin_Roof"
+      }
+    },
+    {
+      "price": 61016.6,
+      "cost": 42002.28,
+      "job": {
+        "name": "260019 Perkins_SS Roof"
+      }
+    },
+    {
+      "price": 59245.89,
+      "cost": 37259.85,
+      "job": {
+        "name": "258442 Chavarria_Deck"
+      }
+    },
+    {
+      "price": 58300.9,
+      "cost": 41981.12,
+      "job": {
+        "name": "261034 Phlipot_Roof"
+      }
+    },
+    {
+      "price": 55878.86,
+      "cost": 36122.39,
+      "job": {
+        "name": "260109 Shock_New Garage"
+      }
+    },
+    {
+      "price": 55787.17,
+      "cost": 40142.14,
+      "job": {
+        "name": "261205 Beach_Roof"
+      }
+    },
+    {
+      "price": 53543.4,
+      "cost": 35285.12,
+      "job": {
+        "name": "258761 Wright_Roof"
+      }
+    },
+    {
+      "price": 53170.52,
+      "cost": 36831.88,
+      "job": {
+        "name": "260345 Collins_Roof Damage"
+      }
+    },
+    {
+      "price": 51694.37,
+      "cost": 35033.52,
+      "job": {
+        "name": "261037 Spoors_Roof"
+      }
+    },
+    {
+      "price": 49735.19,
+      "cost": 33874.71,
+      "job": {
+        "name": "261127 Foster_Roof"
+      }
+    },
+    {
+      "price": 48527.87,
+      "cost": 33260.7,
+      "job": {
+        "name": "260731 Sinning_Storm Damage"
+      }
+    },
+    {
+      "price": 47510.13,
+      "cost": 31667.98,
+      "job": {
+        "name": "#25-8679 Kelly Mastromauro_Roo"
+      }
+    },
+    {
+      "price": 46587.24,
+      "cost": 30735.57,
+      "job": {
+        "name": "258664 Purdy_Lead"
+      }
+    },
+    {
+      "price": 45997.09,
+      "cost": 28600.41,
+      "job": {
+        "name": "260992 Hilt_Roof"
+      }
+    },
+    {
+      "price": 45916.42,
+      "cost": 44920.97,
+      "job": {
+        "name": "258089 McCowan_Roof"
+      }
+    },
+    {
+      "price": 45696.17,
+      "cost": 31410.46,
+      "job": {
+        "name": "260100 Suzuki_SS Roof"
+      }
+    },
+    {
+      "price": 41940.85,
+      "cost": 27326.67,
+      "job": {
+        "name": "261049 Hall_Bathroom"
+      }
+    },
+    {
+      "price": 41456.24,
+      "cost": 28017.39,
+      "job": {
+        "name": "260224 Motycka_Roof"
+      }
+    },
+    {
+      "price": 41262.38,
+      "cost": 27637.81,
+      "job": {
+        "name": "260857 Sealscott_Roof"
+      }
+    },
+    {
+      "price": 40491.13,
+      "cost": 40491.13,
+      "job": {
+        "name": "260245 Sidle_Roof"
+      }
+    },
+    {
+      "price": 39011.71,
+      "cost": 31102.33,
+      "job": {
+        "name": "#25-8494 Bluffton Meadows_Trip"
+      }
+    },
+    {
+      "price": 38938.78,
+      "cost": 24994.51,
+      "job": {
+        "name": "260014 Madaj_Bathroom"
+      }
+    },
+    {
+      "price": 38935.38,
+      "cost": 25967.03,
+      "job": {
+        "name": "#24-6737 Kip Stemen_Roof"
+      }
+    },
+    {
+      "price": 38186.08,
+      "cost": 23866.38,
+      "job": {
+        "name": "261035 Mock_Roof"
+      }
+    },
+    {
+      "price": 38030.3,
+      "cost": 24690.49,
+      "job": {
+        "name": "261277 Markward_Remodel"
+      }
+    },
+    {
+      "price": 37738.41,
+      "cost": 25670.51,
+      "job": {
+        "name": "260427 Collert_Storm Damage"
+      }
+    },
+    {
+      "price": 37658,
+      "cost": 25724.55,
+      "job": {
+        "name": "Kay Oss Kitchen remodel"
+      }
+    },
+    {
+      "price": 37405.45,
+      "cost": 22593.54,
+      "job": {
+        "name": "260201 Schroer_CHIP"
+      }
+    },
+    {
+      "price": 37372.59,
+      "cost": 3332.98,
+      "job": {
+        "name": "258791 Schnipke_Roof"
+      }
+    },
+    {
+      "price": 37182.31,
+      "cost": 25271.96,
+      "job": {
+        "name": "261144 Dunn_Roof"
+      }
+    },
+    {
+      "price": 36707.8,
+      "cost": 24600.91,
+      "job": {
+        "name": "260230 Bevington_Roof"
+      }
+    }
+  ]
+}
