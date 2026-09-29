@@ -21,7 +21,7 @@ master agree and the duplicate check stops flagging them.
 | Drywall Mud Labor `22PHGfWHEStn` | Phase 3 - Interior > Drywall/Plaster | Labor | $52.50 -> $94.50 | $55 -> $100 |
 | Framing/Sheathing Labor `22PHGfWHEStY` | Phase 2 - Rough-In > Framing/Sheathing Materials | Labor | $52.50 -> $94.50 | $55 -> $100 |
 | Project Management (C) `22PHGfWHEStR` | Phase 1 - General Requirements > Project/Site Management | Labor | $52.50 -> $94.50 | $55 -> $100 |
-| General HVAC MAT `22PHGfWHEStf` | Phase 3 - Interior > HVAC | Labor | $50 -> $90 | $50 -> $90.909091 |
+| General HVAC MAT `22PHGfWHEStf` | Phase 3 - Interior > HVAC | Labor, then Materials | $50 -> $90 | $50 -> $72.50 (see below) |
 | Crew Labor `22PQQzg4pRMb` | DB Duration Shingle Roofing > Shingle Roof Replacement | Labor | $52.50 -> $94.50 | $55 -> $100 |
 | Crew Labor `22PTgLRkCHdN` | Insurance Restoration Agreement > INSURANCE RESTORATION | Labor | $52.50 -> $94.50 | $55 -> $100 |
 | Project Management (R) `22PQQzg4pRMc` | Shingle Roof Replacement > Project Management | Labor | $52.50 -> $94.50 | $55 -> $100 |
@@ -32,9 +32,15 @@ master agree and the duplicate check stops flagging them.
 | Siding - Lighting Labor `22PLkt6AJrqk` | loose (Cost Items tab) | Subcontractor | $105 -> $157.50 | $105 -> $152.25 |
 | Siding - Flashing Labor `22PLkssMWuvS` | loose (Cost Items tab) | Subcontractor | $2.50 -> $3.75 | $2.50 -> $3.625 |
 
-General HVAC MAT: the name says material, the cost type says Labor, and it was
-priced to what the cost type says. If it is really a material, the cost type
-should change to Materials and the price to $72.50.
+General HVAC MAT was first priced to what its cost type said (Labor,
+$90.909091). Carl then confirmed it is a material, so it was moved to cost
+type Materials at $50 -> $72.50, and the same was done for every HVAC
+materials line in every template. Six such lines exist; two were already
+Materials (the loose `HVAC Materials` at $50 -> $72.50, and the copy in
+Phase 2 - Rough-In > HVAC). The other three, all named `HVAC Materials`, were
+cost type Labor with no price, and were changed to Materials:
+`22PLiRydtgN6` (MECHANICAL (HVAC/PLUMB) > HVAC), `22PLm7f9eikb` and
+`22PLwktUit8d` (each in a Phase 3 - Interiors > HVAC group).
 
 ## Changed by Carl in JobTread
 
