@@ -113,52 +113,26 @@ test('an entry either approves a price or redirects the policy, never both', () 
   }
 });
 
-test('a redirected item is still checked, against the other policy', () => {
-  // Aluminum Fascia Install is subcontracted, so x1.4286 is its target even
-  // though the line carries cost type Labor. It currently runs x1.80, which
-  // has to surface — a redirect is not an exemption.
-  assert.equal(exceptionFor({
-    catalogItemId: '22PLkzertZt5',
-    name: 'Aluminum Fascia Install',
-    multiplier: rateFromNumber(1.8),
-  }), null, 'a redirect silenced the check');
-  assert.equal(
-    Number(policyOverrideFor({ catalogItemId: '22PLkzertZt5', name: 'Aluminum Fascia Install' })),
-    Number(rateFromNumber(1 / 0.7)),
-  );
-});
+test('a redirect keeps the check and moves the target', () => {
+  // Tested against a list built here, not against a real catalog item. The two
+  // items this mechanism was built for turned out to be correctly priced
+  // already — a test that asserts a business fact goes stale the moment the
+  // fact does, and then it is defending the mistake.
+  const list = [{
+    catalogItemId: 'cat-1',
+    name: 'Some Subcontracted Install',
+    measureAgainst: rateFromNumber(1 / 0.7),
+    reason: 'Subcontracted, so the Subcontractor margin applies.',
+    decidedBy: 'test',
+    decidedOn: '2026-09-29',
+  }];
+  const line = { catalogItemId: 'cat-1', name: 'Some Subcontracted Install' };
 
-test('a redirected finding names the policy it actually applied', () => {
-  // The first version of this said "Labor policy ... x1.8182" while showing a
-  // target of $5.7143, which is x1.4286. A reviewer who checks the arithmetic
-  // finds it wrong and stops trusting the rest.
-  const line = {
-    id: 'l1', name: 'Aluminum Fascia Install', quantity: 100_000_000n,
-    unitCost: moneyFromString('4'), unitPrice: moneyFromString('7.20'),
-    cost: moneyFromString('400'), price: moneyFromString('720'),
-    computedCost: moneyFromString('400'), computedPrice: moneyFromString('720'),
-    isTaxable: false, isSpecification: false, globalId: null, quantityFormula: null,
-    unitName: 'LF', costTypeId: '22PBAjfWNQr6', costTypeName: 'Labor',
-    costCodeName: 'Siding', groupId: null, catalogItemId: '22PLkzertZt5',
-    multiplier: rateFromNumber(1.8),
-  };
-  const policy = {
-    byCostTypeId: new Map([['22PBAjfWNQr6', {
-      name: 'Labor', margin: rateFromNumber(0.45000549994500055),
-      multiplier: rateFromNumber(1.8182), isTaxable: false,
-    }]]),
-  };
-  const f = markupRule.run({
-    estimate: { lines: [line], jobType: 'Construction' },
-    policy,
-  } as never)[0]!;
-
-  assert.match(f.title, /Subcontractor policy/);
-  assert.match(f.detail, /30\.00% margin/);
-  assert.match(f.detail, /×1\.4286/);
-  assert.ok(!/×1\.8182/.test(f.detail), 'cited the policy it did not use');
-  assert.equal(f.math![0]!.value, '$5.7143');
-  assert.equal(formatMoney(f.impact!), '-$148.57');
+  // A redirect never exempts.
+  assert.equal(exceptionFor({ ...line, multiplier: rateFromNumber(1.8) }, list), null);
+  assert.equal(exceptionFor({ ...line, multiplier: rateFromNumber(1 / 0.7) }, list), null);
+  // It moves the target.
+  assert.equal(Number(policyOverrideFor(line, list)), Number(rateFromNumber(1 / 0.7)));
 });
 
 test('roofing-trade removal inside a construction job is left alone', () => {

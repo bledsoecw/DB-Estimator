@@ -92,7 +92,7 @@ npm run audit -- <documentId>                                       # live
 npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
-npm test                                                            # 76 tests
+npm test                                                            # 75 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -119,10 +119,17 @@ entry names one catalog item, who decided and when, and exactly one of:
   so they belong at the Subcontractor margin even though the line reads cost type Labor.
 
 Who does the work decides the cost type; which trade it is decides the book. Gutter and
-siding **removal and rehang** are DB crew at the roofing schedule; **installs** are
-subcontracted at the construction Subcontractor margin. Listed per item rather than
-matched on "Remove" or "Install" in the name — the line reading `Aluminum Soffit Install`
-is catalog item `Vinyl Soffit Install`, and a string test would never know.
+siding **removal and rehang** are DB crew at the roofing schedule. Listed per catalog item
+rather than matched on "Remove" or "Install" in the name — the line reading
+`Aluminum Soffit Install` is catalog item `Vinyl Soffit Install`, and a string test would
+never know.
+
+**The catalog is the truth, not the lines.** Two items were listed here as needing the
+Subcontractor margin, read off the estimate lines. The catalog had them right all along —
+`Aluminum Fascia Install` is DB crew at 45% and `Fascia and Soffit Install` is the
+subcontracted one at 30%, two different items. What the lines actually showed was drift
+*from* the catalog ($7.20 against a catalog $7.27), which is a check this auditor cannot
+yet make because it never reads the catalog.
 
 Exempted lines are reported under **Not raised**, never dropped silently.
 

@@ -115,22 +115,20 @@ export const EXCEPTIONS: Exception[] = [
     decidedBy: 'Carl Bledsoe',
     decidedOn: '2026-09-29',
   },
-  {
-    catalogItemId: '22PLkzertZt5',
-    name: 'Aluminum Fascia Install',
-    measureAgainst: SUB,
-    reason: 'Fascia install is subcontracted — construction Subcontractor margin.',
-    decidedBy: 'Carl Bledsoe',
-    decidedOn: '2026-09-29',
-  },
-  {
-    catalogItemId: '22PLm2GUPX5q',
-    name: 'Vinyl Soffit Install',
-    measureAgainst: SUB,
-    reason: 'Soffit install is subcontracted — construction Subcontractor margin.',
-    decidedBy: 'Carl Bledsoe',
-    decidedOn: '2026-09-29',
-  },
+  // 'Aluminum Fascia Install' and 'Vinyl Soffit Install' were listed here with
+  // measureAgainst: SUB, on the strength of a read of the estimate lines. The
+  // catalog says otherwise, and the catalog is the truth:
+  //
+  //   Aluminum Fascia Install   $4.00 -> $7.27   45% margin   Labor
+  //   Fascia and Soffit Install $4.50 -> $6.43   30% margin   Subcontractor
+  //
+  // Two different items. Fascia install is DB crew at the Labor margin and
+  // needs no entry at all; "Fascia and Soffit Install" is the subcontracted
+  // one and is already at 30%. Both were right before I touched them.
+  //
+  // What the estimate line actually showed was drift FROM the catalog — the
+  // line read $7.20 against a catalog price of $7.27 — which is a different
+  // finding this auditor cannot yet make, because it never reads the catalog.
 ];
 
 /** Tolerance on the approved multiplier, matching the rule's own cent tolerance. */
@@ -149,8 +147,9 @@ export interface ExceptionMatch {
  */
 export function entryFor(
   line: { catalogItemId: string | null; name: string },
+  list: Exception[] = EXCEPTIONS,
 ): Exception | null {
-  for (const e of EXCEPTIONS) {
+  for (const e of list) {
     if (e.catalogItemId !== undefined) {
       if (e.catalogItemId === line.catalogItemId) return e;
       continue;
@@ -170,9 +169,10 @@ export function entryFor(
  */
 export function exceptionFor(
   line: { catalogItemId: string | null; name: string; multiplier: Rate | null },
+  list: Exception[] = EXCEPTIONS,
 ): Exception | null {
   if (line.multiplier === null) return null;
-  const e = entryFor(line);
+  const e = entryFor(line, list);
   if (!e || e.approvedAt === undefined) return null;
   const drift = line.multiplier - e.approvedAt;
   if ((drift < 0n ? -drift : drift) > TOLERANCE) return null; // price moved; no longer approved
@@ -182,6 +182,7 @@ export function exceptionFor(
 /** The multiplier this item should be measured against, when not its cost type's. */
 export function policyOverrideFor(
   line: { catalogItemId: string | null; name: string },
+  list: Exception[] = EXCEPTIONS,
 ): Rate | null {
-  return entryFor(line)?.measureAgainst ?? null;
+  return entryFor(line, list)?.measureAgainst ?? null;
 }
