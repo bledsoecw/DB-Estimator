@@ -96,11 +96,16 @@ test('the stored Labor margin is not exactly 45%', () => {
   assert.equal(formatMoney(priceFromCostAtMargin(moneyFromString('55'), labor.margin)), '$100.0009');
 });
 
-test('flags the blank-quantity line', () => {
+test('the Sales On-Site Support tracking line is context, not an ask', () => {
+  // All seven "not real" marks on the first shadow run were this line: a
+  // non-monetized catalog item (its own description says so) that rides along
+  // at $0 with no quantity, to track sales time. Nothing on it can reach the
+  // customer's total. It stays on the page, under "worth knowing", unscored.
   const empty = result.findings.filter((f) => f.rule === 'line.empty');
   assert.equal(empty.length, 1);
+  assert.equal(empty[0]!.severity, 'info');
   assert.ok(empty[0]!.title.includes('Sales On-Site Support'));
-  assert.ok(empty[0]!.detail.includes('blank'));
+  assert.ok(empty[0]!.title.includes('no quantity and no cost'));
 });
 
 test('flags that line prices are visible to the customer', () => {

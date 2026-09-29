@@ -19,10 +19,20 @@ import type { Finding, Rule } from './types.ts';
  * One card per kind, not one per line. 258761 Wright_Roof carries 22 measured
  * but unpriced lines in a roof system the customer did not take — as 22 cards
  * that buried the four findings on the estimate that mattered. The three kinds
- * are kept apart because the answer differs: a blank quantity is someone's
- * unfinished work, a quantity with no cost is an alternative that was measured
- * and never priced, and a line with neither is usually deliberate — a warranty
- * shown as included at no charge.
+ * are kept apart because the answer differs: a blank quantity on a priced line
+ * is someone's unfinished work, a quantity with no cost is an alternative that
+ * was measured and never priced, and a line with neither is deliberate — a
+ * warranty shown as included at no charge, or a line that tracks something
+ * rather than prices it.
+ *
+ * That last kind is context, not an ask. The first shadow run (2026-09-29, 20
+ * findings, Kristen grading) came back 13 real and 7 not real, and all seven
+ * were one line: "Sales On-Site Support", a catalog item whose own description
+ * reads "non-monetized line item to track Sales Team time", riding along at $0
+ * with no quantity. The first cut of this rule saw the blank quantity before it
+ * saw the absence of money and filed it as unfinished work. Nothing on such a
+ * line can reach the customer's total, so it is shown under "worth knowing" and
+ * never scored.
  *
  * The rule does not try to guess which zero was intended. It groups them so a
  * reviewer can dismiss the whole set with one glance instead of twenty-two.
@@ -43,8 +53,9 @@ export const emptyLineRule: Rule = {
       const noMoney = line.unitCost === ZERO && line.unitPrice === ZERO;
       if (!noQty && !noMoney) continue;
 
-      if (line.quantity === null) blankQty.push(line);
-      else if (noMoney && noQty) neither.push(line);
+      // Money first, then quantity. A blank quantity only matters on a line
+      // that has something to multiply.
+      if (noMoney && noQty) neither.push(line);
       else if (noMoney) unpriced.push(line);
       else blankQty.push(line);
     }
@@ -82,9 +93,11 @@ export const emptyLineRule: Rule = {
           'no quantity and no cost',
           neither,
           estimate,
-          'No quantity, no cost, no price. Often deliberate — a warranty or inclusion shown ' +
-            'at no charge — but it reads to a reviewer as something left undone.',
-          ['Accept — included at no charge', 'Remove the line'],
+          'No quantity, no cost, no price. A line that tracks something rather than prices ' +
+            'it — sales time on site, a warranty shown as included. Nothing on it reaches the ' +
+            'customer’s total. Listed so nobody wonders why it is on the estimate.',
+          [],
+          'info',
         ),
       );
     }
@@ -102,6 +115,7 @@ function emptyFinding(
   estimate: Estimate,
   detail: string,
   actions: string[],
+  severity: Finding['severity'] = 'data',
 ): Finding {
   const single = lines.length === 1;
   const groupName = (l: Line) => estimate.groupsById.get(l.groupId ?? '')?.name;
@@ -110,7 +124,7 @@ function emptyFinding(
 
   return {
     rule: 'line.empty',
-    severity: 'data',
+    severity,
     title: single
       ? `${lines[0]!.name} has ${kind === 'blank quantity' ? 'no quantity' : kind}`
       : `${lines.length} lines${where} — ${kind}`,

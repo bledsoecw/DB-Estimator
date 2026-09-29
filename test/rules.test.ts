@@ -260,13 +260,25 @@ test('an unlinked line is flagged', () => {
   assert.ok(found[0]!.title.includes('1 line'));
 });
 
-test('a zero-quantity line is flagged but a specification line is not', () => {
+test('a priced line with no quantity is an ask; a $0 tracking line is context; a specification line is neither', () => {
   const spec = line({ qty: null, unitCost: 0, unitPrice: 0, name: 'Scope note' });
   spec.isSpecification = true;
-  const f = fixture([line({ qty: 0, unitCost: 0, unitPrice: 0, name: 'Forgotten' }), spec, line({})]);
+  // The shape of the seven false positives on the first shadow run: a catalog
+  // line at $0 / $0 with a blank quantity, there to track time, not to price.
+  const tracking = line({ qty: null, unitCost: 0, unitPrice: 0, name: 'Sales On-Site Support' });
+  const f = fixture([line({ qty: 0, name: 'Forgotten' }), spec, tracking, line({})]);
   const found = find(f, 'line.empty');
-  assert.equal(found.length, 1);
-  assert.ok(found[0]!.title.includes('Forgotten'));
+  assert.equal(found.length, 2);
+
+  const ask = found.find((x) => x.severity !== 'info')!;
+  assert.ok(ask, 'the priced line with no quantity was not raised');
+  assert.ok(ask.title.includes('Forgotten'));
+
+  const context = found.find((x) => x.severity === 'info')!;
+  assert.ok(context, 'the tracking line vanished instead of being shown as context');
+  assert.ok(context.title.includes('Sales On-Site Support'));
+  assert.ok(context.title.includes('no quantity and no cost'));
+  assert.ok(!found.some((x) => x.title.includes('Scope note')), 'a specification line was raised');
 });
 
 // ---- markup edge cases -------------------------------------------------------
