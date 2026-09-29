@@ -129,6 +129,10 @@ test('the report is self-contained and its numbers are on the page', () => {
   assert.match(html, /20 YR Warranty/);
   assert.match(html, /\$36\.25/);
   assert.match(html, /×2\.40/);
+  // Direction is a word, not a sign. "+$23.75" reads as short to half the
+  // people who see it; the warranty is priced HIGH.
+  assert.match(html, /\$23\.75 high/);
+  assert.ok(!/[+\u2212-]\$23\.75/.test(html), 'a bare signed amount with no direction');
   assert.match(html, /Duplicate names — 4/);
   assert.match(html, /Read-only/);
   // Names came from JobTread and carry quotes.

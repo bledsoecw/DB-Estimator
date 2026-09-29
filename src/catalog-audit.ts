@@ -328,7 +328,7 @@ function renderCluster(c: Cluster): string {
   return `    <div class="cluster">
       <p class="rate">${esc(c.rate)} <span class="n">(${formatPercent(margin)} margin) — ${c.items.length} item${c.items.length === 1 ? '' : 's'}</span></p>
       <div class="tw"><table>
-        <thead><tr><th>Item</th><th class="num">Cost</th><th class="num">Price</th><th class="num">At policy</th><th class="num">Per unit</th></tr></thead>
+        <thead><tr><th>Item</th><th class="num">Cost</th><th class="num">Price</th><th class="num">At policy</th><th class="num">vs policy</th></tr></thead>
         <tbody>
 ${c.items
   .map(
@@ -337,7 +337,7 @@ ${c.items
             <td class="num">${formatMoney(o.item.unitCost)}</td>
             <td class="num">${formatMoney(o.item.unitPrice)}</td>
             <td class="num">${formatMoney(o.expectedUnitPrice)}</td>
-            <td class="num"><span class="${o.perUnit > ZERO ? 'low' : 'high'}">${o.perUnit > ZERO ? '−' : '+'}${formatMoney(abs(o.perUnit))}</span></td>
+            <td class="num"><span class="${o.perUnit > ZERO ? 'low' : 'high'}">${formatMoney(abs(o.perUnit))} ${o.perUnit > ZERO ? 'low' : 'high'}</span></td>
           </tr>`,
   )
   .join('\n')}

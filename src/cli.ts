@@ -17,7 +17,7 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { ZERO, add, formatMoney, formatPercent } from './money.ts';
+import { ZERO, abs, add, formatMoney, formatPercent } from './money.ts';
 import { fromFixture, marginOf } from './domain.ts';
 import { audit } from './rules/index.ts';
 import { marginBand } from './rules/comparables.ts';
@@ -292,7 +292,8 @@ async function catalogAudit(args: Args): Promise<number> {
                 unitCost: formatMoney(o.item.unitCost),
                 unitPrice: formatMoney(o.item.unitPrice),
                 atPolicy: formatMoney(o.expectedUnitPrice),
-                perUnit: formatMoney(o.perUnit),
+                perUnit: formatMoney(abs(o.perUnit)),
+                direction: o.perUnit > ZERO ? 'low' : 'high',
               })),
             ),
           ),
