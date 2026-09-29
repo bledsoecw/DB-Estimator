@@ -46,6 +46,7 @@ import {
   roundToCents, sub,
 } from '../money.ts';
 import type { Line } from '../domain.ts';
+import { exceptionFor } from './exceptions.ts';
 import type { Rule, Finding } from './types.ts';
 
 /**
@@ -86,6 +87,8 @@ interface Analysis {
   atPolicy: number;
   /** Deviations real enough to measure but too small to interrupt anyone for. */
   quiet: Deviation[];
+  /** Lines priced off policy on purpose, with the decision behind each. */
+  approved: { line: Line; reason: string; decidedBy: string }[];
 }
 
 /**
@@ -99,9 +102,19 @@ function analyse(
   lines: Line[],
   policy: { byCostTypeId: Map<string, { name: string; margin: Rate; multiplier: Rate }> },
 ): Analysis {
-  const { deviations, checkedByType } = measure(lines, policy);
+  const { deviations: all, checkedByType } = measure(lines, policy);
   const findings: Finding[] = [];
   const quiet: Deviation[] = [];
+
+  // Deliberate prices come out before anything is counted, so they cannot make
+  // a cost type look systemically off or pad the under-policy total.
+  const approved: { line: Line; reason: string; decidedBy: string }[] = [];
+  const deviations: Deviation[] = [];
+  for (const d of all) {
+    const e = exceptionFor(d.line);
+    if (e) approved.push({ line: d.line, reason: e.reason, decidedBy: e.decidedBy });
+    else deviations.push(d);
+  }
 
   for (const [costTypeId, devs] of groupBy(deviations, (d) => d.line.costTypeId)) {
     const p = policy.byCostTypeId.get(costTypeId)!;
@@ -126,8 +139,9 @@ function analyse(
   return {
     findings: findings.sort((a, b) => Number(abs(b.impact ?? ZERO) - abs(a.impact ?? ZERO))),
     checked,
-    atPolicy: checked - deviations.length,
+    atPolicy: checked - deviations.length - approved.length,
     quiet,
+    approved,
   };
 }
 
@@ -181,14 +195,27 @@ export const markupRule: Rule = {
 
   suppressed({ estimate, policy }) {
     if (exempt(estimate.jobType)) return null;
-    const { quiet, checked, atPolicy } = analyse(estimate.lines, policy);
-    if (quiet.length === 0) return null;
-    const money = quiet.reduce((acc, d) => add(acc, abs(d.impact)), ZERO);
-    return (
-      `${quiet.length} line${quiet.length === 1 ? '' : 's'} off policy by less than ` +
-      `${formatMoney(MIN_IMPACT)} each, ${formatMoney(money)} in total — not raised ` +
-      `(${atPolicy} of ${checked} priced lines are exactly at policy)`
-    );
+    const { quiet, approved, checked, atPolicy } = analyse(estimate.lines, policy);
+    const parts: string[] = [];
+
+    if (approved.length > 0) {
+      const names = [...new Set(approved.map((a) => a.line.name))];
+      parts.push(
+        `${approved.length} line${approved.length === 1 ? '' : 's'} priced off policy ` +
+          `on purpose — ${names.slice(0, 3).join(', ')}` +
+          `${names.length > 3 ? ` +${names.length - 3} more` : ''} ` +
+          `(${approved[0]!.decidedBy})`,
+      );
+    }
+    if (quiet.length > 0) {
+      const money = quiet.reduce((acc, d) => add(acc, abs(d.impact)), ZERO);
+      parts.push(
+        `${quiet.length} line${quiet.length === 1 ? '' : 's'} off policy by less than ` +
+          `${formatMoney(MIN_IMPACT)} each, ${formatMoney(money)} in total — not raised ` +
+          `(${atPolicy} of ${checked} priced lines are exactly at policy)`,
+      );
+    }
+    return parts.length > 0 ? parts.join('; ') : null;
   },
 };
 

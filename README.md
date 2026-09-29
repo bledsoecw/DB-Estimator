@@ -92,7 +92,7 @@ npm run audit -- <documentId>                                       # live
 npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
-npm test                                                            # 66 tests
+npm test                                                            # 72 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -107,6 +107,12 @@ start review/index.html
 Audits the 20 most recent estimates and writes an index over them — job, price,
 margin, how many findings, how much under policy — with each row linking to its own
 approver screen.
+
+**Deliberate prices live in [`src/rules/exceptions.ts`](src/rules/exceptions.ts).** Each
+entry names one catalog item, the approved multiplier, who decided and when. An exception
+lapses the moment the price moves off what was approved — the decision was about a price,
+and a different price is a decision nobody has made. Exempted lines are reported in
+**Not raised**, never dropped silently.
 
 **It audits Construction only.** Roofing is entirely subcontracted and prices from its
 own templates, which are correct and are not the cost-type margins; Construction is what
