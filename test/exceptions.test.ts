@@ -27,7 +27,7 @@ test('every exception records who decided it and why', () => {
     assert.ok(e.reason.length > 10, `${e.name}: no reason given`);
     assert.ok(e.decidedBy.length > 0, `${e.name}: nobody named`);
     assert.match(e.decidedOn, /^\d{4}-\d{2}-\d{2}$/, `${e.name}: no date`);
-    assert.ok(e.catalogItemId || e.name, 'an exception that matches nothing');
+    assert.ok(e.catalogItemId || e.name || e.namePrefix, 'an exception that matches nothing');
   }
 });
 
@@ -38,6 +38,29 @@ test('an exception applies at the approved price', () => {
     multiplier: rateFromNumber(1.25),
   };
   assert.ok(exceptionFor(designer));
+});
+
+test('a class covers every item with the prefix, at the approved rate only', () => {
+  // Seventeen fasteners at x1.667 and the eighteenth added next month.
+  for (const name of ['Fastener - Screws', 'Fastener - DP Screws', 'fastener - nail generic', 'Fastener - Something New']) {
+    assert.ok(exceptionFor({ catalogItemId: 'whatever', name, multiplier: rateFromNumber(5 / 3) }), name);
+  }
+  // A fastener at some other rate is not covered by the class.
+  assert.equal(exceptionFor({ catalogItemId: 'w', name: 'Fastener - Screws', multiplier: rateFromNumber(1.45) }), null);
+  assert.equal(exceptionFor({ catalogItemId: 'w', name: 'Fastener - Screws', multiplier: rateFromNumber(2.0) }), null);
+  // And the prefix is a prefix: "Unfastener" is not a fastener.
+  assert.equal(exceptionFor({ catalogItemId: 'w', name: 'Unfastener Tool', multiplier: rateFromNumber(5 / 3) }), null);
+});
+
+test('an id or exact name beats a prefix, so one item can leave its class', () => {
+  const list = [
+    { namePrefix: 'HOVER', approvedAt: rateFromNumber(1.0), reason: 'class', decidedBy: 't', decidedOn: '2026-09-29' },
+    { catalogItemId: 'special', approvedAt: rateFromNumber(1.45), reason: 'carve-out', decidedBy: 't', decidedOn: '2026-09-29' },
+  ];
+  const carved = { catalogItemId: 'special', name: 'HOVER Complete - Special', multiplier: rateFromNumber(1.45) };
+  assert.equal(exceptionFor(carved, list)!.reason, 'carve-out');
+  const ordinary = { catalogItemId: 'other', name: 'HOVER Complete - Average', multiplier: rateFromNumber(1.0) };
+  assert.equal(exceptionFor(ordinary, list)!.reason, 'class');
 });
 
 test('and lapses when the price moves off it', () => {
@@ -53,23 +76,24 @@ test('and lapses when the price moves off it', () => {
   }
 });
 
-test('matches on catalog item id, not the name on the line', () => {
+test('an id entry follows the item through a rename; a class does not follow an impostor', () => {
   // Line names get edited: the line reading "Aluminum Soffit Install" is
-  // catalog item "Vinyl Soffit Install". Matching on the displayed name would
-  // exempt the wrong thing, or nothing.
+  // catalog item "Vinyl Soffit Install". An id-based entry must survive that.
   const renamed = {
-    catalogItemId: '22PCCDafayH8',
-    name: 'Design work — schematic phase',
-    multiplier: rateFromNumber(1.25),
+    catalogItemId: '22PLm3w6734e', // Gutter Rehang, approved at the roofing rate
+    name: 'Gutters — rehang existing',
+    multiplier: rateFromNumber(1.45),
   };
   assert.ok(exceptionFor(renamed), 'lost the exception when the line was renamed');
 
-  const impostor = {
-    catalogItemId: '22PsomethingElse',
-    name: 'Designer - Schematic',
-    multiplier: rateFromNumber(1.25),
+  // A class matches by prefix on purpose, so a name is enough there — but only
+  // at the class's rate, and the prefix has to actually be the prefix.
+  const notAClassMember = {
+    catalogItemId: 'unknown',
+    name: 'Gutter Rehang', // an exact-name lookalike of an id-based entry
+    multiplier: rateFromNumber(1.45),
   };
-  assert.equal(exceptionFor(impostor), null, 'exempted a different item by name');
+  assert.equal(exceptionFor(notAClassMember), null, 'exempted a lookalike of an id-based entry by name');
 });
 
 test('an exempted line is not counted as off policy', () => {
@@ -99,7 +123,8 @@ test('an exempted line is not counted as off policy', () => {
 test('an exception cannot make a cost type look systemically clean', () => {
   // Exceptions are removed before the systemic share is computed, so they
   // neither trigger nor suppress the "this whole cost type is off" finding.
-  const e = EXCEPTIONS.find((x) => x.name === 'Designer - Schematic')!;
+  const e = EXCEPTIONS.find((x) => x.namePrefix === 'Designer')!;
+  assert.ok(e, 'the Designer class is gone');
   assert.equal(Number(e.approvedAt), 1_250_000);
 });
 

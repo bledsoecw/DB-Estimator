@@ -16,13 +16,26 @@
  * is catalog item "Vinyl Soffit Install".
  */
 
-import { type Money, type Rate, moneyFromString, rateFromNumber } from '../money.ts';
+import { type Money, type Rate, rateFromNumber } from '../money.ts';
 
 export interface Exception {
   /** organizationCostItem id, when known. Matched first. */
   catalogItemId?: string;
   /** Catalog item name, as a fallback for items not yet seen on a line. */
   name?: string;
+  /**
+   * A CLASS of items, by name prefix, when the decision is about all of them.
+   *
+   * "Sub-supplied fasteners carry a 40% margin" is one decision covering
+   * seventeen catalog items and every fastener added after them. Listing ids
+   * would need updating each time and would miss the eighteenth. A prefix is
+   * what Carl actually means — and the price check still applies to every
+   * match, so an item in the class priced at some other rate is not covered.
+   *
+   * Prefixes are matched case-insensitively. An id or exact-name entry always
+   * wins over a prefix, so a single item can be carved out of its class.
+   */
+  namePrefix?: string;
   /**
    * The approved multiplier — this price is right, do not raise it.
    * The exemption lapses if the price moves off it.
@@ -51,37 +64,27 @@ const SUB = rateFromNumber(1 / 0.7);
 const ROOFING = rateFromNumber(1.45);
 
 export const EXCEPTIONS: Exception[] = [
+  // --- Classes: one decision, every item it covers -----------------------------
   {
-    catalogItemId: '22PCCDafayH8',
-    name: 'Designer - Schematic',
+    namePrefix: 'Designer',
     approvedAt: rateFromNumber(1.25),
-    unitCost: moneyFromString('100'),
     reason: 'Design time is billed at a set rate, not at the Labor margin.',
     decidedBy: 'Carl Bledsoe',
     decidedOn: '2026-09-29',
   },
   {
-    catalogItemId: '22PDa443H59U',
-    name: 'Designer - Developmental',
-    approvedAt: rateFromNumber(1.25),
-    unitCost: moneyFromString('100'),
-    reason: 'Design time is billed at a set rate, not at the Labor margin.',
-    decidedBy: 'Carl Bledsoe',
-    decidedOn: '2026-09-29',
-  },
-  {
-    catalogItemId: '22PCCDaewQ5n',
-    name: 'Designer - Con Docs',
-    approvedAt: rateFromNumber(1.25),
-    unitCost: moneyFromString('100'),
-    reason: 'Design time is billed at a set rate, not at the Labor margin.',
-    decidedBy: 'Carl Bledsoe',
-    decidedOn: '2026-09-29',
-  },
-  {
-    name: 'HOVER Complete - Simple',
+    namePrefix: 'HOVER',
     approvedAt: rateFromNumber(1.0),
-    reason: 'Measurement report passed through at cost, on purpose.',
+    reason: 'Measurement reports are passed through at cost.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    namePrefix: 'Fastener',
+    approvedAt: rateFromNumber(5 / 3),
+    reason:
+      'Fasteners are bought through the subcontractor, so they carry a 40% margin ' +
+      'rather than the Materials 31.03%.',
     decidedBy: 'Carl Bledsoe',
     decidedOn: '2026-09-29',
   },
@@ -154,12 +157,18 @@ export function entryFor(
   line: { catalogItemId: string | null; name: string },
   list: Exception[] = EXCEPTIONS,
 ): Exception | null {
+  // Specific before general: an id or an exact name beats a prefix, so one
+  // item can be carved out of its class.
   for (const e of list) {
     if (e.catalogItemId !== undefined) {
       if (e.catalogItemId === line.catalogItemId) return e;
       continue;
     }
     if (e.name !== undefined && e.name === line.name) return e;
+  }
+  const lower = line.name.trim().toLowerCase();
+  for (const e of list) {
+    if (e.namePrefix !== undefined && lower.startsWith(e.namePrefix.toLowerCase())) return e;
   }
   return null;
 }

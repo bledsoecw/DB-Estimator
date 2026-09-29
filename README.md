@@ -93,7 +93,7 @@ npm run audit -- <documentId> --html review.html                    # the approv
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
 npm run audit -- --catalog --out review                              # the whole catalog
-npm test                                                            # 96 tests
+npm test                                                            # 98 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -128,8 +128,12 @@ entry names one catalog item, who decided and when, and exactly one of:
   moves off what was approved, because the decision was about a price and a different
   price is a decision nobody has made.
 - `measureAgainst` — a different book prices this item than its cost type says. Still
-  checked, just against the right number: fascia and soffit installs are subcontracted,
-  so they belong at the Subcontractor margin even though the line reads cost type Labor.
+  checked, just against the right number.
+
+An entry names one item by id, or a **class** by name prefix — `Fastener` at ×1.667 is one
+decision covering seventeen catalog items and every fastener added after them. A class
+still applies only at its rate, and an id entry beats a prefix so one item can be carved
+out of its class.
 
 Who does the work decides the cost type; which trade it is decides the book. Gutter and
 siding **removal and rehang** are DB crew at the roofing schedule. Listed per catalog item

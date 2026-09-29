@@ -95,6 +95,7 @@ test('an approved exception is set aside, not flagged', () => {
   const labor = a.sections.find((s) => s.costType === 'Labor')!;
   assert.equal(labor.approved[0]!.item.name, 'Designer - Schematic');
   assert.match(labor.approved[0]!.decidedBy, /Carl/);
+  assert.match(labor.approved[0]!.reason, /set rate/);
 });
 
 test('an approved exception lapses if the catalog price moved', () => {
