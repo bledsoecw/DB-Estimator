@@ -52,6 +52,37 @@ test('a class covers every item with the prefix, at the approved rate only', () 
   assert.equal(exceptionFor({ catalogItemId: 'w', name: 'Unfastener Tool', multiplier: rateFromNumber(5 / 3) }), null);
 });
 
+test('the 2026-09-29 catalog decisions each cover what they say and nothing else', () => {
+  const ok = (name: string, m: number) =>
+    assert.ok(exceptionFor({ catalogItemId: 'x', name, multiplier: rateFromNumber(m) }), `${name} @ x${m}`);
+  const no = (name: string, m: number) =>
+    assert.equal(exceptionFor({ catalogItemId: 'x', name, multiplier: rateFromNumber(m) }), null, `${name} @ x${m} should not be covered`);
+
+  ok('Service Call - Zone 3', 125 / 55);
+  ok('Service Call - Extended (over 50 miles)', 2.27);
+  no('Service Call - Zone 1', 250 / 85); // x2.94: not the schedule, still shows
+
+  ok('Payment processing (est. 3%)', 0);
+  no('Payment processing (est. 3%)', 1.0); // charged through at cost is a different decision
+
+  ok('Install SS Steel Panel 12/12', 1.8);
+  ok('Install SS Steel Panel 10/12', 1.8);
+  no('Install SS Steel Panel <= 7/12', 1.45); // at policy; the class never applies to it
+
+  ok('Logistical Management', 94.25 / 65);
+  no('Logistical Management', 1.8182);
+
+  ok('20 YR Warranty', 2.4);
+  ok('OC Upgrd Warranty - Preferred', 2.5);
+  ok('OC Upgrd Warranty - System', 7 / 3);
+  no('OC Upgrd Warranty - System', 2.5); // right family, wrong rate
+
+  ok('Tarp Installed - per square', 5 / 3);
+  ok('Tarp - steep or two-story adder, per square', 2.0);
+  ok('Cricket Lab - Average', 160.2 / 90);
+  ok('Fill Box Vent(s)', 36.25 / 25);
+});
+
 test('an id or exact name beats a prefix, so one item can leave its class', () => {
   const list = [
     { namePrefix: 'HOVER', approvedAt: rateFromNumber(1.0), reason: 'class', decidedBy: 't', decidedOn: '2026-09-29' },

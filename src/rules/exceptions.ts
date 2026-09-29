@@ -89,6 +89,112 @@ export const EXCEPTIONS: Exception[] = [
     decidedOn: '2026-09-29',
   },
 
+  // --- Decided on 2026-09-29 from the first full catalog audit ---------------
+  //
+  // 718 items, 74 off the cost-type defaults. Carl walked the groups. These are
+  // the ones that are priced the way they are on purpose; the rest he fixed.
+  {
+    namePrefix: 'Service Call',
+    approvedAt: rateFromNumber(125 / 55),
+    reason: 'Service calls are a trip-charge schedule by zone, not hourly labour at the Labor margin.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    namePrefix: 'Payment processing',
+    approvedAt: rateFromNumber(0),
+    reason: 'Card fees are recorded as a cost and not charged to the customer — DB absorbs them, for now.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    namePrefix: 'Install SS Steel Panel',
+    approvedAt: rateFromNumber(1.8),
+    reason: 'Steep-pitch standing-seam install carries a premium; the shallow pitches sit at the Subcontractor margin and never reach this entry.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    name: 'Logistical Management',
+    approvedAt: rateFromNumber(1.45),
+    reason: 'Priced at 45% markup on purpose — the catalog item\'s own note says "$65 with 45% markup".',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  // Warranties: three deliberate rates, so one entry per name rather than a class.
+  {
+    name: '20 YR Warranty',
+    approvedAt: rateFromNumber(2.4),
+    reason: 'Warranty registration priced on its own schedule.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    name: 'Platinum Metals 20 Warranty',
+    approvedAt: rateFromNumber(2.4),
+    reason: 'Warranty registration priced on its own schedule.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    name: 'OC Upgrd Warranty - Preferred',
+    approvedAt: rateFromNumber(2.5),
+    reason: 'Warranty registration priced on its own schedule.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    name: 'OC Upgrd Warranty - System',
+    approvedAt: rateFromNumber(7 / 3),
+    reason: 'Warranty registration priced on its own schedule.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  // Tarps: storm response with adders, three rates.
+  {
+    name: 'Tarp Installed - per square',
+    approvedAt: rateFromNumber(5 / 3),
+    reason: 'Emergency tarping is its own schedule.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    name: 'Tarp Installed - after hours or weekend, per square',
+    approvedAt: rateFromNumber(1.76),
+    reason: 'Emergency tarping, after-hours adder.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    name: 'Tarp - steep or two-story adder, per square',
+    approvedAt: rateFromNumber(2.0),
+    reason: 'Emergency tarping, steep or two-storey adder.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  // Roofing labour items with a premium or on the roofing schedule.
+  {
+    name: 'Cricket Lab - Average',
+    approvedAt: rateFromNumber(1.78),
+    reason: 'Cricket fabrication carries a premium over the Labor margin.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    name: 'Fill Box Vent(s)',
+    approvedAt: rateFromNumber(1.45),
+    reason: 'Roofing labour priced on the roofing schedule.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    name: 'Ridgevent - Cut',
+    approvedAt: rateFromNumber(1.45),
+    reason: 'Roofing labour priced on the roofing schedule.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+
   // --- Roofing-trade work inside a construction job ---------------------------
   //
   // Gutters and siding price from the roofing book wherever they appear, and a
