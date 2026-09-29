@@ -42,11 +42,11 @@
 import {
   type Money, type Rate, ZERO,
   abs, add, formatMoney, formatMultiplier, formatPercent,
-  marginFromMultiplier, moneyEquals, mulQty, priceFromCostAtMargin,
+  marginFromMultiplier, moneyEquals, mulQty, mulRate, priceFromCostAtMargin,
   roundToCents, sub,
 } from '../money.ts';
 import type { Line } from '../domain.ts';
-import { exceptionFor } from './exceptions.ts';
+import { exceptionFor, policyOverrideFor } from './exceptions.ts';
 import type { Rule, Finding } from './types.ts';
 
 /**
@@ -79,6 +79,8 @@ interface Deviation {
   impact: Money;
   expectedUnitPrice: Money;
   multiplier: Rate;
+  /** Set when a different book prices this item than its cost type's. */
+  override: Rate | null;
 }
 
 interface Analysis {
@@ -238,7 +240,15 @@ function measure(
 
     // One exact division from the stored margin. Not cost x quantized-multiplier,
     // and not rounded to cents — unitPrice carries 4 decimal places.
-    const expectedUnitPrice = priceFromCostAtMargin(line.unitCost, p.margin);
+    //
+    // An item may declare that a different book prices it: fascia and soffit
+    // installs are subcontracted, so they belong at the Subcontractor margin
+    // even though the line carries cost type Labor. They are still checked —
+    // just against the right number.
+    const override = policyOverrideFor(line);
+    const expectedUnitPrice = override
+      ? mulRate(line.unitCost, override)
+      : priceFromCostAtMargin(line.unitCost, p.margin);
     if (moneyEquals(line.unitPrice, expectedUnitPrice, Number(UNIT_PRICE_TOLERANCE / 100n))) {
       continue;
     }
@@ -248,7 +258,7 @@ function measure(
     const impact = sub(expectedExtension, line.price) as Money;
     if (impact === ZERO) continue;
 
-    deviations.push({ line, impact, expectedUnitPrice, multiplier: line.multiplier });
+    deviations.push({ line, impact, expectedUnitPrice, multiplier: line.multiplier, override });
   }
 
   return { deviations, checkedByType };
@@ -342,22 +352,34 @@ function itemFinding(
   const under = total > ZERO;
   const qty = group.reduce((acc, d) => acc + (d.line.quantity ?? 0n), 0n);
 
+  // Name the policy actually being applied. An item redirected to another book
+  // is not measured against its cost type, and a card that cites the cost type
+  // while showing the other book's number is worse than no card: the reviewer
+  // checks the arithmetic, finds it wrong, and stops trusting all of it.
+  const target = first.override ?? p.multiplier;
+  const targetMargin = marginFromMultiplier(target);
+  const policyName = first.override ? 'Subcontractor (this item is subcontracted)' : p.name;
+
   return {
     rule: 'markup.off-policy',
     severity: 'pricing',
     title:
-      `${line.name} is priced ${under ? 'below' : 'above'} the ${p.name} policy` +
+      `${line.name} is priced ${under ? 'below' : 'above'} the ` +
+      `${first.override ? 'Subcontractor' : p.name} policy` +
       (group.length > 1 ? ` on ${group.length} lines` : ''),
     detail:
       `Priced at ${formatMultiplier(first.multiplier)} ` +
       `(${formatPercent(marginFromMultiplier(first.multiplier))} margin). ` +
-      `${p.name} policy is ${formatPercent(p.margin)} margin, which is ` +
-      `${formatMultiplier(p.multiplier)}.`,
+      `${policyName} policy is ${formatPercent(targetMargin)} margin, which is ` +
+      `${formatMultiplier(target)}.` +
+      (first.override
+        ? ` The line carries cost type ${p.name}, but the work is subcontracted.`
+        : ''),
     impact: total,
     lineIds: group.map((d) => d.line.id),
     math: [
       {
-        label: `cost ${formatMoney(line.unitCost)} × ${formatMultiplier(p.multiplier).slice(1)}`,
+        label: `cost ${formatMoney(line.unitCost)} × ${formatMultiplier(target).slice(1)}`,
         value: formatMoney(first.expectedUnitPrice),
       },
       { label: 'priced as drafted', value: formatMoney(line.unitPrice) },

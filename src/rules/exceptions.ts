@@ -23,8 +23,21 @@ export interface Exception {
   catalogItemId?: string;
   /** Catalog item name, as a fallback for items not yet seen on a line. */
   name?: string;
-  /** The approved multiplier. The exemption lapses if the price moves off it. */
-  multiplier: Rate;
+  /**
+   * The approved multiplier — this price is right, do not raise it.
+   * The exemption lapses if the price moves off it.
+   */
+  approvedAt?: Rate;
+  /**
+   * This item is priced from a different book than its cost type says, so
+   * measure it against THIS instead of the cost-type policy.
+   *
+   * Not the same as approvedAt. An item with `measureAgainst` is still checked
+   * and can still be found wrong — it is simply checked against the right
+   * number. Aluminum Fascia Install is subcontracted, so it belongs at the
+   * Subcontractor margin even though the line carries cost type Labor.
+   */
+  measureAgainst?: Rate;
   /** Approved unit cost, where the decision was about a specific price point. */
   unitCost?: Money;
   reason: string;
@@ -32,11 +45,16 @@ export interface Exception {
   decidedOn: string;
 }
 
+/** Construction Subcontractor policy: 30% margin. */
+const SUB = rateFromNumber(1 / 0.7);
+/** The roofing schedule, which Shawn maintains and which is not the cost types. */
+const ROOFING = rateFromNumber(1.45);
+
 export const EXCEPTIONS: Exception[] = [
   {
     catalogItemId: '22PCCDafayH8',
     name: 'Designer - Schematic',
-    multiplier: rateFromNumber(1.25),
+    approvedAt: rateFromNumber(1.25),
     unitCost: moneyFromString('100'),
     reason: 'Design time is billed at a set rate, not at the Labor margin.',
     decidedBy: 'Carl Bledsoe',
@@ -45,7 +63,7 @@ export const EXCEPTIONS: Exception[] = [
   {
     catalogItemId: '22PDa443H59U',
     name: 'Designer - Developmental',
-    multiplier: rateFromNumber(1.25),
+    approvedAt: rateFromNumber(1.25),
     unitCost: moneyFromString('100'),
     reason: 'Design time is billed at a set rate, not at the Labor margin.',
     decidedBy: 'Carl Bledsoe',
@@ -54,7 +72,7 @@ export const EXCEPTIONS: Exception[] = [
   {
     catalogItemId: '22PCCDaewQ5n',
     name: 'Designer - Con Docs',
-    multiplier: rateFromNumber(1.25),
+    approvedAt: rateFromNumber(1.25),
     unitCost: moneyFromString('100'),
     reason: 'Design time is billed at a set rate, not at the Labor margin.',
     decidedBy: 'Carl Bledsoe',
@@ -62,8 +80,54 @@ export const EXCEPTIONS: Exception[] = [
   },
   {
     name: 'HOVER Complete - Simple',
-    multiplier: rateFromNumber(1.0),
+    approvedAt: rateFromNumber(1.0),
     reason: 'Measurement report passed through at cost, on purpose.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+
+  // --- Roofing-trade work inside a construction job ---------------------------
+  //
+  // Gutters and siding price from the roofing book wherever they appear, and a
+  // construction job that includes them is not thereby mispriced. Who does the
+  // work decides the cost type; which trade it is decides the book.
+  //
+  //   removal and rehang  -> DB crew   -> roofing schedule, x1.45
+  //   installs            -> the sub   -> construction Subcontractor, x1.4286
+  //
+  // Listed per item rather than matched on "Remove" / "Rehang" / "Install" in
+  // the name. A string test would quietly mis-sort the first item somebody
+  // names differently, and would have no idea that the line reading "Aluminum
+  // Soffit Install" is catalog item "Vinyl Soffit Install".
+  {
+    catalogItemId: '22PLm3w6734e',
+    name: 'Gutter Rehang',
+    approvedAt: ROOFING,
+    reason: 'Gutter rehang is DB crew, priced from the roofing book.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    catalogItemId: '22PL8h6a8aFQ',
+    name: 'Remove Vinyl Siding',
+    approvedAt: ROOFING,
+    reason: 'Siding removal is DB crew, priced from the roofing book.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    catalogItemId: '22PLkzertZt5',
+    name: 'Aluminum Fascia Install',
+    measureAgainst: SUB,
+    reason: 'Fascia install is subcontracted — construction Subcontractor margin.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    catalogItemId: '22PLm2GUPX5q',
+    name: 'Vinyl Soffit Install',
+    measureAgainst: SUB,
+    reason: 'Soffit install is subcontracted — construction Subcontractor margin.',
     decidedBy: 'Carl Bledsoe',
     decidedOn: '2026-09-29',
   },
@@ -83,18 +147,41 @@ export interface ExceptionMatch {
  * the decision was about a price, and a different price is a different
  * decision that nobody has made.
  */
+export function entryFor(
+  line: { catalogItemId: string | null; name: string },
+): Exception | null {
+  for (const e of EXCEPTIONS) {
+    if (e.catalogItemId !== undefined) {
+      if (e.catalogItemId === line.catalogItemId) return e;
+      continue;
+    }
+    if (e.name !== undefined && e.name === line.name) return e;
+  }
+  return null;
+}
+
+/**
+ * The approved exception for this line, or null.
+ *
+ * Returns null when the line's price has moved away from what was approved:
+ * the decision was about a price, and a different price is a different
+ * decision that nobody has made. Entries that only redirect which policy
+ * applies (`measureAgainst`) never exempt anything.
+ */
 export function exceptionFor(
   line: { catalogItemId: string | null; name: string; multiplier: Rate | null },
 ): Exception | null {
   if (line.multiplier === null) return null;
-  for (const e of EXCEPTIONS) {
-    const matches =
-      (e.catalogItemId !== undefined && e.catalogItemId === line.catalogItemId) ||
-      (e.catalogItemId === undefined && e.name !== undefined && e.name === line.name);
-    if (!matches) continue;
-    const drift = line.multiplier - e.multiplier;
-    if ((drift < 0n ? -drift : drift) > TOLERANCE) return null; // price moved; no longer approved
-    return e;
-  }
-  return null;
+  const e = entryFor(line);
+  if (!e || e.approvedAt === undefined) return null;
+  const drift = line.multiplier - e.approvedAt;
+  if ((drift < 0n ? -drift : drift) > TOLERANCE) return null; // price moved; no longer approved
+  return e;
+}
+
+/** The multiplier this item should be measured against, when not its cost type's. */
+export function policyOverrideFor(
+  line: { catalogItemId: string | null; name: string },
+): Rate | null {
+  return entryFor(line)?.measureAgainst ?? null;
 }
