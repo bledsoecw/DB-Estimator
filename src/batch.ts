@@ -44,6 +44,8 @@ export interface BatchRow {
 export interface BatchOptions {
   limit: number;
   status?: string;
+  /** "Construction" | "Roofing". Omit to audit both. */
+  jobType?: string;
   outDir: string;
   /** Called after each document so a long run shows progress. */
   onProgress?(index: number, total: number, label: string): void;
@@ -66,6 +68,7 @@ export async function runBatch(
     : await fetchRecentDocuments(client!, {
         limit: opts.limit,
         ...(opts.status ? { status: opts.status } : {}),
+        ...(opts.jobType ? { jobType: opts.jobType } : {}),
       });
   const costTypes = opts.fetch ? [] : await fetchCostTypes(client!);
   const fetchOne = opts.fetch ?? ((id: string) => captureFixture(client!, id, costTypes));
@@ -278,7 +281,7 @@ const VERDICT_SCRIPT = (total: number) => `
 })();
 `;
 
-function renderIndex(rows: BatchRow[], opts: { status?: string }): string {
+function renderIndex(rows: BatchRow[], opts: { status?: string; jobType?: string }): string {
   const clean = rows.filter((r) => !r.error && r.needsHuman === 0).length;
   const failed = rows.filter((r) => r.error);
   const totalFindings = rows.reduce((n, r) => n + r.needsHuman, 0);
@@ -354,9 +357,9 @@ footer { margin-top:36px; padding-top:16px; border-top:1px solid var(--line);
 <body>
 <main>
   <h1>Estimate audit</h1>
-  <p class="meta">${rows.length} estimate${rows.length === 1 ? '' : 's'}${
-    opts.status ? `, status ${esc(opts.status)}` : ''
-  } · ${new Date().toLocaleString()}</p>
+  <p class="meta">${rows.length} ${opts.jobType ? esc(opts.jobType) + ' ' : ''}estimate${
+    rows.length === 1 ? '' : 's'
+  }${opts.status ? `, status ${esc(opts.status)}` : ''} · ${new Date().toLocaleString()}</p>
 
   <div class="tiles">
     <div class="tile"><span class="k">Estimates</span><span class="v">${rows.length}</span></div>

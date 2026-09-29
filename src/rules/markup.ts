@@ -131,15 +131,47 @@ function analyse(
   };
 }
 
+/**
+ * The cost-type margins govern Construction only.
+ *
+ * Roofing is entirely subcontracted and prices from its own templates, which
+ * Shawn maintains and which are correct. They are not the cost-type settings
+ * and were never meant to match them: a roofing estimate runs Labor lines at
+ * x1.45 and x1.80 because that is the roofing schedule, not because anyone
+ * mispriced it.
+ *
+ * Checking roofing against the cost types produced $3,943 of "under policy" on
+ * 258740 Daeger_Roof — an estimate that was correctly priced and sold. So the
+ * rule does not run there, and says so rather than passing silently, because a
+ * check that quietly does nothing looks exactly like a check that found
+ * nothing.
+ *
+ * A job with no Job Type recorded is still checked. Guessing that an unlabelled
+ * job is roofing would hide real findings on construction work, which is the
+ * more expensive mistake.
+ */
+const EXEMPT_JOB_TYPES = new Set(['roofing']);
+
+function exempt(jobType: string | null): boolean {
+  return jobType !== null && EXEMPT_JOB_TYPES.has(jobType.toLowerCase());
+}
+
 export const markupRule: Rule = {
   id: 'markup.off-policy',
   describes: 'Every priced line matches its cost type’s margin policy',
 
   run({ estimate, policy }) {
+    if (exempt(estimate.jobType)) return [];
     return analyse(estimate.lines, policy).findings;
   },
 
   passMessage({ estimate, policy }) {
+    if (exempt(estimate.jobType)) {
+      return (
+        `Markup not checked — ${estimate.jobType} prices from its own templates, ` +
+        `not from the cost-type margins`
+      );
+    }
     const { checked, atPolicy } = analyse(estimate.lines, policy);
     if (checked === 0) return null;
     return atPolicy === checked
@@ -148,6 +180,7 @@ export const markupRule: Rule = {
   },
 
   suppressed({ estimate, policy }) {
+    if (exempt(estimate.jobType)) return null;
     const { quiet, checked, atPolicy } = analyse(estimate.lines, policy);
     if (quiet.length === 0) return null;
     const money = quiet.reduce((acc, d) => add(acc, abs(d.impact)), ZERO);

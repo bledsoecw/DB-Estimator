@@ -552,6 +552,35 @@ Two consequences worth stating, because both were wrong in the first implementat
   $130.30 difference is tax on $1,902.11 of taxable lines inside branches the customer did
   not take. Against the selected base it closes to the cent.
 
+### `Job Type` splits the company in two, and decides which policy applies — **VERIFIED**
+
+Jobs carry a custom field **`Job Type`** (`22PBzhnUydgC`) with exactly two options:
+**Roofing** and **Construction**. 1,214 jobs are Construction. A second field, `Project Type`
+(`22PC7idvhRzp`), prefixes its options `C-` or `R-` the same way.
+
+This is the most consequential field in the organization for anything that checks pricing:
+
+- **Roofing is entirely subcontracted** and prices from roofing templates maintained
+  separately. Those prices are correct and are **not** the cost-type margins.
+- **Construction** is the work the cost-type settings govern, and the only work that gets
+  reviewed before it goes out.
+
+Checking a roofing estimate against the cost types compares it to a policy it was never
+meant to follow: `258740 Daeger_Roof` reads as $3,943.17 "under policy" and was priced
+correctly and sold.
+
+Read it from the job, never inferred from the name. `261538 Linton_Gutters` and
+`260463 Leeth_Storm Damage` are both Roofing and neither says so.
+
+It is **not filterable server-side** through `document.job`. A `with` alias works from
+`jobs` directly —
+`with: { jt: { _: "customFieldValues", $: { where: [["customField","id"],"=","22PBzhnUydgC"] }, values: { $: "value" } } }`
+then `where: [["jt","values"],"=","Construction"]` — but does not compose through a
+document's job, so documents are filtered client-side after reading the field.
+
+Roofing dominates recent work: of the 20 most recent approved customer orders, **17 are
+Roofing and 3 are Construction.**
+
 ### Tax is configured almost nowhere, and `isTaxable` means nothing — **VERIFIED**
 
 Counted across all **802 approved customer orders** in the organization:

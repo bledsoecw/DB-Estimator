@@ -124,7 +124,7 @@ test('an approved estimate does not produce a wall of findings', () => {
   const result = audit(daeger);
   const needsHuman = result.findings.filter((f) => f.severity !== 'info');
   assert.ok(
-    needsHuman.length <= 8,
+    needsHuman.length <= 4,
     `${needsHuman.length} findings: ${needsHuman.map((f) => f.title).join(' | ')}`,
   );
 });
@@ -142,34 +142,53 @@ test('Wright_Roof stays readable despite 101 lines and 22 unpriced ones', () => 
   assert.ok(empties.some((f) => (f.lineIds?.length ?? 0) > 10), 'did not collapse the EF lines');
 });
 
-// ---- the systemic finding ---------------------------------------------------
+// ---- which policy applies at all -------------------------------------------
 
-test('roofing Labor is reported as one policy question, not 35 mistakes', () => {
-  // Measured against the raw fixture: 35 priced Labor lines, none at the
-  // configured x1.8182. 29 at x1.45, 5 at x1.81, 1 at x1.47. On the GC
-  // estimate the same cost type sits at policy on 6 of 8 lines, so this is
-  // specific to the assembly engine's schedule, not a broken rule.
-  const labor = audit(daeger).findings.filter(
-    (f) => f.rule === 'markup.off-policy' && f.title.includes('Labor'),
-  );
-  assert.equal(labor.length, 1, 'Labor did not collapse to a single finding');
-  assert.equal(formatMoney(labor[0]!.impact!), '$3,943.17');
-  assert.equal(labor[0]!.lineIds!.length, 35);
-  assert.match(labor[0]!.detail, /35 of 35/);
-  // It asks rather than asserts: the setting may be what is stale.
-  assert.ok(labor[0]!.actions!.some((a) => /Confirm the Labor policy/.test(a)));
+test('roofing is not checked against the construction cost types', () => {
+  // This test used to assert the opposite: that Daeger_Roof was $3,943.17 under
+  // the Labor policy, reported as one question rather than 35. It was measured
+  // correctly and meant nothing.
+  //
+  // Roofing at Deitemeyer Brothers is entirely subcontracted and priced from
+  // Shawn's roofing templates. Those are correct and are not the cost-type
+  // margins — Labor lines at x1.45 and x1.80 are the roofing schedule, not a
+  // mistake. The cost-type settings govern Construction, which is also the only
+  // work Kristen reviews.
+  for (const [name, input] of [['daeger', daeger], ['wright', wright]] as const) {
+    assert.equal(input.estimate.jobType, 'Roofing', `${name} fixture lost its job type`);
+    const markup = audit(input).findings.filter((f) => f.rule === 'markup.off-policy');
+    assert.equal(markup.length, 0, `${name} raised ${markup.length} markup findings`);
+  }
 });
 
-test('Materials is at policy on every roofing line, and raises nothing', () => {
-  // 27 of 27 on Daeger and 41 of 41 on Wright, at exactly x1.45. Every
-  // Materials finding the first version raised — Drip Edge, Step Flashing,
-  // Aluminum Trim Coil — was its own cent-rounding, not a pricing decision.
-  for (const [name, input] of [['daeger', daeger], ['wright', wright]] as const) {
-    const materials = audit(input).findings.filter(
-      (f) => f.rule === 'markup.off-policy' && f.title.includes('Materials'),
-    );
-    assert.equal(materials.length, 0, `${name} raised ${materials.length} Materials findings`);
-  }
+test('and says it skipped rather than passing silently', () => {
+  // A check that quietly does nothing looks exactly like a check that found
+  // nothing. The difference matters to whoever reads the clean list.
+  const passed = audit(daeger).passed.find((p) => p.rule === 'markup.off-policy');
+  assert.ok(passed, 'no word either way about markup on a roofing estimate');
+  assert.match(passed.message, /own templates/);
+  assert.match(passed.message, /Roofing/);
+});
+
+test('construction is still checked', () => {
+  // The exemption must not swallow the work it exists to protect.
+  const jones = fromFixture(load('jones-bath-kitchen'));
+  assert.equal(jones.estimate.jobType, 'Construction');
+  assert.equal(
+    audit(jones).findings.filter((f) => f.rule === 'markup.off-policy').length,
+    2,
+  );
+  assert.equal(formatMoney(audit(jones).totalUnderpriced), '$2,974.52');
+});
+
+test('a job with no Job Type recorded is still checked', () => {
+  // Guessing that an unlabelled job is roofing would hide real findings on
+  // construction work, which is the more expensive way to be wrong.
+  const untyped = structuredClone(load('jones-bath-kitchen'));
+  delete (untyped.document.job as { customFieldValues?: unknown }).customFieldValues;
+  const input = fromFixture(untyped);
+  assert.equal(input.estimate.jobType, null);
+  assert.ok(audit(input).findings.some((f) => f.rule === 'markup.off-policy'));
 });
 
 // ---- comparables ------------------------------------------------------------

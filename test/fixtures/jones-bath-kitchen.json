@@ -22,7 +22,18 @@
     "createdAt": "2026-09-28T14:24:57.554Z",
     "job": {
       "id": "22PawufK8BzM",
-      "name": "261305 Jones_Bath/Kitchen"
+      "name": "261305 Jones_Bath/Kitchen",
+      "customFieldValues": {
+        "nodes": [
+          {
+            "value": "Construction",
+            "customField": {
+              "id": "22PBzhnUydgC",
+              "name": "Job Type"
+            }
+          }
+        ]
+      }
     },
     "costGroups": {
       "count": 13,

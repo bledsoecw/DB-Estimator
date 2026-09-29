@@ -13,6 +13,7 @@ import {
   qtyFromApi, rateFromApi, roundToCents, sub,
 } from './money.ts';
 import type { ApiComparable, ApiCostType, ApiDocument, AuditFixture } from './jobtread/types.ts';
+import { jobTypeOf } from './jobtread/queries.ts';
 
 export interface Line {
   id: string;
@@ -57,6 +58,8 @@ export interface Estimate {
   status: string;
   jobId: string;
   jobName: string;
+  /** "Construction" | "Roofing" | null. Decides which policy applies at all. */
+  jobType: string | null;
   createdAt: string;
   /** Totals as JobTread stores them. */
   statedPrice: Money;
@@ -163,6 +166,7 @@ export function toEstimate(doc: ApiDocument): Estimate {
     status: doc.status,
     jobId: doc.job.id,
     jobName: doc.job.name,
+    jobType: jobTypeOf(doc.job),
     createdAt: doc.createdAt,
     statedPrice: moneyFromApi(doc.price),
     statedPriceWithTax: moneyFromApi(doc.priceWithTax),

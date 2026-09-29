@@ -22,7 +22,18 @@
     "createdAt": "2025-12-18T19:39:40.107Z",
     "job": {
       "id": "22PNJwS8KhpM",
-      "name": "258761 Wright_Roof"
+      "name": "258761 Wright_Roof",
+      "customFieldValues": {
+        "nodes": [
+          {
+            "value": "Roofing",
+            "customField": {
+              "id": "22PBzhnUydgC",
+              "name": "Job Type"
+            }
+          }
+        ]
+      }
     },
     "costGroups": {
       "count": 11,

@@ -22,7 +22,18 @@
     "createdAt": "2025-12-30T14:21:25.464Z",
     "job": {
       "id": "22PNzzfxQTWy",
-      "name": "258740 Daeger_Roof"
+      "name": "258740 Daeger_Roof",
+      "customFieldValues": {
+        "nodes": [
+          {
+            "value": "Roofing",
+            "customField": {
+              "id": "22PBzhnUydgC",
+              "name": "Job Type"
+            }
+          }
+        ]
+      }
     },
     "costGroups": {
       "count": 7,

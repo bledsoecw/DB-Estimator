@@ -49,6 +49,18 @@ export interface ApiCostGroup {
   parentCostGroup: Ref | null;
 }
 
+/** One value of one custom field on a job. */
+export interface ApiCustomFieldValue {
+  value: string | number | boolean | null;
+  customField: { id: string; name?: string };
+}
+
+export interface ApiJob {
+  id: string;
+  name: string;
+  customFieldValues?: { nodes: ApiCustomFieldValue[] };
+}
+
 /** A document as it appears in a list, without its lines. */
 export interface ApiDocumentSummary {
   id: string;
@@ -57,7 +69,7 @@ export interface ApiDocumentSummary {
   price: number;
   cost: number;
   createdAt: string;
-  job: { id: string; name: string };
+  job: ApiJob;
 }
 
 export interface ApiDocument {
@@ -79,7 +91,7 @@ export interface ApiDocument {
   includeInBudget: boolean;
   issueDate: string | null;
   createdAt: string;
-  job: NamedRef;
+  job: ApiJob;
   costGroups: { count: number; nodes: ApiCostGroup[] };
   costItems: { count: number; nodes: ApiCostItem[] };
 }

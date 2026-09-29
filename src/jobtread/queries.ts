@@ -10,6 +10,7 @@ import type { JobTreadClient } from './client.ts';
 import type {
   ApiComparable,
   ApiDocumentSummary,
+  ApiJob,
   ApiCostGroup,
   ApiCostItem,
   ApiCostType,
@@ -18,6 +19,38 @@ import type {
 } from './types.ts';
 
 const PAGE = 100;
+
+/**
+ * The "Job Type" custom field on a job. Two options: Roofing | Construction.
+ *
+ * This is the line that matters. Roofing is entirely subcontracted and priced
+ * from Shawn's roofing templates, which are correct and are NOT the cost-type
+ * margins; Construction is the work Kristen reviews and the work the cost-type
+ * settings govern. Auditing a roofing estimate against the cost types compares
+ * it to a policy it was never meant to follow.
+ *
+ * Read from the job rather than inferred from its name: "261538 Linton_Gutters"
+ * and "260463 Leeth_Storm Damage" are both Roofing and neither says so.
+ */
+export const JOB_TYPE_FIELD = '22PBzhnUydgC';
+
+const JOB_FIELDS = {
+  id: {},
+  name: {},
+  customFieldValues: {
+    $: { size: 20 },
+    nodes: { value: {}, customField: { id: {} } },
+  },
+} as const;
+
+/** "Construction", "Roofing", or null when the job carries no Job Type. */
+export function jobTypeOf(job: ApiJob | undefined): string | null {
+  const nodes = job?.customFieldValues?.nodes ?? [];
+  for (const n of nodes) {
+    if (n.customField?.id === JOB_TYPE_FIELD && typeof n.value === 'string') return n.value;
+  }
+  return null;
+}
 
 const COST_ITEM_FIELDS = {
   id: {}, name: {}, quantity: {}, unitCost: {}, unitPrice: {}, cost: {}, price: {},
@@ -48,7 +81,7 @@ export async function fetchDocument(
       taxRate: {}, taxName: {}, externalId: {}, showChildCosts: {}, showQuantity: {},
       showProfit: {}, showLinesAtDepth: {}, requireSignature: {}, includeInBudget: {},
       issueDate: {}, createdAt: {},
-      job: { id: {}, name: {} },
+      job: JOB_FIELDS,
       costGroups: { $: { size: PAGE }, count: {}, nextPage: {}, nodes: COST_GROUP_FIELDS },
       costItems: {
         $: { size: PAGE, sortBy: [{ field: 'position' }] },
@@ -162,7 +195,7 @@ export async function fetchComparables(
  */
 export async function fetchRecentDocuments(
   client: JobTreadClient,
-  opts: { limit: number; status?: string; type?: string },
+  opts: { limit: number; status?: string; type?: string; jobType?: string },
 ): Promise<ApiDocumentSummary[]> {
   const where: unknown[] = [[['type'], '=', opts.type ?? 'customerOrder']];
   if (opts.status) where.push([['status'], '=', opts.status]);
@@ -174,18 +207,26 @@ export async function fetchRecentDocuments(
       $: { id: client.organizationId },
       documents: {
         $: {
-          size: Math.min(opts.limit, PAGE),
+          // Job Type cannot be filtered server-side without a `with` alias that
+          // does not compose through `document.job`, so it is filtered here.
+          // Construction is a minority of recent approved work — 3 of the last
+          // 20 — so ask for enough candidates to still come back with `limit`.
+          size: Math.min(opts.jobType ? opts.limit * 6 : opts.limit, PAGE),
           where: where.length === 1 ? where[0] : { and: where },
           sortBy: [{ field: 'createdAt', order: 'desc' }],
         },
         nodes: {
           id: {}, name: {}, status: {}, price: {}, cost: {}, createdAt: {},
-          job: { id: {}, name: {} },
+          job: JOB_FIELDS,
         },
       },
     },
   });
-  return res.organization.documents.nodes.slice(0, opts.limit);
+  const all = res.organization.documents.nodes;
+  const wanted = opts.jobType
+    ? all.filter((d) => jobTypeOf(d.job)?.toLowerCase() === opts.jobType!.toLowerCase())
+    : all;
+  return wanted.slice(0, opts.limit);
 }
 
 /** Everything one audit needs, in a form that can be frozen to disk. */

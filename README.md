@@ -92,7 +92,7 @@ npm run audit -- <documentId>                                       # live
 npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
-npm test                                                            # 64 tests
+npm test                                                            # 66 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -107,6 +107,15 @@ start review/index.html
 Audits the 20 most recent estimates and writes an index over them — job, price,
 margin, how many findings, how much under policy — with each row linking to its own
 approver screen.
+
+**It audits Construction only.** Roofing is entirely subcontracted and prices from its
+own templates, which are correct and are not the cost-type margins; Construction is what
+the cost types govern and the only work that gets reviewed before it goes out. Checking
+roofing against the cost types reads a correctly priced, sold estimate as $3,943 short.
+`--job-type Roofing` or `--all-job-types` overrides it, and a single roofing document
+audited directly says that markup was not checked rather than passing silently. A job
+with no `Job Type` recorded **is** checked — guessing it is roofing would hide real
+findings on construction work.
 
 **The first shadow run changed the rules.** Twenty approved estimates produced 87
 findings, and 39 came from three checks that were describing how the company works

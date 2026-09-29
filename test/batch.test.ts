@@ -61,7 +61,9 @@ test('audits every document and writes a report for each', async () => {
     // Each report is the real approver screen, not a stub.
     const daeger = readFileSync(join(dir, '22PPQD68bhaX.html'), 'utf8');
     assert.match(daeger, /Daeger_Roof/);
-    assert.match(daeger, /Under policy by <strong>\$3,943\.17<\/strong>/);
+    // Roofing: priced from its own templates, so no markup verdict at all.
+    assert.match(daeger, /Priced at or above policy on every line/);
+    assert.match(daeger, /own templates/);
   });
 });
 
@@ -78,8 +80,9 @@ test('the index links every estimate and totals them', async () => {
     for (const row of rows) {
       assert.ok(index.includes(`href="${row.id}.html"`), `index does not link ${row.jobName}`);
     }
-    // $2,974.52 + $3,943.17 + $2,889.50
-    assert.match(index, /\$9,807\.19/, 'the under-policy total is wrong or missing');
+    // Only the construction estimate contributes; the two roofing ones are not
+    // measured against the cost types at all.
+    assert.match(index, /\$2,974\.52/, 'the under-policy total is wrong or missing');
   });
 });
 
@@ -200,7 +203,10 @@ test('counts findings by rule across the run', async () => {
 
     // Context-only findings are excluded: they are not asks.
     assert.ok(!counts.has('margin.outside-band'));
-    assert.ok((counts.get('markup.off-policy') ?? 0) >= 4);
+    // Two, both from the one construction estimate in the set. The two roofing
+    // ones price from their own templates and are not measured against the
+    // cost types, so they contribute none.
+    assert.equal(counts.get('markup.off-policy'), 2);
 
     // Sorted commonest first, so the noisiest rule is the obvious one to look at.
     const values = [...counts.values()];

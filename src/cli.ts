@@ -192,6 +192,7 @@ interface Args {
   doctor: boolean;
   recent: number | undefined;
   status: string | undefined;
+  jobType: string | undefined;
   out: string;
   documentId: string | undefined;
   fixture: string | undefined;
@@ -205,7 +206,10 @@ function parseArgs(argv: string[]): Args {
   const args: Args = {
     doctor: false,
     recent: undefined,
+    // Construction by default. Roofing prices from its own templates and is
+    // not what Kristen reviews, so auditing it against the cost types is noise.
     status: undefined,
+    jobType: 'Construction',
     out: 'review',
     documentId: undefined,
     fixture: undefined,
@@ -224,6 +228,8 @@ function parseArgs(argv: string[]): Args {
     else if (a === '--html') args.html = argv[++i];
     else if (a === '--recent') args.recent = Number(argv[++i]);
     else if (a === '--status') args.status = argv[++i];
+    else if (a === '--job-type') args.jobType = argv[++i];
+    else if (a === '--all-job-types') args.jobType = undefined;
     else if (a === '--out') args.out = argv[++i] ?? 'review';
     else if (!a.startsWith('-')) args.documentId = a;
   }
@@ -245,6 +251,7 @@ async function batch(args: Args): Promise<number> {
   const rows = await runBatch(client, {
     limit: args.recent!,
     ...(args.status ? { status: args.status } : {}),
+    ...(args.jobType ? { jobType: args.jobType } : {}),
     outDir: args.out,
     onProgress: (i, total, label) =>
       process.stderr.write(`${DIM}[${i}/${total}] ${label}${OFF}\n`),
@@ -256,7 +263,7 @@ async function batch(args: Args): Promise<number> {
   const totalUnder = rows.reduce((acc, r) => add(acc, r.underpriced), ZERO);
 
   out('');
-  out(`${BOLD}${rows.length} estimates audited${OFF}`);
+  out(`${BOLD}${rows.length} ${args.jobType ?? 'estimates'}${args.jobType ? ' estimates' : ''} audited${OFF}`);
   out('');
   for (const r of rows) {
     if (r.error) {
@@ -381,6 +388,8 @@ ${BOLD}db-estimator auditor v0.5${OFF} ${DIM}— read-only estimate check${OFF}
   --doctor           check the setup: grant key, org id, network
   --recent <n>       audit the n most recent estimates and write an index
   --status <s>       with --recent: approved, pending, draft, denied
+  --job-type <t>     Construction (default) or Roofing
+  --all-job-types    audit both — roofing prices from its own templates
   --out <dir>        with --recent: where the reports go (default: review)
   --fixture <path>   audit a captured fixture, no network
   --capture <path>   save the fetched data as a fixture while auditing
