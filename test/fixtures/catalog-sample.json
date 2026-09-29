@@ -3,32 +3,333 @@
   "organizationId": "22PBAjem8SSC",
   "note": "First 20 priced catalog items by name, captured live. Includes a x2.40 warranty and four duplicate names.",
   "costTypes": [
-    {"id": "22PBAjfWNQr6", "name": "Labor", "margin": 0.45000549994500055, "isTaxable": false, "isTimeTrackable": true, "isActive": true},
-    {"id": "22PBAjfWNQr7", "name": "Materials", "margin": 0.3103448275862069, "isTaxable": false, "isTimeTrackable": false, "isActive": true},
-    {"id": "22PBAjfWNQr8", "name": "Subcontractor", "margin": 0.3103448275862069, "isTaxable": false, "isTimeTrackable": false, "isActive": true},
-    {"id": "22PBAjfWNQr9", "name": "Other", "margin": 0.3103448275862069, "isTaxable": false, "isTimeTrackable": false, "isActive": true},
-    {"id": "22PaTg5HNX8w", "name": "Clock In", "margin": 0, "isTaxable": false, "isTimeTrackable": true, "isActive": true}
+    {
+      "id": "22PBAjfWNQr6",
+      "name": "Labor",
+      "margin": 0.45000549994500055,
+      "isTaxable": false,
+      "isTimeTrackable": true,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr7",
+      "name": "Materials",
+      "margin": 0.3103448275862069,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr8",
+      "name": "Subcontractor",
+      "margin": 0.3103448275862069,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr9",
+      "name": "Other",
+      "margin": 0.3103448275862069,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PaTg5HNX8w",
+      "name": "Clock In",
+      "margin": 0,
+      "isTaxable": false,
+      "isTimeTrackable": true,
+      "isActive": true
+    }
   ],
   "items": [
-    {"id":"22PTYnKqne3q","name":"1-1/2\" x 8\" extension tube","unitCost":15,"unitPrice":21.75,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Mechanical (Plumbing & HVAC)"}},
-    {"id":"22PTYqmLyPZt","name":"1/2\" copper PEX ring","unitCost":0.33,"unitPrice":0.4785,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Mechanical (Plumbing & HVAC)"}},
-    {"id":"22PTYr7Xd4mY","name":"1/2\" Drop Ear L","unitCost":16.25,"unitPrice":23.5625,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Mechanical (Plumbing & HVAC)"}},
-    {"id":"22PTYmRLnfJS","name":"1/2\" FPT x 20\" Flex Lab Conn","unitCost":5.75,"unitPrice":8.337499999999999,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Mechanical (Plumbing & HVAC)"}},
-    {"id":"22PTYm8LZtxi","name":"1/2\" x 3/8\" (OD) SB Angle Stop","unitCost":14.43,"unitPrice":20.923499999999997,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Mechanical (Plumbing & HVAC)"}},
-    {"id":"22PTYs4JgKLB","name":"2\" PVC - DWV","unitCost":0.89,"unitPrice":1.2905,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Mechanical (Plumbing & HVAC)"}},
-    {"id":"22PTYsK5wtve","name":"2\" PVC Sch 40 P Trap","unitCost":10,"unitPrice":14.499999999999998,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Mechanical (Plumbing & HVAC)"}},
-    {"id":"22PTSS9tH6kb","name":"20 YR Warranty","unitCost":25,"unitPrice":60.00000000000001,"isTaxable":false,"costType":{"id":"22PBAjfWNQr9","name":"Other"},"costCode":{"name":"General Requirements"}},
-    {"id":"22PTYpEhy6ww","name":"2510 Posi Temp Valve","unitCost":103.46,"unitPrice":150.01699999999997,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Mechanical (Plumbing & HVAC)"}},
-    {"id":"22PT7H4pLrBE","name":"2x3\" Downspouts","unitCost":60,"unitPrice":87,"isTaxable":false,"costType":{"id":"22PBAjfWNQr8","name":"Subcontractor"},"costCode":{"name":"Roofing"}},
-    {"id":"22PHfTLJd6jq","name":"3x4 Downspouts","unitCost":8.25,"unitPrice":11.962499999999999,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Roofing"}},
-    {"id":"22PTSS9tH6kk","name":"3x4 Downspouts","unitCost":8.25,"unitPrice":11.962499999999999,"isTaxable":false,"costType":{"id":"22PBAjfWNQr8","name":"Subcontractor"},"costCode":{"name":"Roofing"}},
-    {"id":"22PQHrBwQMeD","name":"4\" Insulated Duct, 10'","unitCost":24,"unitPrice":34.8,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Roofing"}},
-    {"id":"22PT7H4n3Rs3","name":"5\" Gutters","unitCost":6,"unitPrice":8.7,"isTaxable":false,"costType":{"id":"22PBAjfWNQr8","name":"Subcontractor"},"costCode":{"name":"Roofing"}},
-    {"id":"22PHfTE7TF2s","name":"6\" Gutter Corner","unitCost":20,"unitPrice":28.999999999999996,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Roofing"}},
-    {"id":"22PTSS9tH6ki","name":"6\" Gutter Corner","unitCost":20,"unitPrice":28.999999999999996,"isTaxable":false,"costType":{"id":"22PBAjfWNQr8","name":"Subcontractor"},"costCode":{"name":"Roofing"}},
-    {"id":"22PHfT7PbATr","name":"6\" Gutters","unitCost":8.25,"unitPrice":11.962499999999999,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Roofing"}},
-    {"id":"22PTSS9tH6kg","name":"6\" Gutters","unitCost":8.25,"unitPrice":11.962499999999999,"isTaxable":false,"costType":{"id":"22PBAjfWNQr8","name":"Subcontractor"},"costCode":{"name":"Roofing"}},
-    {"id":"22PCCDuEvMhS","name":"8x8 Step Flashing","unitCost":1.55,"unitPrice":2.2475,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Roofing"}},
-    {"id":"22PQQzg4pRMT","name":"8x8 Step Flashing","unitCost":1.55,"unitPrice":2.2475,"isTaxable":false,"costType":{"id":"22PBAjfWNQr7","name":"Materials"},"costCode":{"name":"Roofing"}}
+    {
+      "id": "22PTYnKqne3q",
+      "name": "1-1/2\" x 8\" extension tube",
+      "unitCost": 15,
+      "unitPrice": 21.75,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Mechanical (Plumbing & HVAC)"
+      }
+    },
+    {
+      "id": "22PTYqmLyPZt",
+      "name": "1/2\" copper PEX ring",
+      "unitCost": 0.33,
+      "unitPrice": 0.4785,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Mechanical (Plumbing & HVAC)"
+      }
+    },
+    {
+      "id": "22PTYr7Xd4mY",
+      "name": "1/2\" Drop Ear L",
+      "unitCost": 16.25,
+      "unitPrice": 23.5625,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Mechanical (Plumbing & HVAC)"
+      }
+    },
+    {
+      "id": "22PTYmRLnfJS",
+      "name": "1/2\" FPT x 20\" Flex Lab Conn",
+      "unitCost": 5.75,
+      "unitPrice": 8.337499999999999,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Mechanical (Plumbing & HVAC)"
+      }
+    },
+    {
+      "id": "22PTYm8LZtxi",
+      "name": "1/2\" x 3/8\" (OD) SB Angle Stop",
+      "unitCost": 14.43,
+      "unitPrice": 20.923499999999997,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Mechanical (Plumbing & HVAC)"
+      }
+    },
+    {
+      "id": "22PTYs4JgKLB",
+      "name": "2\" PVC - DWV",
+      "unitCost": 0.89,
+      "unitPrice": 1.2905,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Mechanical (Plumbing & HVAC)"
+      }
+    },
+    {
+      "id": "22PTYsK5wtve",
+      "name": "2\" PVC Sch 40 P Trap",
+      "unitCost": 10,
+      "unitPrice": 14.499999999999998,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Mechanical (Plumbing & HVAC)"
+      }
+    },
+    {
+      "id": "22PTSS9tH6kb",
+      "name": "20 YR Warranty",
+      "unitCost": 25,
+      "unitPrice": 60.00000000000001,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr9",
+        "name": "Other"
+      },
+      "costCode": {
+        "name": "General Requirements"
+      },
+      "costGroup": {
+        "name": "Upgrades",
+        "parentCostGroup": {
+          "name": "Standing Seam Roof Replacement"
+        }
+      }
+    },
+    {
+      "id": "22PTYpEhy6ww",
+      "name": "2510 Posi Temp Valve",
+      "unitCost": 103.46,
+      "unitPrice": 150.01699999999997,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Mechanical (Plumbing & HVAC)"
+      }
+    },
+    {
+      "id": "22PT7H4pLrBE",
+      "name": "2x3\" Downspouts",
+      "unitCost": 60,
+      "unitPrice": 87,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr8",
+        "name": "Subcontractor"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PHfTLJd6jq",
+      "name": "3x4 Downspouts",
+      "unitCost": 8.25,
+      "unitPrice": 11.962499999999999,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PTSS9tH6kk",
+      "name": "3x4 Downspouts",
+      "unitCost": 8.25,
+      "unitPrice": 11.962499999999999,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr8",
+        "name": "Subcontractor"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PQHrBwQMeD",
+      "name": "4\" Insulated Duct, 10'",
+      "unitCost": 24,
+      "unitPrice": 34.8,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PT7H4n3Rs3",
+      "name": "5\" Gutters",
+      "unitCost": 6,
+      "unitPrice": 8.7,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr8",
+        "name": "Subcontractor"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PHfTE7TF2s",
+      "name": "6\" Gutter Corner",
+      "unitCost": 20,
+      "unitPrice": 28.999999999999996,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PTSS9tH6ki",
+      "name": "6\" Gutter Corner",
+      "unitCost": 20,
+      "unitPrice": 28.999999999999996,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr8",
+        "name": "Subcontractor"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PHfT7PbATr",
+      "name": "6\" Gutters",
+      "unitCost": 8.25,
+      "unitPrice": 11.962499999999999,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PTSS9tH6kg",
+      "name": "6\" Gutters",
+      "unitCost": 8.25,
+      "unitPrice": 11.962499999999999,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr8",
+        "name": "Subcontractor"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PCCDuEvMhS",
+      "name": "8x8 Step Flashing",
+      "unitCost": 1.55,
+      "unitPrice": 2.2475,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    },
+    {
+      "id": "22PQQzg4pRMT",
+      "name": "8x8 Step Flashing",
+      "unitCost": 1.55,
+      "unitPrice": 2.2475,
+      "isTaxable": false,
+      "costType": {
+        "id": "22PBAjfWNQr7",
+        "name": "Materials"
+      },
+      "costCode": {
+        "name": "Roofing"
+      }
+    }
   ]
 }

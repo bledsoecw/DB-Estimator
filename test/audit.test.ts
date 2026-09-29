@@ -32,26 +32,22 @@ const fixture = JSON.parse(
 const input = fromFixture(fixture);
 const result = audit(input);
 
-test('finds the two material off-policy lines, and accounts for the third', () => {
+test('finds the one material off-policy line, and accounts for the other two', () => {
   const markup = result.findings.filter((f) => f.rule === 'markup.off-policy');
   const titles = markup.map((f) => f.title);
-  assert.equal(markup.length, 2, `expected 2 markup findings, got ${markup.length}: ${titles.join(' | ')}`);
+  assert.equal(markup.length, 1, `expected 1 markup finding, got ${markup.length}: ${titles.join(' | ')}`);
+  assert.ok(titles[0]!.includes('Countertop Sub'));
 
-  assert.ok(titles.some((t) => t.includes('Logistical Management')));
-  assert.ok(titles.some((t) => t.includes('Countertop Sub')));
-
-  // Hauling & Disposal is off policy by $4.55 and deliberately does not get a
-  // card: the materiality floor is $25. It was a finding until the roofing
-  // fixtures showed what that costs — 42 cards on an estimate that had already
-  // been approved and sold, most of them worth less than a dollar.
-  //
-  // But it is NOT dropped. A rule that quietly stops reporting is the failure
-  // mode this whole project exists to prevent, so the money has to still be
-  // somewhere a reviewer sees it.
+  // Two lines this test used to expect as findings are accounted for elsewhere.
+  // Hauling & Disposal is off by $4.55 and sits under the $25 materiality floor.
+  // Logistical Management is priced the way its catalog item says, on purpose.
+  // Neither is dropped: both are in the same note, where a reviewer sees them.
   assert.ok(!titles.some((t) => t.includes('Hauling & Disposal')), 'raised a $4.55 card');
+  assert.ok(!titles.some((t) => t.includes('Logistical Management')), 'raised a deliberate price');
   const note = result.notes.find((n) => n.rule === 'markup.off-policy');
-  assert.ok(note, 'the suppressed $4.55 is not reported anywhere');
+  assert.ok(note, 'the suppressed lines are not reported anywhere');
   assert.match(note.message, /\$4\.55/);
+  assert.match(note.message, /Logistical Management/);
 });
 
 test('Countertop Sub is short by $1,039.89 under the 30% margin policy', () => {
@@ -61,32 +57,29 @@ test('Countertop Sub is short by $1,039.89 under the 30% margin policy', () => {
   assert.equal(formatMoney(f.impact!), '$1,039.89');
 });
 
-test('Logistical Management is short by $1,934.63 under the labor policy', () => {
+test('Logistical Management is priced as its catalog item says, and is not a finding', () => {
+  // Until 2026-09-29 this test asserted the line was $1,934.63 short of the
+  // Labor margin. The arithmetic was right and the conclusion was wrong. The
+  // catalog item behind it is deliberately priced at 45% markup — its own
+  // internal note reads "Unit Cost to be $65 with 45% markup" — and this line
+  // at $94.00 is 25 cents off THAT. Measured against the cost type it was a
+  // correct number about the wrong policy, which is what the catalog check
+  // exists to prevent.
   const f = result.findings.find((x) => x.title.includes('Logistical Management'));
-  assert.ok(f, 'no Logistical Management finding');
-  // $65/hr cost, priced $94/hr, 80 hours.
-  //
-  // The hand calculation before this code existed said $1,934.55, assuming the
-  // Labor margin is exactly 0.45. It is not: JobTread stores
-  // 0.45000549994500055, which gives an expected $118.1830/hr rather than
-  // $118.1818. Over 80 hours that is nine cents. The code computes from the
-  // stored policy, which is the policy of record, so the code is right and the
-  // hand figure was rounded. See the 'labor margin is not exactly 45%' test.
-  //
-  // The last cent comes from holding rates at scale 6: the stored margin
-  // 0.45000549994500055 becomes 450005 millionths, which bounds the error at
-  // well under a cent per unit. Chasing more precision on a value that is
-  // itself a float artifact would be false rigor.
-  assert.equal(formatMoney(f.impact!), '$1,934.63');
+  assert.equal(f, undefined, 'raised a deliberate price as a finding');
+  const note = result.notes.find((n) => n.rule === 'markup.off-policy');
+  assert.ok(note);
+  assert.match(note.message, /Logistical Management/);
+  assert.match(note.message, /on purpose/);
+  assert.match(note.message, /Carl Bledsoe/);
 });
 
-test('total underpriced is $2,974.52 across the two raised lines', () => {
-  // $1,934.63 + $1,039.89. The hand figure for all three lines was $2,978.98,
-  // computed against a Labor margin of exactly 0.45; the stored margin differs
-  // slightly, giving $2,979.07. The $4.55 Hauling & Disposal line now sits
-  // under the materiality floor and is reported as a note rather than a card,
-  // so the raised total is $4.55 lower.
-  assert.equal(formatMoney(result.totalUnderpriced), '$2,974.52');
+test('total underpriced is $1,039.89 — the one raised line', () => {
+  // Countertop Sub alone. It was $2,979.07 across three lines before the
+  // materiality floor took Hauling & Disposal ($4.55) to a note, and $2,974.52
+  // before the catalog item behind Logistical Management was recorded as
+  // deliberate ($1,934.63). Each step is a decision, not a loss.
+  assert.equal(formatMoney(result.totalUnderpriced), '$1,039.89');
 });
 
 test('the stored Labor margin is not exactly 45%', () => {

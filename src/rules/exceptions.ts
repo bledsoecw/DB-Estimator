@@ -160,8 +160,8 @@ export const EXCEPTIONS: Exception[] = [
   },
   {
     name: 'Tarp Installed - after hours or weekend, per square',
-    approvedAt: rateFromNumber(1.76),
-    reason: 'Emergency tarping, after-hours adder.',
+    approvedAt: rateFromNumber(150 / 85),
+    reason: 'Emergency tarping, after-hours adder ($85 -> $150).',
     decidedBy: 'Carl Bledsoe',
     decidedOn: '2026-09-29',
   },

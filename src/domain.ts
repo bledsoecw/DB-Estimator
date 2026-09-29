@@ -101,6 +101,11 @@ export interface CatalogItem {
   costTypeId: string | null;
   costTypeName: string | null;
   costCodeName: string | null;
+  /**
+   * "Parent › Group" when the item is a line inside a catalog cost group, i.e.
+   * a template; null for an ungrouped item. Where to click to find it.
+   */
+  groupPath: string | null;
   /** unitPrice / unitCost, or null when cost is zero or missing. */
   multiplier: Rate | null;
 }
@@ -219,6 +224,9 @@ export function toCatalog(rows: ApiCatalogItem[]): Map<string, CatalogItem> {
       costTypeId: r.costType?.id ?? null,
       costTypeName: r.costType?.name ?? null,
       costCodeName: r.costCode?.name ?? null,
+      groupPath: r.costGroup
+        ? [r.costGroup.parentCostGroup?.name, r.costGroup.name].filter(Boolean).join(' \u203a ')
+        : null,
       multiplier: observedMultiplier(unitCost, unitPrice),
     });
   }

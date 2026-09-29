@@ -81,8 +81,9 @@ test('the index links every estimate and totals them', async () => {
       assert.ok(index.includes(`href="${row.id}.html"`), `index does not link ${row.jobName}`);
     }
     // Only the construction estimate contributes; the two roofing ones are not
-    // measured against the cost types at all.
-    assert.match(index, /\$2,974\.52/, 'the under-policy total is wrong or missing');
+    // measured against the cost types at all. And only one of its lines: the
+    // catalog item behind Logistical Management is deliberately at 45% markup.
+    assert.match(index, /\$1,039\.89/, 'the under-policy total is wrong or missing');
   });
 });
 
@@ -203,10 +204,10 @@ test('counts findings by rule across the run', async () => {
 
     // Context-only findings are excluded: they are not asks.
     assert.ok(!counts.has('margin.outside-band'));
-    // Two, both from the one construction estimate in the set. The two roofing
-    // ones price from their own templates and are not measured against the
-    // cost types, so they contribute none.
-    assert.equal(counts.get('markup.off-policy'), 2);
+    // One, from the one construction estimate in the set. The two roofing ones
+    // price from their own templates and are not measured against the cost
+    // types; the construction estimate's other deviation is a recorded decision.
+    assert.equal(counts.get('markup.off-policy'), 1);
 
     // Sorted commonest first, so the noisiest rule is the obvious one to look at.
     const values = [...counts.values()];

@@ -23,25 +23,25 @@ const fixture = JSON.parse(
 
 const audit = auditCatalog(fixture);
 
-test('nineteen of twenty are at policy', () => {
+test('nineteen of twenty are at policy; the twentieth is a recorded decision', () => {
   assert.equal(audit.checked, 20);
   assert.equal(audit.atPolicy, 19);
-  assert.equal(audit.offPolicy, 1);
-  assert.equal(audit.approved, 0);
+  assert.equal(audit.offPolicy, 0);
+  assert.equal(audit.approved, 1);
 });
 
-test('the one off-policy item is the x2.40 warranty', () => {
-  // 20 YR Warranty: $25 -> $60 under Other, whose policy is x1.45 -> $36.25.
+test('the x2.40 warranty is set aside as approved, and says where it lives', () => {
+  // 20 YR Warranty: $25 -> $60 under Other. Carl: warranties are priced on
+  // their own schedule, three rates on purpose. It is a line inside the
+  // "Standing Seam Roof Replacement > Upgrades" template group, which is why
+  // the Catalog page's Cost Items tab could not find it.
   const other = audit.sections.find((s) => s.costType === 'Other')!;
-  assert.equal(other.clusters.length, 1);
-  const [c] = other.clusters;
-  assert.equal(c!.rate, '×2.40');
-  assert.equal(c!.items.length, 1);
-  const [o] = c!.items;
-  assert.equal(o!.item.name, '20 YR Warranty');
-  assert.equal(formatMoney(o!.expectedUnitPrice), '$36.25');
-  // Priced HIGH: per-unit is expected - actual, negative.
-  assert.equal(formatMoney(o!.perUnit), '-$23.75');
+  assert.equal(other.clusters.length, 0, 'a recorded decision was clustered as a finding');
+  assert.equal(other.approved.length, 1);
+  const [a] = other.approved;
+  assert.equal(a!.item.name, '20 YR Warranty');
+  assert.match(a!.reason, /own schedule/);
+  assert.equal(a!.item.groupPath, 'Standing Seam Roof Replacement \u203a Upgrades');
 });
 
 test('items at exactly the cost-type rate are not clustered as anything', () => {
@@ -90,8 +90,8 @@ test('an approved exception is set aside, not flagged', () => {
     costCode: { name: 'Design' },
   });
   const a = auditCatalog(f);
-  assert.equal(a.offPolicy, 1, 'still just the warranty');
-  assert.equal(a.approved, 1);
+  assert.equal(a.offPolicy, 0);
+  assert.equal(a.approved, 2, 'the warranty and the Designer item');
   const labor = a.sections.find((s) => s.costType === 'Labor')!;
   assert.equal(labor.approved[0]!.item.name, 'Designer - Schematic');
   assert.match(labor.approved[0]!.decidedBy, /Carl/);
@@ -108,8 +108,8 @@ test('an approved exception lapses if the catalog price moved', () => {
     costType: { id: '22PBAjfWNQr6', name: 'Labor' },
   });
   const a = auditCatalog(f);
-  assert.equal(a.approved, 0);
-  assert.equal(a.offPolicy, 2);
+  assert.equal(a.approved, 1, 'the warranty is still approved');
+  assert.equal(a.offPolicy, 1, 'the moved Designer item is a finding again');
 });
 
 test('items with no cost, no cost type, or at cost by policy are counted, not judged', () => {
@@ -128,12 +128,12 @@ test('the report is self-contained and its numbers are on the page', () => {
   const html = renderCatalogReport(audit);
   assert.ok(!/(?:href|src)\s*=\s*["']?https?:\/\//.test(html), 'references something off the filesystem');
   assert.match(html, /20 YR Warranty/);
-  assert.match(html, /\$36\.25/);
   assert.match(html, /×2\.40/);
-  // Direction is a word, not a sign. "+$23.75" reads as short to half the
-  // people who see it; the warranty is priced HIGH.
-  assert.match(html, /\$23\.75 high/);
-  assert.ok(!/[+\u2212-]\$23\.75/.test(html), 'a bare signed amount with no direction');
+  assert.match(html, /approved:/);
+  // Where to click: the Cost Items tab does not list grouped items.
+  assert.match(html, /in Standing Seam Roof Replacement \u203a Upgrades/);
+  // Direction is a word, not a sign: no bare "+$23.75" anywhere on the page.
+  assert.ok(!/[+\u2212-]\$\d/.test(html), 'a bare signed amount with no direction');
   assert.match(html, /Duplicate names — 4/);
   assert.match(html, /Read-only/);
   // Names came from JobTread and carry quotes.
@@ -143,8 +143,8 @@ test('the report is self-contained and its numbers are on the page', () => {
 
 test('the terminal summary leads with the count and names the cluster', () => {
   const lines = summarizeCatalog(audit);
-  assert.match(lines[0]!, /20 priced catalog items checked — 19 at policy, 1 off/);
-  assert.ok(lines.some((l) => /×2\.40\s+1\s+20 YR Warranty/.test(l)));
+  assert.match(lines[0]!, /20 priced catalog items checked — 19 at policy, 0 off, 1 approved/);
+  assert.ok(!lines.some((l) => /×2\.40/.test(l)), 'an approved item still listed as a cluster');
   assert.ok(lines.some((l) => /4 duplicate names, 3 of which disagree/.test(l)));
 });
 

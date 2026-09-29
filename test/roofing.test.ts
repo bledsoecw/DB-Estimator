@@ -176,9 +176,9 @@ test('construction is still checked', () => {
   assert.equal(jones.estimate.jobType, 'Construction');
   assert.equal(
     audit(jones).findings.filter((f) => f.rule === 'markup.off-policy').length,
-    2,
+    1,
   );
-  assert.equal(formatMoney(audit(jones).totalUnderpriced), '$2,974.52');
+  assert.equal(formatMoney(audit(jones).totalUnderpriced), '$1,039.89');
 });
 
 test('a job with no Job Type recorded is still checked', () => {

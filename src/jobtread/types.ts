@@ -77,6 +77,12 @@ export interface ApiCatalogItem {
   /** Requested by the catalog audit; not by the per-document fetch. */
   costCode?: { name: string } | null;
   isTaxable?: boolean;
+  /**
+   * Set when the item lives inside a catalog cost group — a template. The
+   * Catalog page's Cost Items tab lists only ungrouped items, so an item with
+   * a group here is one Carl "can't find" until told which group to open.
+   */
+  costGroup?: { name: string; parentCostGroup?: { name: string } | null } | null;
 }
 
 /** A frozen copy of the whole priced catalog, for the catalog audit. */

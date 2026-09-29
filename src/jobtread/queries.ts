@@ -308,6 +308,7 @@ export async function fetchCatalog(client: JobTreadClient): Promise<ApiCatalogIt
             id: {}, name: {}, unitCost: {}, unitPrice: {}, isTaxable: {},
             costType: { id: {}, name: {} },
             costCode: { name: {} },
+            costGroup: { name: {}, parentCostGroup: { name: {} } },
           },
         },
       },

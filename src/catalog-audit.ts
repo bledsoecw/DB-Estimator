@@ -213,6 +213,11 @@ export function findDuplicates(items: CatalogItem[]): DuplicateName[] {
 
 // ---- rendering ----------------------------------------------------------------
 
+/** Where to click. The Cost Items tab shows only ungrouped items. */
+function where(item: CatalogItem): string {
+  return item.groupPath ? ` <span class="code">in ${esc(item.groupPath)}</span>` : '';
+}
+
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -316,7 +321,7 @@ ${s.clusters.map((c) => renderCluster(c)).join('\n')}
 ${
   s.approved.length > 0
     ? `    <ul class="approved">${s.approved
-        .map((x) => `<li>${esc(x.item.name)} — ${formatMultiplier(x.item.multiplier!)}, approved: ${esc(x.reason)} (${esc(x.decidedBy)})</li>`)
+        .map((x) => `<li>${esc(x.item.name)}${where(x.item)} — ${formatMultiplier(x.item.multiplier!)}, approved: ${esc(x.reason)} (${esc(x.decidedBy)})</li>`)
         .join('')}</ul>`
     : ''
 }
@@ -333,7 +338,7 @@ function renderCluster(c: Cluster): string {
 ${c.items
   .map(
     (o) => `          <tr>
-            <td>${esc(o.item.name)}${o.item.costCodeName ? ` <span class="code">· ${esc(o.item.costCodeName)}</span>` : ''}</td>
+            <td>${esc(o.item.name)}${o.item.costCodeName ? ` <span class="code">· ${esc(o.item.costCodeName)}</span>` : ''}${where(o.item)}</td>
             <td class="num">${formatMoney(o.item.unitCost)}</td>
             <td class="num">${formatMoney(o.item.unitPrice)}</td>
             <td class="num">${formatMoney(o.expectedUnitPrice)}</td>
@@ -359,7 +364,7 @@ ${d
         <td>${i === 0 ? esc(x.name) : ''}</td>
         <td>${i === 0 ? `${x.items.length}` : ''}</td>
         <td class="num">${formatMoney(it.unitCost)} → ${formatMoney(it.unitPrice)}</td>
-        <td>${esc(it.costTypeName ?? '—')}${it.costCodeName ? ` <span class="code">· ${esc(it.costCodeName)}</span>` : ''}</td>
+        <td>${esc(it.costTypeName ?? '—')}${it.costCodeName ? ` <span class="code">· ${esc(it.costCodeName)}</span>` : ''}${where(it)}</td>
         <td>${i === 0 ? (x.identical ? '<span class="code">identical</span>' : '<span style="color:var(--red)">differ</span>') : ''}</td>
       </tr>`,
       )
