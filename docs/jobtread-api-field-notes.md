@@ -562,10 +562,23 @@ Two consequences worth stating, because both were wrong in the first implementat
 | set | null | a line on a job's budget |
 | set or null | set | a line on an estimate, invoice, change order |
 
-Neither `job` nor `document` is filterable in a `where`, so the catalog can only be isolated
-after reading. There is no separate catalog connection: `organizationCostItem` is not a
-queryable type, `documentTemplate` carries no cost items, and `organization.costItems`
-returns all three kinds mixed together.
+**Both are filterable server-side — through the id, not the object.** `[["document"],"=",null]`
+is refused ("document is not queryable"), but `[["job","id"],"=",null]` and
+`[["document","id"],"=",null]` both work. An earlier revision of this note said neither was
+filterable; that was the wrong path being tried. The catalog is:
+
+```json
+{ "and": [ [["job","id"],"=",null], [["document","id"],"=",null] ] }
+```
+
+**2,567** items match, **718** of them with a unit cost. The rest are groups, headings and
+placeholders that carry no price. There is still no separate catalog connection —
+`organizationCostItem` is not a queryable type, `documentTemplate` carries no cost items — so
+this filter on `organization.costItems` is the way in. `createCostItem`'s own description
+confirms the model: "a catalog cost item with an organizationId, a job budget cost item with a
+jobId, a document costItem with a documentId."
+
+Paging is by the `nextPage` cursor; 718 items is eight pages.
 
 **This matters more than it sounds.** Querying by name looks like the catalog is full of
 duplicates: 1,057 cost items are called "Hauling & Disposal", and 24 of the first hundred
@@ -575,7 +588,10 @@ row has both fields null, and that row is the catalog. An audit that mistakes th
 for stale catalog entries reports a mess that does not exist.
 
 Two names *can* genuinely collide in the catalog — there are two real `Fastener - Screws`
-items, at $22.80 and $48.13 — so identity is the id, never the name.
+items, at $22.80 and $48.13 — so identity is the id, never the name. The first twenty priced
+items alone hold four such collisions: `6" Gutters`, `6" Gutter Corner` and `3x4 Downspouts`
+each exist once under Materials and once under Subcontractor at the same price, and
+`8x8 Step Flashing` exists twice identically. A template that pulls a name can get either.
 
 ### `Job Type` splits the company in two, and decides which policy applies — **VERIFIED**
 

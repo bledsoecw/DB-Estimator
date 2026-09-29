@@ -74,6 +74,18 @@ export interface ApiCatalogItem {
   unitCost: number | null;
   unitPrice: number | null;
   costType: { id: string; name: string } | null;
+  /** Requested by the catalog audit; not by the per-document fetch. */
+  costCode?: { name: string } | null;
+  isTaxable?: boolean;
+}
+
+/** A frozen copy of the whole priced catalog, for the catalog audit. */
+export interface CatalogFixture {
+  capturedAt: string;
+  organizationId: string;
+  note?: string;
+  costTypes: ApiCostType[];
+  items: ApiCatalogItem[];
 }
 
 /** A document as it appears in a list, without its lines. */

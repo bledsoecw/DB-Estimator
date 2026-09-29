@@ -10,6 +10,7 @@
  *   npm run audit -- <documentId> --capture <path.json>   save a fixture while auditing
  *   npm run audit -- <documentId> --html <path.html>      write the approver screen
  *   npm run audit -- --recent 20 --out review               audit a batch, live
+ *   npm run audit -- --catalog --out review                  audit the whole catalog
  *
  * Exit code is 0 when nothing needs a human, 1 when something does — so it can
  * gate a script without anyone reading the output.
@@ -22,6 +23,11 @@ import { audit } from './rules/index.ts';
 import { marginBand } from './rules/comparables.ts';
 import { renderReport } from './report.ts';
 import { findingCounts, runBatch } from './batch.ts';
+import { auditCatalog, renderCatalogReport, summarizeCatalog } from './catalog-audit.ts';
+import { fetchCatalog, fetchCostTypes } from './jobtread/queries.ts';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import type { CatalogFixture } from './jobtread/types.ts';
 import { clientFromEnv } from './jobtread/client.ts';
 import { captureFixture } from './jobtread/queries.ts';
 import type { AuditFixture } from './jobtread/types.ts';
@@ -45,6 +51,7 @@ const SEVERITY_LABEL: Record<Finding['severity'], string> = {
 async function main(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
   if (args.doctor) return doctor();
+  if (args.catalog) return catalogAudit(args);
   if (args.recent !== undefined) return batch(args);
   if (args.help || (!args.documentId && !args.fixture)) {
     usage();
@@ -190,6 +197,7 @@ function wrap(text: string, width: number): string[] {
 
 interface Args {
   doctor: boolean;
+  catalog: boolean;
   recent: number | undefined;
   status: string | undefined;
   jobType: string | undefined;
@@ -205,6 +213,7 @@ interface Args {
 function parseArgs(argv: string[]): Args {
   const args: Args = {
     doctor: false,
+    catalog: false,
     recent: undefined,
     // Construction by default. Roofing prices from its own templates and is
     // not what Kristen reviews, so auditing it against the cost types is noise.
@@ -222,6 +231,7 @@ function parseArgs(argv: string[]): Args {
     const a = argv[i]!;
     if (a === '--help' || a === '-h') args.help = true;
     else if (a === '--doctor') args.doctor = true;
+    else if (a === '--catalog') args.catalog = true;
     else if (a === '--json') args.json = true;
     else if (a === '--fixture') args.fixture = argv[++i];
     else if (a === '--capture') args.capture = argv[++i];
@@ -234,6 +244,84 @@ function parseArgs(argv: string[]): Args {
     else if (!a.startsWith('-')) args.documentId = a;
   }
   return args;
+}
+
+/**
+ * Audit the whole priced catalog against the cost-type margins.
+ *
+ * Org-level, not per estimate: a catalog item priced wrong passes every line
+ * that comes off it, and this is the only thing that would say so.
+ */
+async function catalogAudit(args: Args): Promise<number> {
+  let fixture: CatalogFixture;
+  if (args.fixture) {
+    fixture = JSON.parse(readFileSync(args.fixture, 'utf8')) as CatalogFixture;
+    process.stderr.write(`${DIM}catalog fixture captured ${fixture.capturedAt}${OFF}\n`);
+  } else {
+    const client = clientFromEnv();
+    process.stderr.write(`${DIM}reading the catalog from JobTread (about 8 pages)...${OFF}\n`);
+    const [items, costTypes] = [await fetchCatalog(client), await fetchCostTypes(client)];
+    fixture = {
+      capturedAt: new Date().toISOString(),
+      organizationId: client.organizationId,
+      costTypes,
+      items,
+    };
+    if (args.capture) {
+      writeFileSync(args.capture, JSON.stringify(fixture, null, 2));
+      process.stderr.write(`${DIM}catalog fixture written to ${args.capture}${OFF}\n`);
+    }
+  }
+
+  const result = auditCatalog(fixture);
+
+  if (args.json) {
+    const { sections, duplicates, ...rest } = result;
+    process.stdout.write(
+      JSON.stringify(
+        {
+          ...rest,
+          offPolicyItems: sections.flatMap((s) =>
+            s.clusters.flatMap((c) =>
+              c.items.map((o) => ({
+                id: o.item.id,
+                name: o.item.name,
+                costType: s.costType,
+                costCode: o.item.costCodeName,
+                multiplier: Number(o.item.multiplier) / 1e6,
+                unitCost: formatMoney(o.item.unitCost),
+                unitPrice: formatMoney(o.item.unitPrice),
+                atPolicy: formatMoney(o.expectedUnitPrice),
+                perUnit: formatMoney(o.perUnit),
+              })),
+            ),
+          ),
+          duplicates: duplicates.map((d) => ({
+            name: d.name,
+            identical: d.identical,
+            ids: d.items.map((i) => i.id),
+          })),
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+    return result.offPolicy > 0 ? 1 : 0;
+  }
+
+  mkdirSync(args.out, { recursive: true });
+  const path = join(args.out, 'catalog.html');
+  writeFileSync(path, renderCatalogReport(result));
+
+  out('');
+  out(`${BOLD}Catalog audit${OFF}`);
+  out('');
+  for (const line of summarizeCatalog(result)) out(`  ${line}`);
+  out('');
+  out(`${DIM}Report at ${path}${OFF}`);
+  out(`${DIM}Read-only. Nothing was written to JobTread.${OFF}`);
+  out('');
+  return result.offPolicy > 0 ? 1 : 0;
 }
 
 /**
@@ -386,6 +474,8 @@ ${BOLD}db-estimator auditor v0.5${OFF} ${DIM}— read-only estimate check${OFF}
   ${BOLD}npm run audit -- --recent 20 --status approved --out review${OFF}
 
   --doctor           check the setup: grant key, org id, network
+  --catalog          audit every priced catalog item against the cost types
+                     (--fixture / --capture / --json / --out apply)
   --recent <n>       audit the n most recent estimates and write an index
   --status <s>       with --recent: approved, pending, draft, denied
   --job-type <t>     Construction (default) or Roofing

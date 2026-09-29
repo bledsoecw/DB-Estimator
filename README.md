@@ -92,7 +92,8 @@ npm run audit -- <documentId>                                       # live
 npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
-npm test                                                            # 84 tests
+npm run audit -- --catalog --out review                              # the whole catalog
+npm test                                                            # 96 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -178,6 +179,30 @@ positive, and nothing it does can disturb live work. That is the shadow stage in
 §18 of the roadmap, and its gate is **≥20 estimates audited and ≥80% of findings
 judged real**. Until that number exists, the rules are fitted to three estimates.
 
+### Auditing the catalog
+
+```bash
+npm run audit -- --catalog --out review
+start review/catalog.html
+```
+
+The other half of the catalog check. A line is judged against its catalog item because the
+catalog is the intent — which means a catalog item priced wrong passes every line that
+comes off it, forever. This reads every priced catalog item (718 at last count, eight
+pages) and reports two things, both org-level and neither an estimate's problem:
+
+- **Off policy** — items whose price is not their cost type's margin, grouped by cost type
+  and then by the rate they actually sit at, so eleven warranties at ×2.40 read as one
+  decision rather than eleven mistakes. Approved exceptions are set aside and listed.
+- **Duplicate names** — two or more catalog items with one name. `6" Gutters` exists once
+  under Materials and once under Subcontractor; `8x8 Step Flashing` exists twice
+  identically. A template that pulls a name can get either. Copies that disagree on price
+  or cost type are listed first.
+
+`--capture test/fixtures/catalog.json` freezes the whole catalog to disk; `--fixture` runs
+against one offline; `--json` for machines. It is the whole price book, so treat the
+capture like the other fixtures — real, private, and not for anyone's cloud.
+
 ### The approver screen
 
 `--html` writes the reviewer's view as one self-contained file — open it by
@@ -210,6 +235,7 @@ no credential. Three real estimates are captured in `test/fixtures/`:
 | `jones-bath-kitchen.json` | A GC remodel, 26 lines, zero-rated. The original golden case. |
 | `daeger-roof.json` | Roofing, 67 lines, 7.25% rate, **approved and sold** — the baseline for what a clean estimate must not be flagged as. |
 | `wright-roof.json` | Roofing, 101 lines, 6.85% rate. Crosses JobTread's 100-item page cap and reconciles through three unselected option branches. |
+| `catalog-sample.json` | The first 20 priced catalog items by name, after the 2026-09-29 sweep. One item at ×2.40, four duplicate names. |
 
 ## Working conventions
 

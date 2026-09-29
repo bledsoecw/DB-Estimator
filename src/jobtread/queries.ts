@@ -269,6 +269,57 @@ export async function fetchCatalogItems(
   return out;
 }
 
+/**
+ * The whole priced catalog, for the catalog audit.
+ *
+ * A catalog item is a cost item with no job and no document, and both of those
+ * ARE filterable server-side through their id — `[["job","id"],"=",null]` —
+ * which an earlier note in the field notes got wrong. 2,567 items match, 718
+ * of them with a cost; the rest are groups, headings and placeholders that
+ * carry no price and cannot be off any policy.
+ *
+ * Paged with the cursor the API returns; there is no other way past 100.
+ */
+export async function fetchCatalog(client: JobTreadClient): Promise<ApiCatalogItem[]> {
+  const out: ApiCatalogItem[] = [];
+  let page: string | null = null;
+  for (;;) {
+    const args: Record<string, unknown> = {
+      size: PAGE,
+      where: {
+        and: [
+          [['job', 'id'], '=', null],
+          [['document', 'id'], '=', null],
+          [['unitCost'], '>', 0],
+        ],
+      },
+      sortBy: [{ field: 'name' }],
+    };
+    if (page) args['page'] = page;
+    const res: {
+      organization: { costItems: { nextPage: string | null; nodes: ApiCatalogItem[] } };
+    } = await client.query({
+      organization: {
+        $: { id: client.organizationId },
+        costItems: {
+          $: args,
+          nextPage: {},
+          nodes: {
+            id: {}, name: {}, unitCost: {}, unitPrice: {}, isTaxable: {},
+            costType: { id: {}, name: {} },
+            costCode: { name: {} },
+          },
+        },
+      },
+    });
+    const c = res.organization.costItems;
+    out.push(...c.nodes);
+    if (!c.nextPage || c.nodes.length === 0) break;
+    page = c.nextPage;
+  }
+  return out;
+}
+
 /** Everything one audit needs, in a form that can be frozen to disk. */
 export async function captureFixture(
   client: JobTreadClient,

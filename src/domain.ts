@@ -100,6 +100,7 @@ export interface CatalogItem {
   unitPrice: Money;
   costTypeId: string | null;
   costTypeName: string | null;
+  costCodeName: string | null;
   /** unitPrice / unitCost, or null when cost is zero or missing. */
   multiplier: Rate | null;
 }
@@ -217,6 +218,7 @@ export function toCatalog(rows: ApiCatalogItem[]): Map<string, CatalogItem> {
       unitPrice,
       costTypeId: r.costType?.id ?? null,
       costTypeName: r.costType?.name ?? null,
+      costCodeName: r.costCode?.name ?? null,
       multiplier: observedMultiplier(unitCost, unitPrice),
     });
   }
