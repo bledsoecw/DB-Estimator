@@ -35,6 +35,9 @@ const PAGE = 100;
  */
 export const JOB_TYPE_FIELD = '22PBzhnUydgC';
 
+/** The "Project Type" custom field: C-Bathrooms, C-Additions, R-Shingles, ... */
+export const PROJECT_TYPE_FIELD = '22PC7idvhRzp';
+
 const JOB_FIELDS = {
   id: {},
   name: {},

@@ -241,6 +241,23 @@ no credential. Three real estimates are captured in `test/fixtures/`:
 | `wright-roof.json` | Roofing, 101 lines, 6.85% rate. Crosses JobTread's 100-item page cap and reconciles through three unselected option branches. |
 | `catalog-sample.json` | The first 20 priced catalog items by name, after the 2026-09-29 sweep. One item at ×2.40, four duplicate names. |
 
+### Reviewing scope
+
+The pricing checks ask whether the lines are priced right. `npm run scope`
+asks whether the right lines are there: it reads the job's conversation,
+supplier quotes and site photos, and has a model compare them with the
+estimate, raising what is missing, what quantity does not fit the evidence,
+where a quote and a line disagree, and what the rep should confirm. Findings
+land on the same approver page as "Scope" cards, judged the same way.
+
+```
+npm run scope -- <documentId> --dry-run      # prints what would be sent; sends nothing
+npm run scope -- <documentId> --out review   # needs ANTHROPIC_API_KEY in .env
+```
+
+What it reads, what it costs (about $0.30 to $1 an estimate), what leaves the
+building and what it will not do are in `docs/scope-review.md`.
+
 ## Working conventions
 
 Every factual claim about JobTread in these documents is tagged:

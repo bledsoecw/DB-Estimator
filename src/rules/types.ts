@@ -9,6 +9,11 @@
 import type { AuditInput } from '../domain.ts';
 import type { Money } from '../money.ts';
 
+/**
+ * Findings from the model's scope review (src/scope) carry rules in the
+ * `scope.` namespace and severity 'data': an ask, judged and copied out like
+ * any other. The report labels them by the namespace, not the severity.
+ */
 export type Severity = 'pricing' | 'data' | 'display' | 'info';
 
 export interface Finding {
