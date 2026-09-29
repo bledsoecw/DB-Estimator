@@ -8,6 +8,7 @@
 
 import type { JobTreadClient } from './client.ts';
 import type {
+  ApiCatalogItem,
   ApiComparable,
   ApiDocumentSummary,
   ApiJob,
@@ -229,6 +230,45 @@ export async function fetchRecentDocuments(
   return wanted.slice(0, opts.limit);
 }
 
+/**
+ * The catalog items behind a document's lines.
+ *
+ * `organizationCostItem` on a line IS a catalog item, so fetching those ids
+ * needs no job/document filtering — see the field notes on how the three kinds
+ * of costItem are told apart.
+ *
+ * This is what makes the catalog, rather than the cost-type defaults, the thing
+ * an estimate is judged against. The cost types are org-wide averages; the
+ * catalog is where Carl's actual intent lives, item by item — Designer at
+ * x1.25, HOVER at cost, sub-supplied fasteners at a higher markup.
+ */
+export async function fetchCatalogItems(
+  client: JobTreadClient,
+  ids: string[],
+): Promise<ApiCatalogItem[]> {
+  const unique = [...new Set(ids)];
+  const out: ApiCatalogItem[] = [];
+  for (let i = 0; i < unique.length; i += PAGE) {
+    const batch = unique.slice(i, i + PAGE);
+    const res = await client.query<{
+      organization: { costItems: { nodes: ApiCatalogItem[] } };
+    }>({
+      organization: {
+        $: { id: client.organizationId },
+        costItems: {
+          $: { size: PAGE, where: [['id'], 'in', batch] },
+          nodes: {
+            id: {}, name: {}, unitCost: {}, unitPrice: {},
+            costType: { id: {}, name: {} },
+          },
+        },
+      },
+    });
+    out.push(...res.organization.costItems.nodes);
+  }
+  return out;
+}
+
 /** Everything one audit needs, in a form that can be frozen to disk. */
 export async function captureFixture(
   client: JobTreadClient,
@@ -241,11 +281,18 @@ export async function captureFixture(
   // cannot be shared.
   const costTypes = sharedCostTypes ?? (await fetchCostTypes(client));
   const comparables = await fetchComparables(client, document.price);
+  const catalog = await fetchCatalogItems(
+    client,
+    document.costItems.nodes
+      .map((i) => i.organizationCostItem?.id)
+      .filter((id): id is string => !!id),
+  );
   return {
     capturedAt: new Date().toISOString(),
     organizationId: client.organizationId,
     document,
     costTypes,
     comparables,
+    catalog,
   };
 }

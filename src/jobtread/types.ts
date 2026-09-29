@@ -61,6 +61,21 @@ export interface ApiJob {
   customFieldValues?: { nodes: ApiCustomFieldValue[] };
 }
 
+/**
+ * A catalog item — the org-wide price of record for one thing.
+ *
+ * Identified by having neither a job nor a document (see the field notes). The
+ * ids here come from a line's `organizationCostItem`, which is a catalog item
+ * by definition, so no filtering is needed when fetching by id.
+ */
+export interface ApiCatalogItem {
+  id: string;
+  name: string;
+  unitCost: number | null;
+  unitPrice: number | null;
+  costType: { id: string; name: string } | null;
+}
+
 /** A document as it appears in a list, without its lines. */
 export interface ApiDocumentSummary {
   id: string;
@@ -126,4 +141,6 @@ export interface AuditFixture {
   document: ApiDocument;
   costTypes: ApiCostType[];
   comparables: ApiComparable[];
+  /** Catalog items behind this document's lines. Absent on older fixtures. */
+  catalog?: ApiCatalogItem[];
 }

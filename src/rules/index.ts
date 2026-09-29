@@ -9,6 +9,7 @@
 import { type Money, ZERO, add } from '../money.ts';
 import type { AuditInput } from '../domain.ts';
 import { markupRule } from './markup.ts';
+import { catalogRule } from './catalog.ts';
 import {
   catalogLinkRule,
   displayRule,
@@ -22,6 +23,7 @@ import { comparablesRule } from './comparables.ts';
 import type { AuditResult, Finding, Rule, Severity } from './types.ts';
 
 export const RULES: Rule[] = [
+  catalogRule,
   markupRule,
   emptyLineRule,
   totalsRule,
@@ -64,7 +66,13 @@ export function audit(input: AuditInput, rules: Rule[] = RULES): AuditResult {
     if (produced.length > 0) {
       findings.push(...produced);
     } else {
-      const msg = rule.passMessage?.(input) ?? rule.describes;
+      // A rule that DEFINES passMessage and returns null is saying it has
+      // nothing to report — most often because it could not run at all. Falling
+      // back to `describes` there turned that silence into a claim: the catalog
+      // rule, with no catalog captured, was listing "Every line is priced as its
+      // catalog item says" under CHECKED AND CLEAN. A check that did not run
+      // must never read as a check that passed.
+      const msg = rule.passMessage ? rule.passMessage(input) : rule.describes;
       if (msg) passed.push({ rule: rule.id, message: msg });
     }
 

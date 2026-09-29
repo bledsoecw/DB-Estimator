@@ -42,7 +42,7 @@
 import {
   type Money, type Rate, ZERO,
   abs, add, formatMoney, formatMultiplier, formatPercent,
-  marginFromMultiplier, moneyEquals, mulQty, mulRate, priceFromCostAtMargin,
+  marginFromMultiplier, moneyEquals, mulQty, mulRate, priceFromCostAtMargin, rateEquals,
   roundToCents, sub,
 } from '../money.ts';
 import type { Line } from '../domain.ts';
@@ -103,8 +103,9 @@ interface Analysis {
 function analyse(
   lines: Line[],
   policy: { byCostTypeId: Map<string, { name: string; margin: Rate; multiplier: Rate }> },
+  catalog: Map<string, { multiplier: Rate | null }> = new Map(),
 ): Analysis {
-  const { deviations: all, checkedByType } = measure(lines, policy);
+  const { deviations: all, checkedByType } = measure(lines, policy, catalog);
   const findings: Finding[] = [];
   const quiet: Deviation[] = [];
 
@@ -176,28 +177,28 @@ export const markupRule: Rule = {
   id: 'markup.off-policy',
   describes: 'Every priced line matches its cost type’s margin policy',
 
-  run({ estimate, policy }) {
+  run({ estimate, policy, catalog }) {
     if (exempt(estimate.jobType)) return [];
-    return analyse(estimate.lines, policy).findings;
+    return analyse(estimate.lines, policy, catalog).findings;
   },
 
-  passMessage({ estimate, policy }) {
+  passMessage({ estimate, policy, catalog }) {
     if (exempt(estimate.jobType)) {
       return (
         `Markup not checked — ${estimate.jobType} prices from its own templates, ` +
         `not from the cost-type margins`
       );
     }
-    const { checked, atPolicy } = analyse(estimate.lines, policy);
+    const { checked, atPolicy } = analyse(estimate.lines, policy, catalog);
     if (checked === 0) return null;
     return atPolicy === checked
       ? `All ${checked} priced lines at policy`
       : `${atPolicy} of ${checked} priced lines at policy`;
   },
 
-  suppressed({ estimate, policy }) {
+  suppressed({ estimate, policy, catalog }) {
     if (exempt(estimate.jobType)) return null;
-    const { quiet, approved, checked, atPolicy } = analyse(estimate.lines, policy);
+    const { quiet, approved, checked, atPolicy } = analyse(estimate.lines, policy, catalog);
     const parts: string[] = [];
 
     if (approved.length > 0) {
@@ -217,6 +218,28 @@ export const markupRule: Rule = {
           `(${atPolicy} of ${checked} priced lines are exactly at policy)`,
       );
     }
+    // The catalog is the intent, so a line matching it passes — but if the
+    // catalog item itself is off the cost type, that is worth saying once.
+    // Context, not an ask: changing it is an org decision, not this estimate's.
+    const offPolicyItems = new Set<string>();
+    for (const line of estimate.lines) {
+      if (!line.catalogItemId) continue;
+      const item = catalog.get(line.catalogItemId);
+      if (!item?.multiplier) continue;
+      const p = policy.byCostTypeId.get(line.costTypeId);
+      if (!p || p.margin === 0n) continue;
+      if (!rateEquals(item.multiplier, p.multiplier, 5_000n)) offPolicyItems.add(line.catalogItemId);
+    }
+    if (offPolicyItems.size > 0) {
+      parts.push(
+        offPolicyItems.size === 1
+          ? 'One catalog item behind these lines sits off the cost-type default — the ' +
+            'catalog is the intent, so the line passes'
+          : `${offPolicyItems.size} catalog items behind these lines sit off the ` +
+            `cost-type default — the catalog is the intent, so the lines pass`,
+      );
+    }
+
     return parts.length > 0 ? parts.join('; ') : null;
   },
 };
@@ -225,12 +248,20 @@ export const markupRule: Rule = {
 function measure(
   lines: Line[],
   policy: { byCostTypeId: Map<string, { name: string; margin: Rate; multiplier: Rate }> },
+  catalog: Map<string, { multiplier: Rate | null }> = new Map(),
 ): { deviations: Deviation[]; checkedByType: Map<string, number> } {
   const deviations: Deviation[] = [];
   const checkedByType = new Map<string, number>();
 
   for (const line of lines) {
     if (line.unitCost === ZERO) continue; // the empty-line rule's business
+
+    // A line that came off the catalog is judged against the catalog, which is
+    // where the intent lives — that is catalog.drift's job, not this rule's.
+    // The cost-type policy is the fallback for lines with nothing to compare
+    // to: hand-typed ones, and every line when the catalog was not fetched.
+    if (line.catalogItemId && catalog.has(line.catalogItemId)) continue;
+
     const p = policy.byCostTypeId.get(line.costTypeId);
     if (!p) continue;
     if (p.margin === 0n) continue; // Clock In: cost passes through at cost, by policy

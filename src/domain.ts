@@ -12,7 +12,8 @@ import {
   add, moneyFromApi, mulQty, multiplierFromMargin, observedMultiplier,
   qtyFromApi, rateFromApi, roundToCents, sub,
 } from './money.ts';
-import type { ApiComparable, ApiCostType, ApiDocument, AuditFixture } from './jobtread/types.ts';
+import type {
+  ApiCatalogItem, ApiComparable, ApiCostType, ApiDocument, AuditFixture } from './jobtread/types.ts';
 import { jobTypeOf } from './jobtread/queries.ts';
 
 export interface Line {
@@ -91,10 +92,30 @@ export interface Comparable {
   margin: Rate;
 }
 
+/** A catalog item, as the price of record for one thing. */
+export interface CatalogItem {
+  id: string;
+  name: string;
+  unitCost: Money;
+  unitPrice: Money;
+  costTypeId: string | null;
+  costTypeName: string | null;
+  /** unitPrice / unitCost, or null when cost is zero or missing. */
+  multiplier: Rate | null;
+}
+
 export interface AuditInput {
   estimate: Estimate;
   policy: Policy;
   comparables: Comparable[];
+  /**
+   * The catalog behind the lines, keyed by catalog item id.
+   *
+   * EMPTY means "not fetched", not "no catalog" — fixtures captured before the
+   * catalog check existed carry none. Rules must treat an empty map as "cannot
+   * check", never as "everything matches".
+   */
+  catalog: Map<string, CatalogItem>;
   capturedAt: string;
 }
 
@@ -184,6 +205,24 @@ export function toEstimate(doc: ApiDocument): Estimate {
   };
 }
 
+export function toCatalog(rows: ApiCatalogItem[]): Map<string, CatalogItem> {
+  const out = new Map<string, CatalogItem>();
+  for (const r of rows) {
+    const unitCost = moneyFromApi(r.unitCost);
+    const unitPrice = moneyFromApi(r.unitPrice);
+    out.set(r.id, {
+      id: r.id,
+      name: r.name,
+      unitCost,
+      unitPrice,
+      costTypeId: r.costType?.id ?? null,
+      costTypeName: r.costType?.name ?? null,
+      multiplier: observedMultiplier(unitCost, unitPrice),
+    });
+  }
+  return out;
+}
+
 export function toComparables(rows: ApiComparable[]): Comparable[] {
   return rows.map((r) => {
     const price = moneyFromApi(r.price);
@@ -232,6 +271,7 @@ export function fromFixture(f: AuditFixture): AuditInput {
     estimate: toEstimate(f.document),
     policy: toPolicy(f.costTypes),
     comparables: toComparables(f.comparables),
+    catalog: toCatalog(f.catalog ?? []),
     capturedAt: f.capturedAt,
   };
 }

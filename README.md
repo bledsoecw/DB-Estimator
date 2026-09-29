@@ -92,7 +92,7 @@ npm run audit -- <documentId>                                       # live
 npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
-npm test                                                            # 75 tests
+npm test                                                            # 84 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -107,6 +107,18 @@ start review/index.html
 Audits the 20 most recent estimates and writes an index over them — job, price,
 margin, how many findings, how much under policy — with each row linking to its own
 approver screen.
+
+**The catalog is the price of record, and a line is judged against it.** The cost types
+are four numbers for a catalog of thousands; the catalog is where the intent already
+lives, item by item — Designer at ×1.25 because design is billed at a rate, HOVER at cost
+because it is a pass-through, fasteners at ×1.667 because the subcontractor supplies them
+and carries the markup. None of that needs a rule written for it.
+
+`catalog.drift` compares each line to its own catalog item and the cost-type policy is the
+fallback for lines with nothing to compare to — hand-typed ones. It compares
+**multipliers, not prices**: a line written in March holds March's cost and that is not an
+error, but the markup on top of it should not have moved. An empty catalog means "not
+captured", never "everything matches".
 
 **Per-item decisions live in [`src/rules/exceptions.ts`](src/rules/exceptions.ts).** Each
 entry names one catalog item, who decided and when, and exactly one of:
