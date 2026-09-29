@@ -99,6 +99,11 @@ export const EXCEPTIONS: Exception[] = [
   // the name. A string test would quietly mis-sort the first item somebody
   // names differently, and would have no idea that the line reading "Aluminum
   // Soffit Install" is catalog item "Vinyl Soffit Install".
+  // Both of these were reclassified to Subcontractor in the catalog on
+  // 2026-09-29, and Subcontractor now prices at x1.45 — so the catalog says
+  // what these entries say, and new estimates need neither. They stay because
+  // estimates written before that date carry cost type Labor on the line, and
+  // against the Labor margin x1.45 still reads as off policy.
   {
     catalogItemId: '22PLm3w6734e',
     name: 'Gutter Rehang',

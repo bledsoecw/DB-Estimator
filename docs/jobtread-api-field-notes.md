@@ -552,6 +552,31 @@ Two consequences worth stating, because both were wrong in the first implementat
   $130.30 difference is tax on $1,902.11 of taxable lines inside branches the customer did
   not take. Against the selected base it closes to the cent.
 
+### A catalog item is a cost item with no job AND no document — **VERIFIED**
+
+`costItem` is one type doing three jobs, and they are only told apart by what they point at:
+
+| `job` | `document` | What it is |
+|---|---|---|
+| null | null | **the catalog item** — the org-wide price of record |
+| set | null | a line on a job's budget |
+| set or null | set | a line on an estimate, invoice, change order |
+
+Neither `job` nor `document` is filterable in a `where`, so the catalog can only be isolated
+after reading. There is no separate catalog connection: `organizationCostItem` is not a
+queryable type, `documentTemplate` carries no cost items, and `organization.costItems`
+returns all three kinds mixed together.
+
+**This matters more than it sounds.** Querying by name looks like the catalog is full of
+duplicates: 1,057 cost items are called "Hauling & Disposal", and 24 of the first hundred
+have `document: null` and a stale price. Every one of those is a job-budget line frozen at
+what it cost that day — `#25-0003 Chad Vorst_Addition`, `Kay Oss_House Build`. Exactly one
+row has both fields null, and that row is the catalog. An audit that mistakes the other 23
+for stale catalog entries reports a mess that does not exist.
+
+Two names *can* genuinely collide in the catalog — there are two real `Fastener - Screws`
+items, at $22.80 and $48.13 — so identity is the id, never the name.
+
 ### `Job Type` splits the company in two, and decides which policy applies — **VERIFIED**
 
 Jobs carry a custom field **`Job Type`** (`22PBzhnUydgC`) with exactly two options:
