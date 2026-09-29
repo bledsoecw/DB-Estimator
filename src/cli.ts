@@ -155,10 +155,17 @@ function printFinding(f: Finding): void {
     out(`    ${RED}${sign}${formatMoney(f.impact < ZERO ? (-f.impact as typeof f.impact) : f.impact)}${OFF}`);
   }
   if (f.math?.length) {
-    const w = Math.max(...f.math.map((m) => m.label.length));
+    // Only rows that carry a value set the column width. A long label with no
+    // value — the list of items behind a rate — would otherwise push every
+    // number off to the right.
+    const valued = f.math.filter((m) => m.value !== '');
+    const w = valued.length > 0 ? Math.max(...valued.map((m) => m.label.length)) : 0;
     for (const m of f.math) {
-      const label = m.label.padEnd(w);
-      out(`    ${m.emphasis ? BOLD : DIM}${label}  ${m.value}${OFF}`);
+      if (m.value === '') {
+        out(`    ${DIM}${m.label}${OFF}`);
+        continue;
+      }
+      out(`    ${m.emphasis ? BOLD : DIM}${m.label.padEnd(w)}  ${m.value}${OFF}`);
     }
   }
   if (f.actions?.length) out(`    ${DIM}→ ${f.actions.join('  ·  ')}${OFF}`);

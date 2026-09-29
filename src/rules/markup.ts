@@ -218,6 +218,13 @@ function systemicFinding(
       margin: marginFromMultiplier(
         ds.reduce((acc, d) => acc + d.multiplier, 0n) / BigInt(ds.length) as Rate,
       ),
+      // Which catalog items drive this rate. Measured across 100 Labor lines on
+      // approved customer orders org-wide, the split is not by trade: hourly
+      // crew labour ($55 -> $100) sits at policy on 45% of lines, while named
+      // unit-priced items — Hauling & Disposal (R), Counterflashing Labor,
+      // Gutter Removal (Crew) — run at x1.45 on 37%. Naming them turns "which
+      // schedule is the policy" into a list someone can actually go and fix.
+      items: [...groupBy(ds, (d) => d.line.name).keys()],
     }))
     .sort((a, b) => b.n - a.n);
 
@@ -234,10 +241,18 @@ function systemicFinding(
     impact: total,
     lineIds: devs.map((d) => d.line.id),
     math: [
-      ...clusters.map((c) => ({
-        label: `×${c.rate} (${formatPercent(c.margin)} margin) on ${c.n} line${c.n === 1 ? '' : 's'}`,
-        value: formatMoney(abs(c.money)),
-      })),
+      ...clusters.flatMap((c) => [
+        {
+          label: `×${c.rate} (${formatPercent(c.margin)} margin) on ${c.n} line${c.n === 1 ? '' : 's'}`,
+          value: formatMoney(abs(c.money)),
+        },
+        {
+          label: `    ${c.items.slice(0, 3).join(', ')}${
+            c.items.length > 3 ? ` +${c.items.length - 3} more` : ''
+          }`,
+          value: '',
+        },
+      ]),
       {
         label: `configured policy ${formatMultiplier(p.multiplier)}`,
         value: formatPercent(p.margin),
