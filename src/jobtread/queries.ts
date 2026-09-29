@@ -9,6 +9,7 @@
 import type { JobTreadClient } from './client.ts';
 import type {
   ApiComparable,
+  ApiDocumentSummary,
   ApiCostGroup,
   ApiCostItem,
   ApiCostType,
@@ -151,16 +152,54 @@ export async function fetchComparables(
   return res.organization.documents.nodes;
 }
 
+/**
+ * Recent estimates, for auditing a batch rather than one at a time.
+ *
+ * Sorted newest first. Status is left to the caller: recently APPROVED
+ * estimates are the useful ones for a shadow run, because they already went
+ * to a customer — anything the auditor says about them is either a real miss
+ * or a false positive, and nothing it says can disrupt live work.
+ */
+export async function fetchRecentDocuments(
+  client: JobTreadClient,
+  opts: { limit: number; status?: string; type?: string },
+): Promise<ApiDocumentSummary[]> {
+  const where: unknown[] = [[['type'], '=', opts.type ?? 'customerOrder']];
+  if (opts.status) where.push([['status'], '=', opts.status]);
+
+  const res = await client.query<{
+    organization: { documents: { nodes: ApiDocumentSummary[] } };
+  }>({
+    organization: {
+      $: { id: client.organizationId },
+      documents: {
+        $: {
+          size: Math.min(opts.limit, PAGE),
+          where: where.length === 1 ? where[0] : { and: where },
+          sortBy: [{ field: 'createdAt', order: 'desc' }],
+        },
+        nodes: {
+          id: {}, name: {}, status: {}, price: {}, cost: {}, createdAt: {},
+          job: { id: {}, name: {} },
+        },
+      },
+    },
+  });
+  return res.organization.documents.nodes.slice(0, opts.limit);
+}
+
 /** Everything one audit needs, in a form that can be frozen to disk. */
 export async function captureFixture(
   client: JobTreadClient,
   documentId: string,
+  sharedCostTypes?: ApiCostType[],
 ): Promise<AuditFixture> {
   const document = await fetchDocument(client, documentId);
-  const [costTypes, comparables] = [
-    await fetchCostTypes(client),
-    await fetchComparables(client, document.price),
-  ];
+  // Cost types are org-wide and identical for every document in a run, so a
+  // batch fetches them once. Comparables depend on the document's price and
+  // cannot be shared.
+  const costTypes = sharedCostTypes ?? (await fetchCostTypes(client));
+  const comparables = await fetchComparables(client, document.price);
   return {
     capturedAt: new Date().toISOString(),
     organizationId: client.organizationId,

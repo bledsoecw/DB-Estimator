@@ -49,6 +49,17 @@ export interface ApiCostGroup {
   parentCostGroup: Ref | null;
 }
 
+/** A document as it appears in a list, without its lines. */
+export interface ApiDocumentSummary {
+  id: string;
+  name: string;
+  status: string;
+  price: number;
+  cost: number;
+  createdAt: string;
+  job: { id: string; name: string };
+}
+
 export interface ApiDocument {
   id: string;
   name: string;

@@ -91,10 +91,28 @@ npm run audit -- --fixture test/fixtures/jones-bath-kitchen.json   # offline, no
 npm run audit -- <documentId>                                       # live
 npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
-npm test                                                            # 50 tests
+npm run audit -- --recent 20 --status approved --out review          # a batch
+npm test                                                            # 55 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
+
+### Auditing a batch
+
+```bash
+npm run audit -- --recent 20 --status approved --out review
+start review/index.html
+```
+
+Audits the 20 most recent estimates and writes an index over them — job, price,
+margin, how many findings, how much under policy — with each row linking to its own
+approver screen.
+
+`--status approved` is the one to start with. Those estimates already went to a
+customer, so anything the auditor says about them is either a real miss or a false
+positive, and nothing it does can disturb live work. That is the shadow stage in
+§18 of the roadmap, and its gate is **≥20 estimates audited and ≥80% of findings
+judged real**. Until that number exists, the rules are fitted to three estimates.
 
 ### The approver screen
 

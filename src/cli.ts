@@ -9,17 +9,19 @@
  *   npm run audit -- --fixture <path.json>     audit a captured fixture, no network
  *   npm run audit -- <documentId> --capture <path.json>   save a fixture while auditing
  *   npm run audit -- <documentId> --html <path.html>      write the approver screen
+ *   npm run audit -- --recent 20 --out review               audit a batch, live
  *
  * Exit code is 0 when nothing needs a human, 1 when something does — so it can
  * gate a script without anyone reading the output.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { ZERO, formatMoney, formatPercent } from './money.ts';
+import { ZERO, add, formatMoney, formatPercent } from './money.ts';
 import { fromFixture, marginOf } from './domain.ts';
 import { audit } from './rules/index.ts';
 import { marginBand } from './rules/comparables.ts';
 import { renderReport } from './report.ts';
+import { findingCounts, runBatch } from './batch.ts';
 import { clientFromEnv } from './jobtread/client.ts';
 import { captureFixture } from './jobtread/queries.ts';
 import type { AuditFixture } from './jobtread/types.ts';
@@ -43,6 +45,7 @@ const SEVERITY_LABEL: Record<Finding['severity'], string> = {
 async function main(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
   if (args.doctor) return doctor();
+  if (args.recent !== undefined) return batch(args);
   if (args.help || (!args.documentId && !args.fixture)) {
     usage();
     return args.help ? 0 : 2;
@@ -180,6 +183,9 @@ function wrap(text: string, width: number): string[] {
 
 interface Args {
   doctor: boolean;
+  recent: number | undefined;
+  status: string | undefined;
+  out: string;
   documentId: string | undefined;
   fixture: string | undefined;
   capture: string | undefined;
@@ -191,6 +197,9 @@ interface Args {
 function parseArgs(argv: string[]): Args {
   const args: Args = {
     doctor: false,
+    recent: undefined,
+    status: undefined,
+    out: 'review',
     documentId: undefined,
     fixture: undefined,
     capture: undefined,
@@ -206,9 +215,72 @@ function parseArgs(argv: string[]): Args {
     else if (a === '--fixture') args.fixture = argv[++i];
     else if (a === '--capture') args.capture = argv[++i];
     else if (a === '--html') args.html = argv[++i];
+    else if (a === '--recent') args.recent = Number(argv[++i]);
+    else if (a === '--status') args.status = argv[++i];
+    else if (a === '--out') args.out = argv[++i] ?? 'review';
     else if (!a.startsWith('-')) args.documentId = a;
   }
   return args;
+}
+
+/**
+ * Audit a run of estimates and write an index over them.
+ *
+ * For the shadow stage: point it at estimates that already went out, and read
+ * what the auditor would have said. Nothing is written to JobTread.
+ */
+async function batch(args: Args): Promise<number> {
+  if (!Number.isFinite(args.recent) || args.recent! < 1) {
+    process.stderr.write(`${RED}--recent needs a number, e.g. --recent 20${OFF}\n`);
+    return 2;
+  }
+  const client = clientFromEnv();
+  const rows = await runBatch(client, {
+    limit: args.recent!,
+    ...(args.status ? { status: args.status } : {}),
+    outDir: args.out,
+    onProgress: (i, total, label) =>
+      process.stderr.write(`${DIM}[${i}/${total}] ${label}${OFF}\n`),
+  });
+
+  const failed = rows.filter((r) => r.error);
+  const flagged = rows.filter((r) => !r.error && r.needsHuman > 0);
+  const totalFindings = rows.reduce((n, r) => n + r.needsHuman, 0);
+  const totalUnder = rows.reduce((acc, r) => add(acc, r.underpriced), ZERO);
+
+  out('');
+  out(`${BOLD}${rows.length} estimates audited${OFF}`);
+  out('');
+  for (const r of rows) {
+    if (r.error) {
+      out(`  ${RED}✗${OFF} ${r.jobName} ${DIM}— ${r.error}${OFF}`);
+      continue;
+    }
+    const mark = r.needsHuman === 0 ? `${GREEN}✓${OFF}` : `${RED}${r.needsHuman}${OFF}`;
+    out(
+      `  ${mark}  ${r.jobName.padEnd(38).slice(0, 38)} ` +
+        `${DIM}${formatMoney(r.price, { cents: false }).padStart(11)}${OFF}` +
+        (r.underpriced > ZERO ? `  ${RED}−${formatMoney(r.underpriced)}${OFF}` : ''),
+    );
+  }
+  out('');
+  out(
+    `  ${rows.length - flagged.length - failed.length} clean · ` +
+      `${flagged.length} flagged · ${totalFindings} findings` +
+      (totalUnder > ZERO ? ` · ${formatMoney(totalUnder)} under policy` : '') +
+      (failed.length ? ` · ${failed.length} unreadable` : ''),
+  );
+  out('');
+  const counts = findingCounts(rows);
+  if (counts.size > 0) {
+    out(`${BOLD}BY RULE${OFF}`);
+    for (const [rule, n] of counts) out(`  ${DIM}${rule.padEnd(24)}${OFF} ${n}`);
+    out('');
+  }
+  out(`${DIM}Reports in ${args.out}/ — open ${args.out}/index.html${OFF}`);
+  out(`${DIM}Read-only. Nothing was written to JobTread.${OFF}`);
+  out('');
+  return 0;
 }
 
 /**
@@ -297,7 +369,12 @@ ${BOLD}db-estimator auditor v0.5${OFF} ${DIM}— read-only estimate check${OFF}
   ${BOLD}npm run audit -- <documentId>${OFF}
   ${BOLD}npm run audit -- --fixture test/fixtures/jones-bath-kitchen.json${OFF}
 
+  ${BOLD}npm run audit -- --recent 20 --status approved --out review${OFF}
+
   --doctor           check the setup: grant key, org id, network
+  --recent <n>       audit the n most recent estimates and write an index
+  --status <s>       with --recent: approved, pending, draft, denied
+  --out <dir>        with --recent: where the reports go (default: review)
   --fixture <path>   audit a captured fixture, no network
   --capture <path>   save the fetched data as a fixture while auditing
   --html <path>      write the approver screen as one self-contained HTML file

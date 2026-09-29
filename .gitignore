@@ -46,6 +46,7 @@ Thumbs.db
 # Rendered audit reports carry customer names and real pricing. They are for
 # Carl's machine and for email, not for git and not for anyone's cloud.
 *.html
+/review/
 /local/
 /tmp/
 *.sqlite
