@@ -1964,6 +1964,15 @@ the previous one exits.
 works; it only proves the rule engine is right before anyone depends on it. Skipping it
 means discovering the false-positive rate after Kristen has started trusting it.
 
+**Stage 1 exited 2026-09-29.** Twenty approved construction estimates, twenty findings,
+graded by Kristen: 13 real, 7 not real (65%). All seven were one line on seven jobs —
+*Sales On-Site Support*, a $0 time-tracking catalog item that the empty-line rule filed as
+unfinished work because it looked at the blank quantity before it looked at the money.
+Fixed the same day (`09302d9`, with the false positive recorded in `test/audit.test.ts`),
+re-run against the same twenty: 13 of 13 (100%). Stage 2 runs on drafts, before an estimate
+goes out (`--status draft`). Its gate needs the Stage 0 review-minutes number, which has not
+been written down yet.
+
 ### 18.5 Training
 
 The reps are not technical and the training is not about the software. It is about who owns
