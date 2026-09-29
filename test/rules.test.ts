@@ -17,6 +17,9 @@ import { fromFixture } from '../src/domain.ts';
 import { audit } from '../src/rules/index.ts';
 import { formatMoney } from '../src/money.ts';
 import type {
+  ApiBudget,
+  ApiBudgetGroup,
+  ApiBudgetItem,
   ApiCostGroup,
   ApiCostItem,
   ApiCostType,
@@ -44,6 +47,22 @@ interface LineSpec {
   taxable?: boolean;
   groupId?: string;
   catalogId?: string | null;
+  description?: string;
+  /**
+   * The budget line this one was built from. Omit for "never fetched" (the
+   * shape of the three older fixtures), null for "fetched, not linked", {} for
+   * a budget line that matches exactly, or the fields that differ.
+   */
+  budget?: BudgetSpec | null;
+}
+
+interface BudgetSpec {
+  id?: string;
+  name?: string;
+  qty?: number | null;
+  unitCost?: number;
+  unitPrice?: number;
+  description?: string;
 }
 
 let seq = 0;
@@ -58,7 +77,7 @@ function line(spec: LineSpec): ApiCostItem {
   // 10.3095 and 19550.0745. The fixture has to match or the tests assert
   // against arithmetic no real document produces.
   const cents = (n: number) => Math.round(n * 100) / 100;
-  return {
+  const item: ApiCostItem = {
     id,
     name: spec.name ?? `Line ${id}`,
     quantity: qty,
@@ -81,6 +100,105 @@ function line(spec: LineSpec): ApiCostItem {
     costGroup: { id: spec.groupId ?? 'g1' },
     organizationCostItem: spec.catalogId === null ? null : { id: spec.catalogId ?? 'cat1' },
   };
+  if (spec.description !== undefined) item.description = spec.description;
+  if (spec.budget === null) {
+    item.jobCostItem = null;
+  } else if (spec.budget !== undefined) {
+    const b = spec.budget;
+    const bq = b.qty === undefined ? qty : b.qty;
+    const bc = b.unitCost ?? unitCost;
+    const bp = b.unitPrice ?? (b.unitCost === undefined ? unitPrice : b.unitCost * 1.45);
+    item.jobCostItem = {
+      id: b.id ?? `budget-${id}`,
+      name: b.name ?? item.name,
+      quantity: bq,
+      unitCost: bc,
+      unitPrice: bp,
+      cost: cents(bc * (bq ?? 0)),
+      price: cents(bp * (bq ?? 0)),
+      ...(b.description !== undefined ? { description: b.description } : {}),
+    };
+  }
+  return item;
+}
+
+interface BudgetItemSpec {
+  id?: string;
+  name?: string;
+  qty?: number | null;
+  unitCost?: number;
+  unitPrice?: number;
+  group?: { id: string; name: string };
+  /** Document lines built from this budget line, on any document of the job. */
+  onDocuments?: number;
+}
+
+/** A budget line the document does not carry: added after the fact, or template filler. */
+function budgetItem(spec: BudgetItemSpec): ApiBudgetItem {
+  const id = spec.id ?? `budget-extra${++seq}`;
+  const qty = spec.qty === undefined ? 1 : spec.qty;
+  const unitCost = spec.unitCost ?? 100;
+  const unitPrice = spec.unitPrice ?? unitCost * 1.45;
+  const cents = (n: number) => Math.round(n * 100) / 100;
+  return {
+    id,
+    name: spec.name ?? `Budget ${id}`,
+    quantity: qty,
+    unitCost,
+    unitPrice,
+    cost: cents(unitCost * (qty ?? 0)),
+    price: cents(unitPrice * (qty ?? 0)),
+    isSpecification: false,
+    position: id,
+    costType: { id: MATERIALS, name: 'Materials' },
+    costCode: { id: 'cc', name: 'Finishes' },
+    costGroup: spec.group ?? { id: 'g1', name: 'Group 1' },
+    organizationCostItem: { id: 'cat1' },
+    documentCostItems: { count: spec.onDocuments ?? 0 },
+  };
+}
+
+/**
+ * The job budget behind a set of document lines: one budget line per linked
+ * document line, matching what the line says it was built from, plus whatever
+ * else the budget carries.
+ */
+function budgetOf(
+  lines: ApiCostItem[],
+  extra: ApiBudgetItem[] = [],
+  groups: ApiBudgetGroup[] = [],
+): ApiBudget {
+  const fromLines: ApiBudgetItem[] = lines
+    .filter((l) => l.jobCostItem)
+    .map((l) => {
+      const b = l.jobCostItem!;
+      return {
+        id: b.id,
+        name: b.name,
+        quantity: b.quantity,
+        unitCost: b.unitCost,
+        unitPrice: b.unitPrice,
+        cost: b.cost,
+        price: b.price,
+        isSpecification: false,
+        position: b.id,
+        costType: l.costType,
+        costCode: l.costCode,
+        costGroup: { id: 'g1', name: 'Group 1' },
+        organizationCostItem: l.organizationCostItem,
+        documentCostItems: { count: 1 },
+      };
+    });
+  const nodes = [...fromLines, ...extra];
+  const allGroups = [
+    { id: 'g1', name: 'Group 1', position: 'a', parentCostGroup: null },
+    ...groups,
+  ];
+  return {
+    jobId: 'job1',
+    costItems: { count: nodes.length, nodes },
+    costGroups: { count: allGroups.length, nodes: allGroups },
+  };
 }
 
 function group(id: string, name: string, parentId?: string, sel?: { min: number; max: number }): ApiCostGroup {
@@ -99,7 +217,13 @@ function group(id: string, name: string, parentId?: string, sel?: { min: number;
 
 function fixture(
   lines: ApiCostItem[],
-  opts: { taxRate?: number; groups?: ApiCostGroup[]; statedPrice?: number; showChildCosts?: boolean } = {},
+  opts: {
+    taxRate?: number;
+    groups?: ApiCostGroup[];
+    statedPrice?: number;
+    showChildCosts?: boolean;
+    budget?: ApiBudget;
+  } = {},
 ): AuditFixture {
   const sum = Math.round(lines.reduce((a, l) => a + l.price, 0) * 100) / 100;
   const cost = Math.round(lines.reduce((a, l) => a + l.cost, 0) * 100) / 100;
@@ -132,6 +256,7 @@ function fixture(
       },
       costItems: { count: lines.length, nodes: lines },
     },
+    ...(opts.budget ? { budget: opts.budget } : {}),
     costTypes: COST_TYPES,
     comparables: [],
   };
@@ -303,4 +428,182 @@ test('an empty estimate produces no findings and does not crash', () => {
   const f = fixture([]);
   const r = run(f);
   assert.equal(r.findings.filter((x) => x.severity === 'pricing').length, 0);
+});
+
+// ---- budget drift --------------------------------------------------------------
+
+const passMessage = (f: AuditFixture, rule: string) => run(f).passed.find((p) => p.rule === rule)?.message;
+const note = (f: AuditFixture, rule: string) => run(f).notes.find((n) => n.rule === rule)?.message;
+
+test('a fixture with no budget says the check did not run, and never calls it drift', () => {
+  // The shape of every fixture captured before this rule existed: no
+  // jobCostItem on any line and no budget block at all.
+  const f = fixture([line({}), line({})]);
+  assert.equal(find(f, 'budget.drift').length, 0);
+  assert.match(passMessage(f, 'budget.drift')!, /not captured/);
+  assert.equal(note(f, 'budget.drift'), undefined);
+});
+
+test('lines that match their budget lines pass, and say on how many', () => {
+  const lines = [line({ budget: {} }), line({ budget: {} }), line({ budget: {} })];
+  const f = fixture(lines, { budget: budgetOf(lines) });
+  assert.equal(find(f, 'budget.drift').length, 0);
+  assert.equal(passMessage(f, 'budget.drift'), 'Document matches its budget on all 3 lines');
+});
+
+test('a budget line repriced after the document was built is drift', () => {
+  // The Hunnaman shape: the budget cost came down, the document did not follow.
+  // Distinct catalog items, or the duplicate rule has its own opinion.
+  const lines = [
+    line({ name: 'Window', unitCost: 100, catalogId: 'cat-window', budget: { unitCost: 90 } }),
+    line({ catalogId: 'cat-other', budget: {} }),
+  ];
+  const f = fixture(lines, { budget: budgetOf(lines) });
+  const found = find(f, 'budget.drift');
+  assert.equal(found.length, 1);
+  const d = found[0]!;
+  assert.equal(d.severity, 'pricing');
+  assert.equal(d.title, 'Window no longer matches the job budget');
+  assert.deepEqual(d.lineIds, [lines[0]!.id]);
+  assert.ok(d.math!.some((m) => m.label === 'Window: cost $100.00 → $90.00, price $145.00 → $130.50'));
+  // The document shows the customer MORE than the budget now says, so it is
+  // over, not under — and over must not count toward "under policy by".
+  assert.equal(formatMoney(d.impact!), '-$14.50');
+  assert.equal(formatMoney(run(f).totalUnderpriced), '$0.00');
+  assert.ok(d.math!.some((m) => m.label === 'document above the budget' && m.value === '$14.50'));
+});
+
+test('the headline is the document total against the budget total', () => {
+  const lines = [
+    line({ unitCost: 100, catalogId: 'cat-a', budget: { unitCost: 120 } }), // 145 on the document, 174 in the budget
+    line({ unitCost: 100, catalogId: 'cat-b', budget: {} }), // 145 both
+  ];
+  const f = fixture(lines, { budget: budgetOf(lines) });
+  const d = find(f, 'budget.drift')[0]!;
+  assert.ok(d.math!.some((m) => m.label.startsWith('document total') && m.value === '$290.00'));
+  assert.ok(d.math!.some((m) => m.label === 'job budget total' && m.value === '$319.00'));
+  assert.ok(d.math!.some((m) => m.label === 'document short of the budget' && m.value === '$29.00' && m.emphasis));
+  // Short of the budget IS money on the table if this document goes out.
+  assert.equal(formatMoney(d.impact!), '$29.00');
+  assert.equal(formatMoney(run(f).totalUnderpriced), '$29.00');
+});
+
+test('a budget line the document does not carry is drift, and is priced in', () => {
+  const lines = [line({ budget: {} })];
+  // Priced, so it is not template filler even though it sits in BURDEN.
+  const fee = budgetItem({ name: 'Payment Processing Fee', unitCost: 100, group: { id: 'b', name: 'BURDEN' } });
+  const f = fixture(lines, { budget: budgetOf(lines, [fee]) });
+  const found = find(f, 'budget.drift');
+  assert.equal(found.length, 1);
+  assert.equal(found[0]!.title, '1 budget line is not on the document');
+  assert.match(found[0]!.detail, /never seen/);
+  assert.ok(found[0]!.math!.some((m) => m.label === 'not on the document: Payment Processing Fee' && m.value === '$145.00'));
+  assert.equal(formatMoney(found[0]!.impact!), '$145.00');
+  assert.equal(formatMoney(run(f).totalUnderpriced), '$145.00');
+});
+
+test('both kinds of drift on one document make one card', () => {
+  const lines = [line({ name: 'Window', unitCost: 100, budget: { unitCost: 90 } })];
+  const f = fixture(lines, { budget: budgetOf(lines, [budgetItem({ name: 'Added later' })]) });
+  const found = find(f, 'budget.drift');
+  assert.equal(found.length, 1);
+  assert.equal(
+    found[0]!.title,
+    '1 line no longer matches the job budget, and 1 budget line is not on the document',
+  );
+});
+
+test('zero-cost template lines are set aside, and said so', () => {
+  const lines = [line({ budget: {} })];
+  const fillers = [
+    budgetItem({ name: 'Drywall', unitCost: 0, qty: null, group: { id: 'ci', name: 'CLOCK IN ITEMS' } }),
+    budgetItem({ name: 'Payment Processing Fee', unitCost: 0, group: { id: 'b', name: 'BURDEN' } }),
+    budgetItem({ name: 'Promotional', unitCost: 0, qty: null, group: { id: 'ga', name: 'General and Administrative' } }),
+  ];
+  const f = fixture(lines, { budget: budgetOf(lines, fillers) });
+  assert.equal(find(f, 'budget.drift').length, 0);
+  assert.equal(passMessage(f, 'budget.drift'), 'Document matches its budget on all 1 line');
+  const n = note(f, 'budget.drift')!;
+  assert.match(n, /3 zero-cost template lines/);
+  assert.match(n, /CLOCK IN ITEMS, BURDEN, GENERAL AND ADMINISTRATIVE/);
+});
+
+test('a zero-cost line under a template group’s subgroup is still template filler', () => {
+  const lines = [line({ budget: {} })];
+  const groups: ApiBudgetGroup[] = [
+    { id: 'ci', name: 'CLOCK IN ITEMS', position: 'z', parentCostGroup: null },
+    { id: 'trades', name: 'Trades', position: 'a', parentCostGroup: { id: 'ci' } },
+  ];
+  const filler = budgetItem({ name: 'Tiling', unitCost: 0, qty: null, group: { id: 'trades', name: 'Trades' } });
+  const f = fixture(lines, { budget: budgetOf(lines, [filler], groups) });
+  assert.equal(find(f, 'budget.drift').length, 0);
+  assert.match(note(f, 'budget.drift')!, /1 zero-cost template line in CLOCK IN ITEMS/);
+});
+
+test('a zero-cost line outside the template groups is not filler', () => {
+  // The template groups are the exemption, not zero cost. A line someone
+  // added to the budget and never priced is still a line the customer has
+  // not seen.
+  const lines = [line({ budget: {} })];
+  const f = fixture(lines, { budget: budgetOf(lines, [budgetItem({ name: 'Allowance TBD', unitCost: 0 })]) });
+  const found = find(f, 'budget.drift');
+  assert.equal(found.length, 1);
+  assert.ok(found[0]!.math!.some((m) => m.label === 'not on the document: Allowance TBD'));
+});
+
+test('a budget line carried by another document is not missing from this one', () => {
+  // A change order's lines live in the same budget as the estimate's.
+  const lines = [line({ budget: {} })];
+  const co = budgetItem({ name: 'Change order: deck', unitCost: 500, onDocuments: 1 });
+  const f = fixture(lines, { budget: budgetOf(lines, [co]) });
+  assert.equal(find(f, 'budget.drift').length, 0);
+  assert.match(note(f, 'budget.drift')!, /1 budget line carried by another document/);
+  // And it stays out of the budget total, so the totals still agree.
+  assert.equal(passMessage(f, 'budget.drift'), 'Document matches its budget on all 1 line');
+});
+
+test('a line with no budget link is not drift, and is counted', () => {
+  const lines = [
+    line({ budget: {} }),
+    line({ name: 'Typed by hand', budget: null }), // fetched, not linked
+    line({}), // never fetched
+  ];
+  const f = fixture(lines, { budget: budgetOf(lines) });
+  assert.equal(find(f, 'budget.drift').length, 0);
+  assert.match(note(f, 'budget.drift')!, /2 lines not linked to a budget line/);
+  assert.match(note(f, 'budget.drift')!, /Typed by hand/);
+  // Unlinked lines are on the document and not in the budget, so the totals
+  // differ, and the pass message says so rather than hiding it.
+  assert.match(passMessage(f, 'budget.drift')!, /^Document matches its budget on all 1 line; totals still differ/);
+});
+
+test('a description edit on the budget is drift; whitespace is not', () => {
+  const same = line({ description: 'Wellcraft  27"W\n', budget: { description: ' Wellcraft 27"W' } });
+  const changed = line({
+    name: 'Window',
+    description: '27"W x 45"H White Vinyl Basement Block Inswing Egress Window',
+    budget: { description: 'Wellcraft 27"W x 45"H  in-swing egress Low-E' },
+  });
+  const f = fixture([same, changed], { budget: budgetOf([same, changed]) });
+  const found = find(f, 'budget.drift');
+  assert.equal(found.length, 1);
+  assert.deepEqual(found[0]!.lineIds, [changed.id]);
+  assert.ok(found[0]!.math!.some((m) => m.label === 'Window: description changed'));
+  // A description-only change moves no money.
+  assert.equal(formatMoney(found[0]!.impact!), '$0.00');
+});
+
+test('descriptions that were never captured are not compared', () => {
+  const l = line({ description: 'on the document', budget: {} }); // no budget description
+  const f = fixture([l], { budget: budgetOf([l]) });
+  assert.equal(find(f, 'budget.drift').length, 0);
+});
+
+test('name, quantity and unit price changes are each named', () => {
+  const l = line({ name: 'Trim', qty: 2, unitCost: 10, budget: { name: 'Trim - Casing', qty: 3, unitPrice: 20 } });
+  const f = fixture([l], { budget: budgetOf([l]) });
+  const d = find(f, 'budget.drift')[0]!;
+  const row = d.math!.find((m) => m.label.startsWith('Trim:'))!;
+  assert.equal(row.label, 'Trim: name "Trim" → "Trim - Casing", qty 2 → 3, price $14.50 → $20.00');
+  assert.equal(row.value, '$29.00 → $60.00');
 });

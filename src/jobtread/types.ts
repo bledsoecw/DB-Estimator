@@ -15,6 +15,24 @@ export interface NamedRef extends Ref {
   name: string;
 }
 
+/**
+ * The job-budget line a document line was created from, joined on the wire.
+ *
+ * Money and quantity only. `description` arrives by a second query
+ * (fetchDescriptions in queries.ts): selecting it here, on both the line and
+ * its budget line, pushed a 43-line document over JobTread's response limit.
+ */
+export interface ApiBudgetRef {
+  id: string;
+  name: string;
+  quantity: number | null;
+  unitCost: number | null;
+  unitPrice: number | null;
+  cost: number;
+  price: number;
+  description?: string | null;
+}
+
 /** Raw cost item as it comes off the wire. */
 export interface ApiCostItem {
   id: string;
@@ -35,6 +53,14 @@ export interface ApiCostItem {
   costCode: NamedRef;
   costGroup: Ref | null;
   organizationCostItem: Ref | null;
+  /** Absent on fixtures captured before the budget check existed. */
+  description?: string | null;
+  /**
+   * The budget line this line was created from. Absent on fixtures captured
+   * before the budget check existed, null when the line was never linked.
+   * Both read as "not linked" — never as drift.
+   */
+  jobCostItem?: ApiBudgetRef | null;
 }
 
 export interface ApiCostGroup {
@@ -96,6 +122,47 @@ export interface ApiDocument {
   costItems: { count: number; nodes: ApiCostItem[] };
 }
 
+/** One line of a job budget: a cost item on the job that sits on no document. */
+export interface ApiBudgetItem {
+  id: string;
+  name: string;
+  quantity: number | null;
+  unitCost: number | null;
+  unitPrice: number | null;
+  cost: number;
+  price: number;
+  isSpecification: boolean;
+  position: string | null;
+  costType: NamedRef;
+  costCode: NamedRef;
+  costGroup: NamedRef | null;
+  organizationCostItem: Ref | null;
+  /**
+   * How many document lines were built from this budget line, on any document
+   * of the job. Zero means no customer has seen it.
+   */
+  documentCostItems: { count: number };
+}
+
+export interface ApiBudgetGroup {
+  id: string;
+  name: string;
+  position: string | null;
+  parentCostGroup: Ref | null;
+}
+
+/**
+ * The job budget: every cost item and group on the job with `document = null`.
+ *
+ * Documents are built from it. Edits to it afterwards do not flow to a
+ * document already built, which is what the budget-drift rule checks.
+ */
+export interface ApiBudget {
+  jobId: string;
+  costItems: { count: number; nodes: ApiBudgetItem[] };
+  costGroups: { count: number; nodes: ApiBudgetGroup[] };
+}
+
 /**
  * Cost types carry the org's markup policy.
  *
@@ -124,6 +191,8 @@ export interface AuditFixture {
   capturedAt: string;
   organizationId: string;
   document: ApiDocument;
+  /** The job budget. Absent on fixtures captured before the budget check existed. */
+  budget?: ApiBudget;
   costTypes: ApiCostType[];
   comparables: ApiComparable[];
 }

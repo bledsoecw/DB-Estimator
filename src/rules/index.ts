@@ -9,6 +9,7 @@
 import { type Money, ZERO, add } from '../money.ts';
 import type { AuditInput } from '../domain.ts';
 import { markupRule } from './markup.ts';
+import { budgetDriftRule } from './budget.ts';
 import {
   catalogLinkRule,
   displayRule,
@@ -23,6 +24,7 @@ import type { AuditResult, Finding, Rule, Severity } from './types.ts';
 
 export const RULES: Rule[] = [
   markupRule,
+  budgetDriftRule,
   emptyLineRule,
   totalsRule,
   taxRule,
