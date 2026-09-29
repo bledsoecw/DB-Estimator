@@ -187,12 +187,34 @@ export async function fetchComparables(
 }
 
 /**
+ * Test jobs, which are evidence of nothing.
+ *
+ * The org keeps a test customer — "Kay Oss", say it aloud — and a handful of
+ * jobs called "Test Job", "TEST ROOFING", "SELECTIONS TEST", "Test Contact",
+ * plus one template job. None of them went to a customer, so an audit of one
+ * measures nothing, and a batch of twenty that includes three of them is a
+ * batch of seventeen.
+ *
+ * Matched on the job name: "test" as a whole word, the test customer, and
+ * "template". Whole word, because "Demo" here is demolition ("Gamble_Garage
+ * Demo" is a real job) and a customer named Testa is a customer.
+ */
+export function isTestJob(jobName: string): boolean {
+  return (
+    /(^|[^a-z])test([^a-z]|$)/i.test(jobName) ||
+    /kay oss/i.test(jobName) ||
+    /template/i.test(jobName)
+  );
+}
+
+/**
  * Recent estimates, for auditing a batch rather than one at a time.
  *
  * Sorted newest first. Status is left to the caller: recently APPROVED
  * estimates are the useful ones for a shadow run, because they already went
  * to a customer — anything the auditor says about them is either a real miss
- * or a false positive, and nothing it says can disrupt live work.
+ * or a false positive, and nothing it says can disrupt live work. Test jobs
+ * are left out before the limit is applied, so twenty means twenty real ones.
  */
 export async function fetchRecentDocuments(
   client: JobTreadClient,
@@ -223,7 +245,7 @@ export async function fetchRecentDocuments(
       },
     },
   });
-  const all = res.organization.documents.nodes;
+  const all = res.organization.documents.nodes.filter((d) => !isTestJob(d.job?.name ?? ''));
   const wanted = opts.jobType
     ? all.filter((d) => jobTypeOf(d.job)?.toLowerCase() === opts.jobType!.toLowerCase())
     : all;

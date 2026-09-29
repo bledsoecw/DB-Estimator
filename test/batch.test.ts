@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { findingCounts, runBatch } from '../src/batch.ts';
+import { isTestJob } from '../src/jobtread/queries.ts';
 import type { AuditFixture } from '../src/jobtread/types.ts';
 
 const NAMES = ['jones-bath-kitchen', 'daeger-roof', 'wright-roof'] as const;
@@ -228,5 +229,82 @@ test('escapes job names in the index', async () => {
     const index = readFileSync(join(dir, 'index.html'), 'utf8');
     assert.ok(!index.includes('<script>alert(1)</script>'));
     assert.match(index, /Smith &lt;script&gt;/);
+  });
+});
+
+test('test jobs are not evidence, and are left out of the run', async () => {
+  // How the org actually names them, from the live job list on 2026-09-29.
+  for (const name of [
+    '25-0001 Kay Oss_Test Job', '260118 Kay Oss SELECTIONS TEST', 'Kay Oss Kitchen remodel',
+    '#24-6880 Kay Oss_TEST CONSTRUC', 'Test Contact', "258760 Sam's Siding Template",
+  ]) {
+    assert.ok(isTestJob(name), `${name} is a test job`);
+  }
+  // "Demo" is demolition here, and a surname is not a keyword.
+  for (const name of [
+    '260391 Gamble_Garage Demo', '#24-6487 Tom Wilkin_Barn Demo', '261524 Oechsle_Remodel',
+    '261319 Crisis Care_Foundation', '261200 Testa_Kitchen', '261201 Contest Hall_Roof',
+  ]) {
+    assert.ok(!isTestJob(name), `${name} is a real job`);
+  }
+
+  await withTempDir(async (dir) => {
+    const rows = await runBatch(null, {
+      limit: 10,
+      outDir: dir,
+      list: async () => [
+        { id: 'kayoss', name: 'Estimate', status: 'approved', job: { name: '25-0001 Kay Oss_Test Job' } },
+        ...(await list()),
+      ],
+      fetch: async (id) => {
+        if (id === 'kayoss') throw new Error('the test job was fetched');
+        return fixtures.get(id)!;
+      },
+    });
+    assert.equal(rows.length, 3);
+    assert.ok(!rows.some((r) => r.id === 'kayoss'), 'the test job made it into the run');
+    assert.ok(!existsSync(join(dir, 'kayoss.html')));
+  });
+});
+
+test('each page leads back to the index and on to the next, and both pages call a finding by one name', async () => {
+  await withTempDir(async (dir) => {
+    const rows = await runBatch(null, {
+      limit: 10,
+      outDir: dir,
+      list,
+      fetch: async (id) => fixtures.get(id)!,
+    });
+    const index = readFileSync(join(dir, 'index.html'), 'utf8');
+    const onIndex = new Set(
+      [...index.matchAll(/class="f" data-i="\d+" data-key="([^"]*)"/g)].map((m) => m[1]!),
+    );
+
+    let onPages = 0;
+    for (const [i, row] of rows.entries()) {
+      const page = readFileSync(join(dir, `${row.id}.html`), 'utf8');
+      assert.match(page, /href="index\.html"/, `${row.jobName}: no way back`);
+      const next = rows[i + 1];
+      if (next) {
+        assert.ok(page.includes(`href="${next.id}.html"`), `${row.jobName}: no way on to ${next.jobName}`);
+      } else {
+        assert.ok(!page.includes('Next:'), `${row.jobName} is last and still offers a next`);
+      }
+
+      // A mark made on either page lands under the same key, or the index
+      // never learns what was decided on the estimate page.
+      const body = page.slice(0, page.indexOf('<script>'));
+      for (const m of body.matchAll(/<article class="card [^"]*" data-key="([^"]*)"[^>]*data-needs="1"/g)) {
+        assert.ok(onIndex.has(m[1]!), `${row.jobName}: "${m[1]}" is on the page but not the index`);
+        onPages++;
+      }
+      // And every one of them can be judged where the evidence is.
+      assert.equal(
+        (body.match(/data-v="real"/g) ?? []).length,
+        row.needsHuman,
+        `${row.jobName}: one judge row per finding that needs a human`,
+      );
+    }
+    assert.equal(onPages, onIndex.size, 'the index and the pages disagree about how many findings there are');
   });
 });

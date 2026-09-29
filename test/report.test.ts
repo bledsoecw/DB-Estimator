@@ -129,6 +129,34 @@ test('handles a clean estimate without claiming findings', () => {
   assert.match(out, /Nothing needs you|Priced at or above policy/);
 });
 
+test('stands alone by default, and joins a run when told where the index is', () => {
+  assert.ok(!html.includes('href="index.html"'), 'a single report has nothing to go back to');
+  assert.ok(!html.includes('Next:'));
+  const inRun = renderReport(input, result, {
+    backHref: 'index.html',
+    nextHref: '22PPQD68bhaX.html',
+    nextLabel: 'Daeger <Roof> & Co',
+  });
+  assert.match(inRun, /href="index\.html"/);
+  assert.match(inRun, /href="22PPQD68bhaX\.html"/);
+  assert.match(inRun, /Next: Daeger &lt;Roof&gt; &amp; Co/, 'the next label is escaped');
+});
+
+test('every finding that needs a human can be marked real or not real, where the evidence is', () => {
+  const needs = result.findings.filter((f) => f.severity !== 'info').length;
+  const body = html.slice(0, html.indexOf('<script>'));
+  assert.equal((body.match(/data-v="real"/g) ?? []).length, needs);
+  assert.equal((body.match(/data-v="false"/g) ?? []).length, needs);
+  // Each card carries the key the index uses, so the two pages share marks.
+  for (const f of result.findings) {
+    const key = escapeForTest(`22PfKxuR9Vrx|${f.rule}|${f.title}`);
+    assert.ok(body.includes(`data-key="${key}"`), `no key for ${f.title}`);
+  }
+  // Marks are painted from the store every time the page is shown, so coming
+  // back from the index shows what was decided there.
+  assert.match(html, /addEventListener\('pageshow'/);
+});
+
 /** Mirror of the renderer's escaping, so the test asserts rather than assumes. */
 function escapeForTest(s: string): string {
   return s

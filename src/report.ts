@@ -19,6 +19,7 @@
 import { ZERO, formatMoney, formatPercent } from './money.ts';
 import { marginOf } from './domain.ts';
 import { marginBand } from './rules/comparables.ts';
+import { STORE_SCRIPT, findingKey } from './verdict-store.ts';
 import type { AuditInput } from './domain.ts';
 import type { AuditResult, Finding, Severity } from './rules/types.ts';
 
@@ -57,7 +58,19 @@ function esc(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export function renderReport(input: AuditInput, result: AuditResult): string {
+export interface ReportOptions {
+  /** Where "All estimates" goes, when this page is one of a run. */
+  backHref?: string;
+  /** The next estimate in the run, so a reviewer can go page to page. */
+  nextHref?: string;
+  nextLabel?: string;
+}
+
+export function renderReport(
+  input: AuditInput,
+  result: AuditResult,
+  opts: ReportOptions = {},
+): string {
   const { estimate } = input;
   const margin = marginOf(estimate.statedPrice, estimate.statedCost);
   const band = marginBand(input.comparables);
@@ -77,6 +90,19 @@ export function renderReport(input: AuditInput, result: AuditResult): string {
 </head>
 <body>
 <main>
+${
+  opts.backHref
+    ? `
+  <nav class="crumbs no-print">
+    <a href="${esc(opts.backHref)}">&larr; All estimates</a>
+    ${
+      opts.nextHref
+        ? `<a href="${esc(opts.nextHref)}">Next: ${esc(opts.nextLabel ?? 'estimate')} &rarr;</a>`
+        : ''
+    }
+  </nav>`
+    : ''
+}
 
   <header class="head">
     <div class="job">
@@ -108,9 +134,9 @@ export function renderReport(input: AuditInput, result: AuditResult): string {
       : `<section class="findings">
     <div class="bar">
       <h2>Needs you <span class="count">${needsHuman.length}</span></h2>
-      <p class="tally"><span id="decided">0</span> of ${needsHuman.length} decided</p>
+      <p class="tally" id="tally">0 of ${needsHuman.length} decided &middot; 0 of ${needsHuman.length} judged</p>
     </div>
-    ${needsHuman.map((f, i) => card(f, i)).join('\n')}
+    ${needsHuman.map((f) => card(f, estimate.id)).join('\n')}
   </section>`
   }
 
@@ -118,7 +144,7 @@ export function renderReport(input: AuditInput, result: AuditResult): string {
     context.length > 0
       ? `<section class="findings context">
     <h2>Worth knowing</h2>
-    ${context.map((f, i) => card(f, needsHuman.length + i)).join('\n')}
+    ${context.map((f) => card(f, estimate.id)).join('\n')}
   </section>`
       : ''
   }
@@ -157,13 +183,13 @@ export function renderReport(input: AuditInput, result: AuditResult): string {
   </footer>
 
 </main>
-<script>${SCRIPT(estimate.jobName, estimate.id)}</script>
+<script>${STORE_SCRIPT}${SCRIPT(estimate.jobName, estimate.id)}</script>
 </body>
 </html>
 `;
 }
 
-function card(f: Finding, idx: number): string {
+function card(f: Finding, documentId: string): string {
   const sev = SEVERITY[f.severity];
   const impact =
     f.impact !== undefined && f.impact !== ZERO
@@ -187,14 +213,25 @@ function card(f: Finding, idx: number): string {
     ? `<div class="choices" role="group" aria-label="What to do">${f.actions
         .map(
           (a, i) =>
-            `<button type="button" class="choice${i === 0 ? ' rec' : ''}" data-finding="${idx}" data-choice="${esc(
+            `<button type="button" class="choice${i === 0 ? ' rec' : ''}" data-choice="${esc(
               a,
             )}">${esc(a)}</button>`,
         )
         .join('')}</div>`
     : '';
 
-  return `    <article class="card ${sev.cls}" data-idx="${idx}"
+  // The judgement the shadow run is scored on. Asked here, where the evidence
+  // is, and again on the index; both write to the same store.
+  const judge =
+    f.severity === 'info'
+      ? ''
+      : `<div class="judge" role="group" aria-label="Is this finding real?">
+        <span>Is this finding real?</span>
+        <button type="button" data-v="real">Real</button>
+        <button type="button" data-v="false">Not real</button>
+      </div>`;
+
+  return `    <article class="card ${sev.cls}" data-key="${esc(findingKey(documentId, f))}"
       data-title="${esc(f.title)}"
       data-impact="${impactLabel(f)}"
       data-needs="${f.severity === 'info' ? '0' : '1'}">
@@ -204,6 +241,7 @@ function card(f: Finding, idx: number): string {
       ${impact}
       ${math}
       ${actions}
+      ${judge}
     </article>`;
 }
 
@@ -309,6 +347,19 @@ h2 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .09e
   border: 1px solid var(--rec); background: var(--rec); color: var(--bg); cursor: pointer; }
 .hint { font-size: 12px; color: var(--dim); }
 
+.crumbs { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin: 0 0 18px; font-size: 13px; }
+.crumbs a { color: var(--dim); text-decoration: none; border-bottom: 1px solid var(--line); }
+.crumbs a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+.judge { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px;
+  padding-top: 12px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--dim); }
+.judge button { font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 5px;
+  border: 1px solid var(--line); background: transparent; color: var(--dim); cursor: pointer; }
+.judge button:hover { border-color: var(--dim); color: var(--ink); }
+.judge button.on-real { background: var(--green); border-color: var(--green); color: var(--bg); font-weight: 600; }
+.judge button.on-false { background: var(--red); border-color: var(--red); color: var(--bg); font-weight: 600; }
+
 footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line);
   color: var(--dim); font-size: 12.5px; }
 footer p { margin: 0 0 6px; }
@@ -329,42 +380,68 @@ footer .fine { font-size: 11.5px; }
 
 const SCRIPT = (jobNameRaw: string, docIdRaw: string) => `
 (function () {
-  var picks = {};
   var cards = document.querySelectorAll('.card');
   var needed = document.querySelectorAll('.card[data-needs="1"]').length;
-  var decidedEl = document.getElementById('decided');
+  var tallyEl = document.getElementById('tally');
+
+  // Painted from the store, never from what was clicked, so a mark made on
+  // the index shows here and one made here shows on the index.
+  function paint() {
+    var picks = DBE.load('choices');
+    var verdicts = DBE.load('verdicts');
+    var decided = 0, judged = 0;
+    cards.forEach(function (c) {
+      var key = c.getAttribute('data-key');
+      var pick = picks[key], verdict = verdicts[key];
+      c.querySelectorAll('.choice').forEach(function (o) {
+        o.classList.toggle('picked', !!pick && o.getAttribute('data-choice') === pick);
+      });
+      c.querySelectorAll('.judge button').forEach(function (o) {
+        var mine = o.getAttribute('data-v');
+        o.classList.toggle('on-real', verdict === 'real' && mine === 'real');
+        o.classList.toggle('on-false', verdict === 'false' && mine === 'false');
+      });
+      c.classList.toggle('done', !!pick);
+      if (c.getAttribute('data-needs') === '1') {
+        if (pick) decided++;
+        if (verdict) judged++;
+      }
+    });
+    if (tallyEl) {
+      tallyEl.textContent = decided + ' of ' + needed + ' decided \\u00b7 ' +
+        judged + ' of ' + needed + ' judged';
+    }
+  }
 
   document.addEventListener('click', function (e) {
-    var b = e.target.closest ? e.target.closest('.choice') : null;
-    if (!b) return;
-    var card = b.closest('.card');
-    var idx = b.getAttribute('data-finding');
-    card.querySelectorAll('.choice').forEach(function (o) { o.classList.remove('picked'); });
-    if (picks[idx] === b.getAttribute('data-choice')) {
-      delete picks[idx];
-      card.classList.remove('done');
+    if (!e.target.closest) return;
+    var choice = e.target.closest('.choice');
+    var judge = e.target.closest('.judge button');
+    if (!choice && !judge) return;
+    var key = (choice || judge).closest('.card').getAttribute('data-key');
+    if (choice) {
+      var want = choice.getAttribute('data-choice');
+      DBE.set('choices', key, DBE.load('choices')[key] === want ? null : want);
     } else {
-      picks[idx] = b.getAttribute('data-choice');
-      b.classList.add('picked');
-      card.classList.add('done');
+      var v = judge.getAttribute('data-v');
+      DBE.set('verdicts', key, DBE.load('verdicts')[key] === v ? null : v);
     }
-    if (decidedEl) {
-      var n = 0;
-      document.querySelectorAll('.card[data-needs="1"]').forEach(function (c) {
-        if (picks[c.getAttribute('data-idx')]) n++;
-      });
-      decidedEl.textContent = String(n);
-    }
+    paint();
   });
+  // Back from the index, or a mark made there in another tab: re-read the
+  // store rather than trust what this page last painted.
+  window.addEventListener('pageshow', paint);
+  window.addEventListener('storage', paint);
+  paint();
 
   function notes() {
+    var picks = DBE.load('choices');
     var out = ${jsString(jobNameRaw)} + ' \\u2014 estimate review\\n';
     out += 'Document ' + ${jsString(docIdRaw)} + ' \\u00b7 reviewed ' +
       new Date().toLocaleDateString() + '\\n\\n';
     var undecided = 0;
     cards.forEach(function (c) {
-      var idx = c.getAttribute('data-idx');
-      var pick = picks[idx];
+      var pick = picks[c.getAttribute('data-key')];
       if (!pick) { if (c.getAttribute('data-needs') === '1') undecided++; return; }
       var imp = c.getAttribute('data-impact');
       out += c.getAttribute('data-title') + (imp ? '  (' + imp + ')' : '') + '\\n';
