@@ -138,7 +138,147 @@ function esc(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export function renderIndex(rows: BatchRow[], opts: { status?: string }): string {
+export /**
+ * Judging the findings, which is the only thing the stage-1 gate actually needs.
+ *
+ * ROADMAP 18 gates the auditor on ">= 80% of findings Kristen judges real,
+ * every false positive logged". Nothing in the tool captured a verdict, so
+ * meeting that gate meant opening twenty reports and keeping score on paper —
+ * which is how a gate quietly turns into an opinion.
+ *
+ * One page, one sitting. Grouped by rule so a systematically wrong check shows
+ * up as a block of red rather than as scattered disagreement: the three checks
+ * deleted or demoted after the first run would have been obvious here in
+ * seconds. The tally is live and states the gate, and the log copies out,
+ * because "every false positive logged" is half the requirement.
+ *
+ * It records a judgement about the AUDITOR, not about the estimate. Nothing
+ * here is written to JobTread and nothing changes a price.
+ */
+function renderVerdicts(rows: BatchRow[], counts: Map<string, number>): string {
+  const total = [...counts.values()].reduce((a, b) => a + b, 0);
+  const byRule = new Map<string, { job: string; id: string; title: string }[]>();
+  for (const row of rows) {
+    for (const f of row.result.findings) {
+      if (f.severity === 'info') continue;
+      const bucket = byRule.get(f.rule) ?? [];
+      bucket.push({ job: row.jobName, id: row.id, title: f.title });
+      byRule.set(f.rule, bucket);
+    }
+  }
+  const ordered = [...byRule].sort((a, b) => b[1].length - a[1].length);
+
+  let idx = 0;
+  const groups = ordered
+    .map(([rule, items]) => {
+      const rowsHtml = items
+        .map((it) => {
+          const i = idx++;
+          return `      <div class="f" data-i="${i}" data-rule="${esc(rule)}"
+        data-job="${esc(it.job)}" data-title="${esc(it.title)}">
+        <span class="who"><a href="${esc(it.id)}.html">${esc(it.job)}</a></span>
+        <span class="what">${esc(it.title)}</span>
+        <span class="btns">
+          <button type="button" data-v="real">Real</button>
+          <button type="button" data-v="false">Not real</button>
+        </span>
+      </div>`;
+        })
+        .join('\n');
+      return `    <div class="rulegroup">
+      <h3>${esc(rule)} <span class="n">— ${items.length}</span></h3>
+${rowsHtml}
+    </div>`;
+    })
+    .join('\n');
+
+  return `<h2>Judging the findings — ${total}</h2>
+  <div class="gate">
+    <span class="score"><span id="judged">0</span> of ${total} judged</span>
+    <span class="verdict-note" id="tally">The gate is ≥80% real. Mark each one; the score updates as you go.</span>
+  </div>
+${groups}
+  <button type="button" id="copylog">Copy the log</button>
+  <script>${VERDICT_SCRIPT(total)}</script>`;
+}
+
+const VERDICT_SCRIPT = (total: number) => `
+(function () {
+  var v = {};
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.f button') : null;
+    if (!b) return;
+    var row = b.closest('.f');
+    var i = row.getAttribute('data-i');
+    var pick = b.getAttribute('data-v');
+    row.querySelectorAll('button').forEach(function (o) {
+      o.classList.remove('on-real', 'on-false');
+    });
+    if (v[i] === pick) { delete v[i]; row.classList.remove('judged'); }
+    else {
+      v[i] = pick;
+      b.classList.add(pick === 'real' ? 'on-real' : 'on-false');
+      row.classList.add('judged');
+    }
+    paint();
+  });
+
+  function paint() {
+    var n = 0, real = 0;
+    for (var k in v) { n++; if (v[k] === 'real') real++; }
+    document.getElementById('judged').textContent = String(n);
+    var t = document.getElementById('tally');
+    if (n === 0) {
+      t.innerHTML = 'The gate is \u226580% real. Mark each one; the score updates as you go.';
+      return;
+    }
+    var pct = Math.round((real / n) * 100);
+    var done = n === ${total};
+    var cls = pct >= 80 ? 'pass' : 'fail';
+    t.innerHTML = real + ' real, ' + (n - real) + ' not real \u2014 <span class="' + cls + '">' +
+      pct + '%</span>' +
+      (done ? (pct >= 80 ? ' \u2014 <span class="pass">gate passed</span>'
+                         : ' \u2014 <span class="fail">gate not met</span>')
+            : ' so far');
+  }
+
+  document.getElementById('copylog').addEventListener('click', function () {
+    var out = 'Auditor shadow run \u2014 ' + new Date().toLocaleDateString() + '\\n\\n';
+    var n = 0, real = 0, bad = [];
+    document.querySelectorAll('.f').forEach(function (row) {
+      var pick = v[row.getAttribute('data-i')];
+      if (!pick) return;
+      n++;
+      if (pick === 'real') real++;
+      else bad.push(row.getAttribute('data-rule') + '  |  ' + row.getAttribute('data-job') +
+                    '  |  ' + row.getAttribute('data-title'));
+    });
+    out += n + ' of ${total} findings judged: ' + real + ' real, ' + (n - real) + ' not real';
+    if (n) out += '  (' + Math.round((real / n) * 100) + '%, gate is 80%)';
+    out += '\\n\\n';
+    out += bad.length ? 'FALSE POSITIVES\\n' + bad.join('\\n') + '\\n' : 'No false positives.\\n';
+    var btn = document.getElementById('copylog');
+    var done = function () {
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = 'Copy the log'; }, 1600);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(out).then(done, function () { fb(out, done); });
+    } else { fb(out, done); }
+  });
+
+  function fb(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); }
+    catch (err) { window.prompt('Copy the log:', text); }
+    document.body.removeChild(ta);
+  }
+})();
+`;
+
+function renderIndex(rows: BatchRow[], opts: { status?: string }): string {
   const clean = rows.filter((r) => !r.error && r.needsHuman === 0).length;
   const failed = rows.filter((r) => r.error);
   const totalFindings = rows.reduce((n, r) => n + r.needsHuman, 0);
@@ -185,6 +325,28 @@ h2 { font-size:12px; text-transform:uppercase; letter-spacing:.09em; color:var(-
   margin:34px 0 10px; }
 .rules { font-size:13.5px; color:var(--dim); }
 .rules li { margin:3px 0; }
+
+.gate { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin:10px 0 18px; }
+.gate .score { font-size:22px; font-weight:600; font-variant-numeric:tabular-nums; }
+.gate .verdict-note { font-size:13px; color:var(--dim); }
+.gate .pass { color:var(--green); font-weight:600; }
+.gate .fail { color:var(--red); font-weight:600; }
+.rulegroup { margin:18px 0 0; }
+.rulegroup h3 { margin:0 0 6px; font-size:13px; font-weight:600; }
+.rulegroup h3 .n { color:var(--dim); font-weight:400; }
+.f { display:flex; align-items:baseline; gap:10px; padding:7px 0; border-bottom:1px solid var(--line);
+  font-size:13.5px; }
+.f .who { color:var(--dim); flex:0 0 190px; }
+.f .what { flex:1; min-width:180px; }
+.f .btns { display:flex; gap:6px; flex:0 0 auto; }
+.f button { font:inherit; font-size:12px; padding:3px 10px; border-radius:5px;
+  border:1px solid var(--line); background:transparent; color:var(--dim); cursor:pointer; }
+.f button:hover { border-color:var(--dim); color:var(--ink); }
+.f button.on-real { background:var(--green); border-color:var(--green); color:var(--bg); font-weight:600; }
+.f button.on-false { background:var(--red); border-color:var(--red); color:var(--bg); font-weight:600; }
+.f.judged .what { opacity:.55; }
+#copylog { font:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:6px;
+  border:1px solid var(--ink); background:var(--ink); color:var(--bg); cursor:pointer; margin-top:16px; }
 footer { margin-top:36px; padding-top:16px; border-top:1px solid var(--line);
   color:var(--dim); font-size:12.5px; }
 </style>
@@ -229,14 +391,7 @@ ${rows
     </tbody>
   </table>
 
-  ${
-    counts.size > 0
-      ? `<h2>What was raised</h2>
-  <ul class="rules">${[...counts]
-    .map(([rule, n]) => `<li>${esc(rule)} — ${n}</li>`)
-    .join('')}</ul>`
-      : ''
-  }
+  ${counts.size > 0 ? renderVerdicts(rows, counts) : ''}
 
   ${failed.length > 0 ? `<h2>Could not be read — ${failed.length}</h2>` : ''}
 

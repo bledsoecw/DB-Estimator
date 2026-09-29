@@ -92,7 +92,7 @@ npm run audit -- <documentId>                                       # live
 npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
-npm test                                                            # 61 tests
+npm test                                                            # 64 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -115,6 +115,16 @@ approved orders, all of which were accepted), itemised line prices (82%), and st
 taxable flags (4,170 of them, on documents that charge no tax). One check was deleted
 and two became context. The principle that cost: **a check that fires on the majority
 of work the company has already sold is measuring a convention, not a defect.**
+
+The index also carries **Judging the findings** — every finding that needs a human,
+grouped by rule, with Real / Not real against each one, a live score against the 80%
+gate, and a **Copy the log** button that names every false positive. That is the whole
+of what the gate asks for, in one sitting. It records a judgement about the auditor,
+not about the estimate; nothing there touches JobTread.
+
+Grouping by rule is the point: a check that is systematically wrong shows up as a block
+of red rather than as scattered disagreement. The three checks retired after the first
+run would have been obvious in seconds.
 
 `--status approved` is the one to start with. Those estimates already went to a
 customer, so anything the auditor says about them is either a real miss or a false

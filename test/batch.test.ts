@@ -80,7 +80,85 @@ test('the index links every estimate and totals them', async () => {
     }
     // $2,974.52 + $3,943.17 + $2,889.50
     assert.match(index, /\$9,807\.19/, 'the under-policy total is wrong or missing');
-    assert.ok(!/<script/.test(index), 'the index should need no script');
+  });
+});
+
+test('every finding that needs a human can be judged', () => {
+  return withTempDir(async (dir) => {
+    const rows = await runBatch(null, {
+      limit: 10,
+      outDir: dir,
+      list,
+      fetch: async (id) => fixtures.get(id)!,
+    });
+    const index = readFileSync(join(dir, 'index.html'), 'utf8');
+
+    // The stage-1 gate is a count of real findings, so every one has to be
+    // markable. One left off the page is one silently scored as agreement.
+    const expected = rows.reduce(
+      (n, r) => n + r.result.findings.filter((f) => f.severity !== 'info').length,
+      0,
+    );
+    assert.equal((index.match(/data-v="real"/g) ?? []).length, expected);
+    assert.equal((index.match(/data-v="false"/g) ?? []).length, expected);
+    assert.match(index, new RegExp(`Judging the findings — ${expected}`));
+
+    // Indices must be distinct, or two findings share one verdict.
+    const ids = [...index.matchAll(/class="f" data-i="(\d+)"/g)].map((m) => m[1]);
+    assert.equal(ids.length, expected);
+    assert.equal(new Set(ids).size, expected, 'duplicate data-i, verdicts would collide');
+
+    // Context findings are not asks and must not be scored.
+    assert.ok(!index.includes('margin.outside-band'));
+    assert.ok(!index.includes('display.customer-visible'));
+  });
+});
+
+test('the generated script actually parses', () => {
+  // Every markup assertion above passed while the page was dead. A \n written
+  // into the script template was consumed by the template literal and emitted a
+  // real newline in the middle of a JS string, so the browser threw on load and
+  // no button did anything. Nothing that inspects the HTML as text can see that.
+  //
+  // Compiling it here is cheap and catches exactly that class of damage.
+  return withTempDir(async (dir) => {
+    await runBatch(null, {
+      limit: 10,
+      outDir: dir,
+      list,
+      fetch: async (id) => fixtures.get(id)!,
+    });
+
+    for (const [name, file] of [
+      ['index', 'index.html'],
+      ['report', '22PPQD68bhaX.html'],
+    ] as const) {
+      const html = readFileSync(join(dir, file), 'utf8');
+      const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]!);
+      assert.ok(scripts.length > 0, `${name} has no script`);
+      for (const src of scripts) {
+        assert.doesNotThrow(
+          () => new Function(src),
+          `${name}: generated script does not parse`,
+        );
+      }
+    }
+  });
+});
+
+test('the verdict log escapes what it quotes', () => {
+  return withTempDir(async (dir) => {
+    const hostile = structuredClone(fixtures.get('22PfKxuR9Vrx')!);
+    hostile.document.job.name = 'Smith <img src=x> & Co "job"';
+    await runBatch(null, {
+      limit: 10,
+      outDir: dir,
+      list: async () => [{ id: 'x', name: 'x', status: 'pending', job: { name: 'x' } }],
+      fetch: async () => hostile,
+    });
+    const index = readFileSync(join(dir, 'index.html'), 'utf8');
+    assert.ok(!index.includes('<img src=x>'), 'unescaped markup reached the page');
+    assert.match(index, /data-job="Smith &lt;img src=x&gt; &amp; Co &quot;job&quot;"/);
   });
 });
 
