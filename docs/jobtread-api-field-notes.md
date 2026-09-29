@@ -552,6 +552,38 @@ Two consequences worth stating, because both were wrong in the first implementat
   $130.30 difference is tax on $1,902.11 of taxable lines inside branches the customer did
   not take. Against the selected base it closes to the cent.
 
+### Tax is configured almost nowhere, and `isTaxable` means nothing — **VERIFIED**
+
+Counted across all **802 approved customer orders** in the organization:
+
+| Count | What |
+|---:|---|
+| 4 | approved customer orders that carry a tax rate at all |
+| 4,170 | cost items flagged `isTaxable` on a document whose rate is 0 |
+| **0** | cost items flagged `isTaxable` on a document that has a rate |
+
+`isTaxable` defaults to true on creation (see §7 create-time defaults), nobody clears it
+because it has never changed what a customer pays, and the two are never seen together on
+approved work. Any rule that treats the flag as an assertion about tax will fire on
+thousands of items and mean nothing by it.
+
+Where a rate *is* set, the arithmetic is exact — see the selected-base finding above — so
+the flag is not useless, only unused.
+
+### Customer-facing defaults are the opposite of what they look like — **VERIFIED**
+
+Same 802 approved customer orders:
+
+| Count | Share | Setting |
+|---:|---:|---|
+| 456 | 57% | `requireSignature: false` — **and all of these were accepted** |
+| 658 | 82% | `showChildCosts: true`, so the customer sees every line price |
+| 71 | 9% | signature required *and* line prices hidden |
+
+The first row disproves a claim worth stating plainly, because a rule was built on it: a
+customer order **can** be accepted with no signature requirement. It happens on the
+majority of them.
+
 ### `references` for change-order lineage
 
 `createDocument.$.references` (≤1000) feeds `document.referencedDocuments` and

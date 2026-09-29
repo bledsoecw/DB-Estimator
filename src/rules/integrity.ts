@@ -463,16 +463,24 @@ export const taxRule: Rule = {
     }
 
     if (taxable.length > 0 && rate === 0n) {
+      // Context, not an ask. Across approved customer orders there are 4,170
+      // cost items carrying a taxable flag on a document with no rate, and
+      // ZERO carrying one on a document that has a rate — only 4 of 802
+      // approved orders have a rate at all. The flag is the create-time default
+      // and it has never changed what a customer was charged. Raising it per
+      // estimate asks a reviewer to clean up a field that does nothing; if the
+      // flags are ever worth clearing it is one bulk job, not twenty cards.
       findings.push({
         rule: 'tax.inconsistent',
-        severity: 'data',
-        title: `${taxable.length} line${taxable.length === 1 ? ' is' : 's are'} marked taxable but the document rate is 0%`,
+        severity: 'info',
+        title: `${taxable.length} line${taxable.length === 1 ? ' is' : 's are'} marked taxable, but no tax is charged`,
         detail:
-          'Either the lines should not be taxable, or the document is missing its rate. ' +
-          'Note that new cost items default to taxable, so this can happen without anyone choosing it.',
+          'The document has no tax rate, so these flags change nothing the customer pays. ' +
+          'New cost items default to taxable, which is where they come from. Worth a bulk ' +
+          'cleanup one day; not worth stopping this estimate for.',
         lineIds: taxable.map((l) => l.id),
-        math: taxable.slice(0, 8).map((l) => ({ label: l.name, value: 'taxable' })),
-        actions: ['Clear the taxable flags', 'Set the document tax rate'],
+        math: taxable.slice(0, 5).map((l) => ({ label: l.name, value: 'taxable' })),
+        actions: ['Leave it', 'Clear the taxable flags'],
       });
     }
 
@@ -546,6 +554,35 @@ export const duplicateRule: Rule = {
  * Not errors, but the kind of thing discovered after sending. showChildCosts
  * true means every line price is itemised on the proposal.
  */
+/**
+ * Customer-facing display settings.
+ *
+ * Rewritten after the first shadow run over 20 approved estimates, where these
+ * checks produced 31 of 87 findings and every one of them was wrong. They were
+ * written from the brief rather than from the book, and they turned out to be
+ * describing how Deitemeyer Brothers works rather than finding anything amiss.
+ *
+ * Counted across all 802 approved customer orders:
+ *
+ *   456 (57%)  require no signature — and every one was accepted
+ *   658 (82%)  show line prices to the customer
+ *    71  (9%)  match what these rules used to call correct
+ *
+ * The signature check is gone. It asserted that a customer order without a
+ * signature requirement cannot be accepted, and there are 456 counterexamples;
+ * a rule resting on a false premise does not get demoted, it gets deleted.
+ *
+ * Itemised line prices are now context rather than an ask. They are the house
+ * style, and a reviewer told 18 times out of 20 that the house style is a
+ * finding stops reading the findings.
+ *
+ * Profit visibility stays an ask. It is rare and it leaks margin.
+ *
+ * The general rule, which cost 31 false positives to learn: a check that fires
+ * on the majority of work the company has already sold is measuring a
+ * convention, not a defect. Prevalence has to be measured before a check is
+ * allowed to interrupt anyone.
+ */
 export const displayRule: Rule = {
   id: 'display.customer-visible',
   describes: 'Customer-facing display settings are as intended',
@@ -556,16 +593,17 @@ export const displayRule: Rule = {
       const total = sumLinePrices(estimate.lines);
       findings.push({
         rule: 'display.customer-visible',
-        severity: 'display',
+        severity: 'info',
         title: 'Line prices are visible to the customer',
         detail:
           `showChildCosts is on, so the proposal itemises all ${estimate.lines.length} line ` +
-          'prices rather than showing group totals only.',
+          'prices rather than showing group totals only. This is how 82% of approved work ' +
+          'here is presented, so it is almost certainly deliberate.',
         math: [
           { label: 'lines itemised', value: String(estimate.lines.length) },
           { label: 'total shown', value: formatMoney(total) },
         ],
-        actions: ['Hide line prices', 'Leave shown — customer asked for detail'],
+        actions: ['Hide line prices', 'Leave shown — the usual presentation'],
       });
     }
     if (estimate.showProfit) {
@@ -577,21 +615,13 @@ export const displayRule: Rule = {
         actions: ['Turn off showProfit'],
       });
     }
-    if (!estimate.requireSignature && estimate.type === 'customerOrder') {
-      findings.push({
-        rule: 'display.no-signature',
-        severity: 'display',
-        title: 'Signature is not required',
-        detail: 'A customer order without a signature requirement cannot be accepted in JobTread.',
-        actions: ['Turn on requireSignature'],
-      });
-    }
     return findings;
   },
 
   passMessage({ estimate }) {
-    return estimate.requireSignature && !estimate.showProfit && !estimate.showChildCosts
-      ? 'Customer view: line prices hidden, profit hidden, signature required'
-      : null;
+    if (estimate.showProfit) return null;
+    return estimate.showChildCosts
+      ? 'Profit hidden from the customer'
+      : 'Customer view: line prices hidden, profit hidden';
   },
 };

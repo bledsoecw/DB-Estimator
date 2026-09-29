@@ -92,7 +92,7 @@ npm run audit -- <documentId>                                       # live
 npm run audit -- <documentId> --html review.html                    # the approver screen
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
-npm test                                                            # 55 tests
+npm test                                                            # 61 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -107,6 +107,14 @@ start review/index.html
 Audits the 20 most recent estimates and writes an index over them — job, price,
 margin, how many findings, how much under policy — with each row linking to its own
 approver screen.
+
+**The first shadow run changed the rules.** Twenty approved estimates produced 87
+findings, and 39 came from three checks that were describing how the company works
+rather than finding anything wrong — a missing signature requirement (true of 57% of
+approved orders, all of which were accepted), itemised line prices (82%), and stale
+taxable flags (4,170 of them, on documents that charge no tax). One check was deleted
+and two became context. The principle that cost: **a check that fires on the majority
+of work the company has already sold is measuring a convention, not a defect.**
 
 `--status approved` is the one to start with. Those estimates already went to a
 customer, so anything the auditor says about them is either a real miss or a false
