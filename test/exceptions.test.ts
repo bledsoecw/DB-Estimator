@@ -50,6 +50,16 @@ test('a class covers every item with the prefix, at the approved rate only', () 
   assert.equal(exceptionFor({ catalogItemId: 'w', name: 'Fastener - Screws', multiplier: rateFromNumber(2.0) }), null);
   // And the prefix is a prefix: "Unfastener" is not a fastener.
   assert.equal(exceptionFor({ catalogItemId: 'w', name: 'Unfastener Tool', multiplier: rateFromNumber(5 / 3) }), null);
+
+  // The rule behind the class ("bought through the sub, so 40%") also covers
+  // seven named materials that are not fasteners — by name, not by rate.
+  for (const name of ['Drywall Brd- Mat', 'Framing/Sheathing Materials', 'Trim Caulk', 'Purlins']) {
+    assert.ok(exceptionFor({ catalogItemId: 'w', name, multiplier: rateFromNumber(5 / 3) }), name);
+  }
+  // An unnamed material at that rate is not covered by being at that rate.
+  assert.equal(exceptionFor({ catalogItemId: 'w', name: 'Drywall Screws Mat', multiplier: rateFromNumber(5 / 3) }), null);
+  // And a named one at some other rate has moved off the decision.
+  assert.equal(exceptionFor({ catalogItemId: 'w', name: 'Purlins', multiplier: rateFromNumber(1.8) }), null);
 });
 
 test('the 2026-09-29 catalog decisions each cover what they say and nothing else', () => {
@@ -61,6 +71,14 @@ test('the 2026-09-29 catalog decisions each cover what they say and nothing else
   ok('Service Call - Zone 3', 125 / 55);
   ok('Service Call - Extended (over 50 miles)', 2.27);
   no('Service Call - Zone 1', 250 / 85); // x2.94: not the schedule, still shows
+  // The same schedule under its other three names. Eleven items in the
+  // catalog; the first cut covered only the four trip charges and left seven
+  // showing as off after Carl had already said "deliberate".
+  ok('Service Repair Labor - Drywall', 125 / 55);
+  ok('Service Repair Labor - Electrical', 170.4545 / 75);
+  ok('Emergency Service Labor (any trade)', 193.1818 / 85);
+  ok('Warranty Service', 125 / 55);
+  no('Warranty Service', 1.8182); // at the Labor margin it is not the schedule
 
   ok('Payment processing (est. 3%)', 0);
   no('Payment processing (est. 3%)', 1.0); // charged through at cost is a different decision

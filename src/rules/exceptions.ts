@@ -62,6 +62,8 @@ export interface Exception {
 const SUB = rateFromNumber(1 / 0.7);
 /** The roofing schedule, which Shawn maintains and which is not the cost types. */
 const ROOFING = rateFromNumber(1.45);
+/** The service schedule: $125/hr billed against the $55 crew rate. */
+const SERVICE = rateFromNumber(125 / 55);
 
 export const EXCEPTIONS: Exception[] = [
   // --- Classes: one decision, every item it covers -----------------------------
@@ -88,15 +90,60 @@ export const EXCEPTIONS: Exception[] = [
     decidedBy: 'Carl Bledsoe',
     decidedOn: '2026-09-29',
   },
+  // The same rule — "the materials at 40% margin we pay for through the sub" —
+  // covers seven more Materials items that are not fasteners. Named one by one,
+  // because a rule of the form "any Materials item at x1.667" would approve the
+  // next typo at that rate too. Pull any of these if DB buys it directly.
+  ...[
+    'Drywall Brd- Mat',
+    'Drywall Mud Mat',
+    'Framing/Sheathing Materials',
+    'Lumber - Roofing',
+    'Purlins',
+    'Trim Caulk',
+  ].map((name) => ({
+    name,
+    approvedAt: rateFromNumber(5 / 3),
+    reason: 'Bought through the subcontractor, so it carries a 40% margin rather than the Materials 31.03%.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  })),
 
   // --- Decided on 2026-09-29 from the first full catalog audit ---------------
   //
   // 718 items, 74 off the cost-type defaults. Carl walked the groups. These are
-  // the ones that are priced the way they are on purpose; the rest he fixed.
+  // the ones that are priced the way they are on purpose; the other fifteen
+  // were corrected in the catalog the same day (docs/catalog-corrections.md).
+  //
+  // Service work is one schedule under four names: eleven Labor items, all at
+  // x2.2727 ($55 -> $125). The trip charges by zone, the hourly service-repair
+  // rates by trade, emergency labour, and warranty visits. One decision, so one
+  // rate, but four entries because the names share no prefix.
   {
     namePrefix: 'Service Call',
-    approvedAt: rateFromNumber(125 / 55),
+    approvedAt: SERVICE,
     reason: 'Service calls are a trip-charge schedule by zone, not hourly labour at the Labor margin.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    namePrefix: 'Service Repair Labor',
+    approvedAt: SERVICE,
+    reason: 'Service-repair labour is billed at $125/hr on the service schedule, not at the Labor margin.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    namePrefix: 'Emergency Service Labor',
+    approvedAt: SERVICE,
+    reason: 'Emergency labour is billed on the service schedule.',
+    decidedBy: 'Carl Bledsoe',
+    decidedOn: '2026-09-29',
+  },
+  {
+    name: 'Warranty Service',
+    approvedAt: SERVICE,
+    reason: 'Warranty visits are billed on the service schedule.',
     decidedBy: 'Carl Bledsoe',
     decidedOn: '2026-09-29',
   },
