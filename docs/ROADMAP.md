@@ -2174,3 +2174,45 @@ against this job type's history — and a human who knows the job.
 ---
 
 *Conventions: every factual claim is tagged VERIFIED (confirmed by direct query against organization `22PBAjem8SSC`), REPORTED (asserted in research, spike attached), or UNVERIFIED (explicitly unknown, no design depends on an assumed answer). The verified facts in §1.1 each overturn an assumption that would otherwise have produced a defect — most consequentially the tax premise, the `_type` discriminator, and the assumption that `createdByGrantId` distinguishes machine writes from human ones. Effort is re-baselined with Phase 0 given a possible calendar, Phase 2 split in two, Phases 1, 3, 4 and 6 lengthened, and gated ML cut. Exit criteria are counts, caps and protocols rather than judgements. Five domain entities — contingency, price adjustment, duration, escalation and contract type — are added at Phase 2a, because their absence would corrupt the audit trail this project exists to create.*
+
+---
+
+## 20. Revision 6 — the drafter, and what Carl said on 2026-09-30
+
+**Decided 2026-09-30.** The branches to that date had built a good tool for the wrong end
+of the pipeline: the auditor, the catalog audit and the scope review all check an estimate
+a rep has already finished. The problem Carl named is upstream of all of it — two reps
+doing two inspections a day and no time to build the estimate, Kristen reviewing every one
+and then making the work orders, purchase orders and the production folder, and general
+construction taking a median of 13 days to a first estimate (§18.1). Stage 3 of §18.4,
+"Drafter, one rep", is the first stage that touches the rep, and nothing existed for it.
+
+Three facts from Carl, which fix the design:
+
+1. **The discovery report is on the job.** Job 261323 carries it as a comment (a full
+   meeting summary with the room measured) plus 18 CompanyCam photos. There is no separate
+   document to parse; the scope review's packet already reads exactly this.
+2. **Estimates are built in JobTread from budget templates, and those templates must
+   still be used.** A rep adds a template group to the Budget tab, deletes the lines the job
+   does not need, and brings in another template only for lines the first lacks. When no
+   template has the line, Carl decides. VERIFIED against the API: a budget template is a
+   top-level catalog cost group (44 of them); its lines carry no price and each points at
+   the ungrouped priced catalog item JobTread prices it from when the group is added.
+3. **Work orders and purchase orders are made in JobTread from its document templates**
+   (`Work Order` and `Purchase Order`, both `vendorOrder`).
+
+So the drafter (`src/draft/`, `docs/drafter.md`) reproduces the rep's process rather than
+generating lines: the model picks the template(s) and says which lines to keep with what
+quantity and on what evidence; the code prices each kept line from its catalog item with
+the auditor's arithmetic; scope with no template line is flagged for Carl; a line id the
+model names that is in no chosen template is rejected and listed. Its page is the steps the
+rep takes in JobTread, because the write path (§7) is still off. Its gate is in
+`docs/drafter.md`: ten of Robert's jobs, three counts per draft, until eight of ten need
+under ten minutes of his work.
+
+What this changes in the rollout (§18.4): Stage 3 starts now, in shadow, on the drafter's
+own gate, and does not wait for Stage 2's review-minutes number. Stage 2 still runs; it is
+Kristen's half of the problem and the drafter is the reps'. Kristen's paperwork after the
+contract — work orders and purchase orders from the same lines regrouped by who does the
+work, and the folder — is the phase after the drafter has been used live, and it is the
+one that gives her design time back.

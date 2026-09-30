@@ -3,10 +3,13 @@
 A private, in-house takeoff and estimating application for **Deitemeyer Brothers**, designed
 to integrate natively with JobTread. General construction first; roofing later.
 
-**Status: v0.5 auditor runs; the rest is design material.** The auditor reads one
-JobTread estimate and checks it against policy, and renders the reviewer's screen —
-read-only, no writes, no AI in the loop. Everything beyond that is still the decision material for whether — and how —
-to build the larger thing. [Jump to running it](#running-the-v05-auditor).
+**Status: the auditor runs, and the drafter is built and waiting for its first live run.**
+The auditor reads one JobTread estimate and checks it against policy, and renders the
+reviewer's screen — read-only, no writes, no AI in the loop. The drafter goes the other
+way: it reads a job's site-visit notes and photos and produces the budget a rep would build
+from DB's own budget templates — which templates, which lines, what quantities, and what has
+no template line and goes to Carl. Also read-only. [Running the auditor](#running-the-v05-auditor)
+&middot; [Drafting a budget](#drafting-a-budget).
 
 ---
 
@@ -16,7 +19,8 @@ to build the larger thing. [Jump to running it](#running-the-v05-auditor).
 |---|---|
 | **[`docs/ROADMAP.md`](docs/ROADMAP.md)** | The build roadmap. Phases, gates, costs, the build-vs-buy reckoning, the JobTread subsystem design, the reliability model, and the questions only Carl can answer. |
 | **[`docs/jobtread-api-field-notes.md`](docs/jobtread-api-field-notes.md)** | The JobTread Pave API, verified by direct query against the live organization. The factual baseline the integration is designed against. |
-| **[`src/`](src/)** | The v0.5 auditor. `src/money.ts` is the arithmetic everything else depends on; `src/rules/` holds the nine policy checks; `src/report.ts` renders the approver screen. |
+| **[`docs/drafter.md`](docs/drafter.md)** | The budget drafter: how DB builds an estimate from budget templates, what the model is asked, what the rep gets, and the gate before anyone trusts it. |
+| **[`src/`](src/)** | The v0.5 auditor and the drafter. `src/money.ts` is the arithmetic everything else depends on; `src/rules/` holds the policy checks; `src/report.ts` renders the approver screen; `src/draft/` builds a budget from the templates. |
 
 ## The short version
 
@@ -93,7 +97,9 @@ npm run audit -- <documentId> --html review.html                    # the approv
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
 npm run audit -- --catalog --out review                              # the whole catalog
-npm test                                                            # 138 tests
+npm run draft -- 261323 --dry-run                                    # what the drafter would read
+npm run draft -- 261323 --out review                                 # draft the budget (needs a key)
+npm test                                                            # 152 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -262,6 +268,7 @@ no credential. Four real estimates are captured in `test/fixtures/`:
 | `wright-roof.json` | Roofing, 101 lines, 6.85% rate. Crosses JobTread's 100-item page cap and reconciles through three unselected option branches. |
 | `catalog-sample.json` | The first 20 priced catalog items by name, after the 2026-09-29 sweep. One item at ×2.40, four duplicate names. |
 | `hunnaman-window.json` | A GC egress window, 43 lines, pending, captured **with its job budget**. The budget was edited after the customer had viewed the estimate — the drift case. |
+| `haag-basement.json` | Job 261323, a basement refresh with one discovery note and 18 photos (records only), the 44 budget templates, and two of them in full. The drafter's offline case. |
 
 The three older fixtures predate the budget check and carry no budget; on them it
 reports *Budget not captured*, never drift. A fresh `--capture` includes the budget.
@@ -282,6 +289,45 @@ npm run scope -- <documentId> --out review   # needs ANTHROPIC_API_KEY in .env
 
 What it reads, what it costs (about $0.30 to $1 an estimate), what leaves the
 building and what it will not do are in `docs/scope-review.md`.
+
+### Drafting a budget
+
+Both checks above need an estimate to exist. `npm run draft` is for the step
+before that, which is where the reps' time goes: it reads what came back from
+the site visit — the discovery notes on the job, the CompanyCam photos, any
+drawings or quotes — and builds the budget the way a rep does, from DB's own
+**budget templates** in JobTread.
+
+```
+npm run draft -- 261323 --dry-run          # sends nothing; writes what the model would read
+npm run draft -- 261323 --out review       # needs ANTHROPIC_API_KEY in .env
+npm run draft -- 261323 --templates 22PLCZU3cbqS,22PF3gnGCuiB   # you pick the templates
+```
+
+The job is the six-digit number that starts its name, the hyphenated number
+JobTread stores, or the job id.
+
+**It picks templates and prunes them; it does not invent lines.** A budget
+template is a top-level catalog cost group — `Bathroom Remodel`, `Deck`,
+`X-Division 09 Finishes`, 44 of them — whose lines carry no price of their own
+and point at the priced catalog item JobTread prices them from when the rep
+adds the group. The model reads the job and picks the template(s), then reads
+every line of those templates (no prices) and says which to keep, with a
+quantity, the basis for it and the evidence it rests on. The code prices each
+kept line from its catalog item, rounded to cents once. Scope with no template
+line lands under **Not in any template**, flagged for Carl. A line id the
+model names that is in no chosen template is **rejected and listed**, never
+added — that is the "made it up" case, and it is meant to be seen.
+
+The page is written as the steps the rep takes in JobTread — add this
+template, keep these lines, delete those, set these quantities, put these in
+a selection group, write this in General Description — with a Copy button.
+A JSON copy of the draft sits beside it; it is the payload the write path will
+push one day. Today the rep follows the steps, and Kristen still reviews.
+
+What it reads, what it costs (about $0.50 to $1.50 a job), what leaves the
+building, the gate before anyone trusts it, and what is not built yet are in
+`docs/drafter.md`.
 
 ## Working conventions
 

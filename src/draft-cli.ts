@@ -1,0 +1,206 @@
+/**
+ * npm run draft -- <job> [--dry-run] [--out review] [--templates id,id] [--model ...]
+ *                        [--fixture path] [--capture path] [--no-photos]
+ *
+ * One job, drafted from the budget templates the way a rep would build it:
+ * which template to add, which lines to keep with what quantity, which to
+ * delete, what to put in a selection group, what to write in General
+ * Description, and what has no template line and goes to Carl. Writes the
+ * rep's page and a JSON copy of the draft.
+ *
+ * <job> is a JobTread job id, the six-digit number that starts the job
+ * name (261323), or the hyphenated number (26-1323).
+ *
+ * --dry-run reads everything and writes what the model WOULD read — the job
+ * text and the template list — then stops. No key is needed and nothing
+ * leaves the machine.
+ *
+ * Read-only against JobTread. The job's notes, photos and files and the
+ * chosen templates' line names go to Anthropic's API; that is the one thing
+ * here that leaves the building, and only when a key is set.
+ */
+
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import Anthropic from '@anthropic-ai/sdk';
+import { clientFromEnv } from './jobtread/client.ts';
+import { fetchJobEvidence, resolveJobId, type JobEvidence } from './draft/evidence.ts';
+import { fetchTemplate, fetchTemplateIndex, type Template, type TemplateSummary } from './draft/templates.ts';
+import { evidenceText, templateIndexText } from './draft/prompt.ts';
+import { DEFAULT_MODEL, PRICING, anthropicStructuredCall, costOf } from './draft/model.ts';
+import { draftEstimate, type DraftFixture } from './draft/draft.ts';
+import { draftJson, renderDraft } from './draft/render.ts';
+
+export interface DraftArgs {
+  job: string;
+  dryRun: boolean;
+  out: string;
+  model: string;
+  templateIds: string[];
+  fixture: string | null;
+  capture: string | null;
+  photos: boolean;
+}
+
+export function parseDraftArgs(argv: string[]): DraftArgs {
+  const args: DraftArgs = {
+    job: '', dryRun: false, out: 'review', model: DEFAULT_MODEL, templateIds: [],
+    fixture: null, capture: null, photos: true,
+  };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]!;
+    if (a === '--dry-run') args.dryRun = true;
+    else if (a === '--no-photos') args.photos = false;
+    else if (a === '--out') args.out = argv[++i] ?? args.out;
+    else if (a === '--model') args.model = argv[++i] ?? args.model;
+    else if (a === '--fixture') args.fixture = argv[++i] ?? null;
+    else if (a === '--capture') args.capture = argv[++i] ?? null;
+    else if (a === '--templates') {
+      args.templateIds = (argv[++i] ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+    } else if (a.startsWith('--')) throw new Error(`unknown flag ${a}`);
+    else if (!args.job) args.job = a;
+    else throw new Error(`unexpected argument ${a}`);
+  }
+  if (!args.job && !args.fixture) {
+    throw new Error('usage: npm run draft -- <jobId | 261323 | 26-1323> [--dry-run] [--out review] [--templates id,id]');
+  }
+  return args;
+}
+
+/** A rough token count for the dry run. Photos dominate. */
+export function estimateDraftTokens(e: JobEvidence, text: string): number {
+  let n = Math.ceil(text.length / 4);
+  for (const a of e.attachments) {
+    if (a.file.type === 'application/pdf') n += Math.ceil(a.bytes.length / 60_000) * 2_500 + 500;
+    else n += 1_600;
+  }
+  // A dry run may not have downloaded anything; count what would go.
+  if (e.attachments.length === 0) {
+    for (const f of e.included) n += f.type === 'application/pdf' ? Math.ceil(f.size / 60_000) * 2_500 + 500 : 1_600;
+  }
+  return n;
+}
+
+/** Everything a fixture needs, minus the photo bytes. */
+export function toFixture(
+  organizationId: string,
+  evidence: JobEvidence,
+  index: TemplateSummary[],
+  templates: Template[],
+): DraftFixture {
+  return {
+    capturedAt: new Date().toISOString(),
+    organizationId,
+    evidence: { ...evidence, attachments: [] },
+    index,
+    templates,
+  };
+}
+
+async function main(): Promise<number> {
+  const args = parseDraftArgs(process.argv.slice(2));
+  const log = (s: string): void => { process.stderr.write(`${s}\n`); };
+
+  let evidence: JobEvidence;
+  let index: TemplateSummary[];
+  let loadTemplate: (id: string) => Promise<Template>;
+  let organizationId: string;
+  const loaded: Template[] = [];
+
+  if (args.fixture) {
+    const f = JSON.parse(readFileSync(args.fixture, 'utf8')) as DraftFixture;
+    evidence = f.evidence;
+    index = f.index;
+    organizationId = f.organizationId;
+    const byId = new Map(f.templates.map((t) => [t.id, t]));
+    loadTemplate = async (id) => {
+      const t = byId.get(id);
+      if (!t) throw new Error(`template ${id} is not in the fixture (it holds ${[...byId.keys()].join(', ')})`);
+      loaded.push(t);
+      return t;
+    };
+    log(`fixture captured ${f.capturedAt}: ${evidence.jobName}, ${index.length} templates listed, ${f.templates.length} in full`);
+  } else {
+    const client = clientFromEnv();
+    organizationId = client.organizationId;
+    const job = await resolveJobId(client, args.job);
+    log(`reading ${job.name} (${job.id})`);
+    // A dry run and --no-photos read the file list but download nothing.
+    evidence = await fetchJobEvidence(client, job.id, args.dryRun || !args.photos ? { download: null } : {});
+    index = await fetchTemplateIndex(client);
+    loadTemplate = async (id) => {
+      log(`reading template ${id}`);
+      const t = await fetchTemplate(client, id);
+      loaded.push(t);
+      return t;
+    };
+  }
+
+  const text = evidenceText(evidence);
+  const lines = [
+    `${evidence.jobName} — ${evidence.projectType ?? 'no project type'}`,
+    `  ${evidence.comments.length} comments, ${evidence.included.length} files to send` +
+      (evidence.attachments.length ? ` (${evidence.attachments.length} downloaded)` : '') +
+      (evidence.failed.length ? `, ${evidence.failed.length} failed` : '') +
+      `, ${evidence.excluded.length} left out; ${index.length} budget templates`,
+  ];
+  for (const f of evidence.failed) lines.push(`  ! ${f.file.name}: ${f.reason}`);
+  for (const x of evidence.excluded) lines.push(`  - ${x.file.name}: ${x.reason}`);
+  const tokens = estimateDraftTokens(evidence, text + templateIndexText(index));
+  const est = costOf(args.model, { input: tokens * 2, output: 12_000, cacheRead: 0, cacheWrite: 0 });
+  lines.push(`  about ${tokens.toLocaleString()} input tokens a call, two calls; roughly $${(est ?? 0).toFixed(2)} on ${args.model}`);
+  log(lines.join('\n'));
+
+  mkdirSync(args.out, { recursive: true });
+  const stem = join(args.out, `${evidence.jobId}-draft`);
+
+  if (args.dryRun) {
+    writeFileSync(`${stem}-packet.txt`, `${text}\n\n${templateIndexText(index)}\n`);
+    log(`dry run: what the model would read is in ${stem}-packet.txt. Nothing was sent.`);
+    return 0;
+  }
+
+  if (!process.env['ANTHROPIC_API_KEY']) {
+    log('ANTHROPIC_API_KEY is not set. Add it to .env to draft, or use --dry-run to see what would be sent.');
+    return 2;
+  }
+  if (!PRICING[args.model]) log(`no price table for ${args.model}; cost will not be shown`);
+
+  log(`drafting with ${args.model}`);
+  const draft = await draftEstimate(evidence, index, loadTemplate, anthropicStructuredCall(new Anthropic()), {
+    model: args.model,
+    ...(args.templateIds.length ? { templateIds: args.templateIds } : {}),
+  });
+
+  if (args.capture) {
+    writeFileSync(args.capture, JSON.stringify(toFixture(organizationId, evidence, index, loaded), null, 2));
+    log(`fixture written to ${args.capture}`);
+  }
+
+  writeFileSync(`${stem}.html`, renderDraft(evidence, draft));
+  writeFileSync(`${stem}.json`, JSON.stringify(draftJson(draft), null, 2));
+
+  if (draft.noFit) {
+    log(`no template fits: ${draft.noFit}`);
+  } else {
+    log(
+      `${draft.lines.length} lines from ${draft.plans.map((p) => p.template.name).join(' + ')}; ` +
+        `${draft.gaps.length} gap${draft.gaps.length === 1 ? '' : 's'} for Carl, ` +
+        `${draft.questions.length} question${draft.questions.length === 1 ? '' : 's'}` +
+        (draft.rejected.length ? `, ${draft.rejected.length} line ids rejected` : '') +
+        (draft.cost !== null ? ` ($${draft.cost.toFixed(2)})` : ''),
+    );
+  }
+  log(`page written to ${stem}.html; data in ${stem}.json`);
+  return 0;
+}
+
+if (process.argv[1] && /draft-cli\.ts$/.test(process.argv[1])) {
+  main().then(
+    (code) => process.exit(code),
+    (err) => {
+      process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+      process.exit(1);
+    },
+  );
+}

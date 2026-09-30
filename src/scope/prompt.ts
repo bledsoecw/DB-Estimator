@@ -120,7 +120,7 @@ export function buildUserContent(p: ScopePacket): Anthropic.ContentBlockParam[] 
   return blocks;
 }
 
-function attachmentBlocks(a: ScopeAttachment): Anthropic.ContentBlockParam[] {
+export function attachmentBlocks(a: ScopeAttachment): Anthropic.ContentBlockParam[] {
   const data = Buffer.from(a.bytes).toString('base64');
   const label = `${a.file.type === 'application/pdf' ? 'File' : 'Photo'}: ${a.file.name}` +
     ` (uploaded ${a.file.createdAt.slice(0, 10)})${a.file.description ? ` — ${a.file.description}` : ''}`;

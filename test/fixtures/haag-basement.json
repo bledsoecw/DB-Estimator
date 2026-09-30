@@ -1,0 +1,1825 @@
+{
+  "capturedAt": "2026-09-30T00:00:00.000Z",
+  "organizationId": "22PBAjem8SSC",
+  "note": "Job 261323 Haag_Remodel as read on 2026-09-30: a basement refresh with one discovery note and 18 CompanyCam photos (records only; no bytes), the 44 budget templates, and two of them in full. The long design-phase descriptions are shortened.",
+  "evidence": {
+    "jobId": "22PbLhMqY7tC",
+    "jobName": "261323 Haag_Remodel",
+    "jobNumber": "26-1323",
+    "description": "Customer just purchased home and would like to refresh the basement",
+    "jobType": "Construction",
+    "projectType": "C-Remodel/Interior",
+    "city": "Van Wert",
+    "comments": [
+      {
+        "at": "2026-07-22T12:05:24.343Z",
+        "who": "Carla Voltz",
+        "message": "@Robert Switzer New job assigned and scheduled",
+        "fromEmail": false
+      },
+      {
+        "at": "2026-07-23T18:04:11.115Z",
+        "who": "Robert Switzer",
+        "message": "Main Topics Discussed\n\nScope of Work and Client Intentions\n\nThe client, Jason Haag, recently moved from Cleveland and wants to improve the basement in a new home (moved in two weeks ago).\nThe focus is on sprucing up the basement—primarily through painting, not a full-scale remodel.\nJason is considering cosmetic improvements to make the space more enjoyable, especially for home gym equipment.\nWalls and Ceiling Considerations\n\nWalls:\nThe contractor suggests “skimming” the concrete walls (applying a drywall mud-type filler to smooth out cracks and holes), then painting for a clean, updated look.\n\nCeiling:\nNo current drywall on the ceiling—just exposed joists and wiring.\nPainting the ceiling is an option, but would be more costly and complicated due to masking/taping requirements and painting around obstructions.\nThe typical recommendation is dry-walling the ceiling and installing can lights, but the client is not seeking that level of renovation.\nDecision to paint the ceiling remains tentative; contractor will consult team (Jeff/Neil) for feasibility and pricing.\nFlooring Options\n\nThree primary options discussed:\nLaminate Vinyl Plank:\nDurable, water-resistant, and relatively easy to install and repair.\nNot prone to the issues that come with carpeting in basements (such as water damage).\nEpoxy Flooring:\nPolishing and prepping the floor, filling cracks, then applying the epoxy finish.\nProvides a clean, sealed, easy-to-clean finish; good for gym equipment.\nTypically higher cost, but considered worthwhile for durability and appearance.\nContractor explains that epoxy is usually done all at once but will check if it can be done in sections (e.g., one half at a time).\nCarpet:\nNot recommended for basements due to potential water damage.\nAdditional Logistics and Client Support\n\nThe contractor will provide estimates for all flooring (vinyl plank and epoxy) and painting options, with clear line items to allow the client to “pick and choose” services.\nAssistance with moving basement equipment and contents will be included as a separate labor line item if needed. Workers will help move items as part of the process.\nMeasurements taken:\nBasement: 18 feet 4 inches (width) × 38 feet 6 inches (length), with 8-foot walls.\n\nGarage measurements also to be included upon client’s request.",
+        "fromEmail": false
+      }
+    ],
+    "files": [
+      {
+        "id": "22PbQfgFMnWN",
+        "name": "CompanyCam 3400725410",
+        "type": "image/jpeg",
+        "size": 172951,
+        "createdAt": "2026-07-23T17:07:56.364Z",
+        "url": "https://cdn.jobtread.com/22PbQfgFMnWN",
+        "description": null
+      },
+      {
+        "id": "22PbQfhwjWZx",
+        "name": "CompanyCam 3400727123",
+        "type": "image/jpeg",
+        "size": 456377,
+        "createdAt": "2026-07-23T17:08:10.678Z",
+        "url": "https://cdn.jobtread.com/22PbQfhwjWZx",
+        "description": null
+      },
+      {
+        "id": "22PbQfisJri9",
+        "name": "CompanyCam 3400727878",
+        "type": "image/jpeg",
+        "size": 488206,
+        "createdAt": "2026-07-23T17:08:18.416Z",
+        "url": "https://cdn.jobtread.com/22PbQfisJri9",
+        "description": null
+      },
+      {
+        "id": "22PbQfkk3iuQ",
+        "name": "CompanyCam 3400729712",
+        "type": "image/jpeg",
+        "size": 412127,
+        "createdAt": "2026-07-23T17:08:34.282Z",
+        "url": "https://cdn.jobtread.com/22PbQfkk3iuQ",
+        "description": null
+      },
+      {
+        "id": "22PbQfniwb9t",
+        "name": "CompanyCam 3400731648",
+        "type": "image/jpeg",
+        "size": 530364,
+        "createdAt": "2026-07-23T17:08:50.925Z",
+        "url": "https://cdn.jobtread.com/22PbQfniwb9t",
+        "description": null
+      },
+      {
+        "id": "22PbQfpswVS8",
+        "name": "CompanyCam 3400732531",
+        "type": "image/jpeg",
+        "size": 261694,
+        "createdAt": "2026-07-23T17:09:00.529Z",
+        "url": "https://cdn.jobtread.com/22PbQfpswVS8",
+        "description": null
+      },
+      {
+        "id": "22PbQfqvUazf",
+        "name": "CompanyCam 3400733508",
+        "type": "image/jpeg",
+        "size": 285918,
+        "createdAt": "2026-07-23T17:09:09.313Z",
+        "url": "https://cdn.jobtread.com/22PbQfqvUazf",
+        "description": null
+      },
+      {
+        "id": "22PbQfvEupTh",
+        "name": "CompanyCam 3400735830",
+        "type": "image/jpeg",
+        "size": 468812,
+        "createdAt": "2026-07-23T17:09:45.543Z",
+        "url": "https://cdn.jobtread.com/22PbQfvEupTh",
+        "description": null
+      },
+      {
+        "id": "22PbQfvHcL3s",
+        "name": "CompanyCam 3400736846",
+        "type": "image/jpeg",
+        "size": 453500,
+        "createdAt": "2026-07-23T17:09:45.949Z",
+        "url": "https://cdn.jobtread.com/22PbQfvHcL3s",
+        "description": null
+      },
+      {
+        "id": "22PbQfwVSMMi",
+        "name": "CompanyCam 3400738328",
+        "type": "image/jpeg",
+        "size": 459565,
+        "createdAt": "2026-07-23T17:09:56.126Z",
+        "url": "https://cdn.jobtread.com/22PbQfwVSMMi",
+        "description": null
+      },
+      {
+        "id": "22PbQfxe33dt",
+        "name": "CompanyCam 3400739322",
+        "type": "image/jpeg",
+        "size": 208564,
+        "createdAt": "2026-07-23T17:10:05.818Z",
+        "url": "https://cdn.jobtread.com/22PbQfxe33dt",
+        "description": null
+      },
+      {
+        "id": "22PbQg27TGPi",
+        "name": "CompanyCam 3400741625",
+        "type": "image/jpeg",
+        "size": 472094,
+        "createdAt": "2026-07-23T17:10:26.441Z",
+        "url": "https://cdn.jobtread.com/22PbQg27TGPi",
+        "description": null
+      },
+      {
+        "id": "22PbQg2mmP4w",
+        "name": "CompanyCam 3400742194",
+        "type": "image/jpeg",
+        "size": 338752,
+        "createdAt": "2026-07-23T17:10:32.192Z",
+        "url": "https://cdn.jobtread.com/22PbQg2mmP4w",
+        "description": null
+      },
+      {
+        "id": "22PbQg3bsXV3",
+        "name": "CompanyCam 3400743021",
+        "type": "image/jpeg",
+        "size": 346123,
+        "createdAt": "2026-07-23T17:10:39.109Z",
+        "url": "https://cdn.jobtread.com/22PbQg3bsXV3",
+        "description": null
+      },
+      {
+        "id": "22PbQg4NR2bG",
+        "name": "CompanyCam 3400743619",
+        "type": "image/jpeg",
+        "size": 199799,
+        "createdAt": "2026-07-23T17:10:45.493Z",
+        "url": "https://cdn.jobtread.com/22PbQg4NR2bG",
+        "description": null
+      },
+      {
+        "id": "22PbQg5LPE4y",
+        "name": "CompanyCam 3400744673",
+        "type": "image/jpeg",
+        "size": 248638,
+        "createdAt": "2026-07-23T17:10:53.592Z",
+        "url": "https://cdn.jobtread.com/22PbQg5LPE4y",
+        "description": null
+      },
+      {
+        "id": "22PbQg5y6LSS",
+        "name": "CompanyCam 3400745256",
+        "type": "image/jpeg",
+        "size": 233773,
+        "createdAt": "2026-07-23T17:10:58.949Z",
+        "url": "https://cdn.jobtread.com/22PbQg5y6LSS",
+        "description": null
+      },
+      {
+        "id": "22PbQg7VqdJi",
+        "name": "CompanyCam 3400746903",
+        "type": "image/jpeg",
+        "size": 225693,
+        "createdAt": "2026-07-23T17:11:11.818Z",
+        "url": "https://cdn.jobtread.com/22PbQg7VqdJi",
+        "description": null
+      }
+    ],
+    "included": [
+      {
+        "id": "22PbQfgFMnWN",
+        "name": "CompanyCam 3400725410",
+        "type": "image/jpeg",
+        "size": 172951,
+        "createdAt": "2026-07-23T17:07:56.364Z",
+        "url": "https://cdn.jobtread.com/22PbQfgFMnWN",
+        "description": null
+      },
+      {
+        "id": "22PbQfhwjWZx",
+        "name": "CompanyCam 3400727123",
+        "type": "image/jpeg",
+        "size": 456377,
+        "createdAt": "2026-07-23T17:08:10.678Z",
+        "url": "https://cdn.jobtread.com/22PbQfhwjWZx",
+        "description": null
+      },
+      {
+        "id": "22PbQfisJri9",
+        "name": "CompanyCam 3400727878",
+        "type": "image/jpeg",
+        "size": 488206,
+        "createdAt": "2026-07-23T17:08:18.416Z",
+        "url": "https://cdn.jobtread.com/22PbQfisJri9",
+        "description": null
+      },
+      {
+        "id": "22PbQfkk3iuQ",
+        "name": "CompanyCam 3400729712",
+        "type": "image/jpeg",
+        "size": 412127,
+        "createdAt": "2026-07-23T17:08:34.282Z",
+        "url": "https://cdn.jobtread.com/22PbQfkk3iuQ",
+        "description": null
+      },
+      {
+        "id": "22PbQfniwb9t",
+        "name": "CompanyCam 3400731648",
+        "type": "image/jpeg",
+        "size": 530364,
+        "createdAt": "2026-07-23T17:08:50.925Z",
+        "url": "https://cdn.jobtread.com/22PbQfniwb9t",
+        "description": null
+      },
+      {
+        "id": "22PbQfpswVS8",
+        "name": "CompanyCam 3400732531",
+        "type": "image/jpeg",
+        "size": 261694,
+        "createdAt": "2026-07-23T17:09:00.529Z",
+        "url": "https://cdn.jobtread.com/22PbQfpswVS8",
+        "description": null
+      },
+      {
+        "id": "22PbQfqvUazf",
+        "name": "CompanyCam 3400733508",
+        "type": "image/jpeg",
+        "size": 285918,
+        "createdAt": "2026-07-23T17:09:09.313Z",
+        "url": "https://cdn.jobtread.com/22PbQfqvUazf",
+        "description": null
+      },
+      {
+        "id": "22PbQfvEupTh",
+        "name": "CompanyCam 3400735830",
+        "type": "image/jpeg",
+        "size": 468812,
+        "createdAt": "2026-07-23T17:09:45.543Z",
+        "url": "https://cdn.jobtread.com/22PbQfvEupTh",
+        "description": null
+      },
+      {
+        "id": "22PbQfvHcL3s",
+        "name": "CompanyCam 3400736846",
+        "type": "image/jpeg",
+        "size": 453500,
+        "createdAt": "2026-07-23T17:09:45.949Z",
+        "url": "https://cdn.jobtread.com/22PbQfvHcL3s",
+        "description": null
+      },
+      {
+        "id": "22PbQfwVSMMi",
+        "name": "CompanyCam 3400738328",
+        "type": "image/jpeg",
+        "size": 459565,
+        "createdAt": "2026-07-23T17:09:56.126Z",
+        "url": "https://cdn.jobtread.com/22PbQfwVSMMi",
+        "description": null
+      },
+      {
+        "id": "22PbQfxe33dt",
+        "name": "CompanyCam 3400739322",
+        "type": "image/jpeg",
+        "size": 208564,
+        "createdAt": "2026-07-23T17:10:05.818Z",
+        "url": "https://cdn.jobtread.com/22PbQfxe33dt",
+        "description": null
+      },
+      {
+        "id": "22PbQg27TGPi",
+        "name": "CompanyCam 3400741625",
+        "type": "image/jpeg",
+        "size": 472094,
+        "createdAt": "2026-07-23T17:10:26.441Z",
+        "url": "https://cdn.jobtread.com/22PbQg27TGPi",
+        "description": null
+      },
+      {
+        "id": "22PbQg2mmP4w",
+        "name": "CompanyCam 3400742194",
+        "type": "image/jpeg",
+        "size": 338752,
+        "createdAt": "2026-07-23T17:10:32.192Z",
+        "url": "https://cdn.jobtread.com/22PbQg2mmP4w",
+        "description": null
+      },
+      {
+        "id": "22PbQg3bsXV3",
+        "name": "CompanyCam 3400743021",
+        "type": "image/jpeg",
+        "size": 346123,
+        "createdAt": "2026-07-23T17:10:39.109Z",
+        "url": "https://cdn.jobtread.com/22PbQg3bsXV3",
+        "description": null
+      },
+      {
+        "id": "22PbQg4NR2bG",
+        "name": "CompanyCam 3400743619",
+        "type": "image/jpeg",
+        "size": 199799,
+        "createdAt": "2026-07-23T17:10:45.493Z",
+        "url": "https://cdn.jobtread.com/22PbQg4NR2bG",
+        "description": null
+      },
+      {
+        "id": "22PbQg5LPE4y",
+        "name": "CompanyCam 3400744673",
+        "type": "image/jpeg",
+        "size": 248638,
+        "createdAt": "2026-07-23T17:10:53.592Z",
+        "url": "https://cdn.jobtread.com/22PbQg5LPE4y",
+        "description": null
+      },
+      {
+        "id": "22PbQg5y6LSS",
+        "name": "CompanyCam 3400745256",
+        "type": "image/jpeg",
+        "size": 233773,
+        "createdAt": "2026-07-23T17:10:58.949Z",
+        "url": "https://cdn.jobtread.com/22PbQg5y6LSS",
+        "description": null
+      },
+      {
+        "id": "22PbQg7VqdJi",
+        "name": "CompanyCam 3400746903",
+        "type": "image/jpeg",
+        "size": 225693,
+        "createdAt": "2026-07-23T17:11:11.818Z",
+        "url": "https://cdn.jobtread.com/22PbQg7VqdJi",
+        "description": null
+      }
+    ],
+    "excluded": [],
+    "attachments": [],
+    "failed": [],
+    "budget": {
+      "groups": [
+        "CLOCK IN ITEMS",
+        "GENERAL AND ADMINISTRATIVE"
+      ],
+      "lines": 41,
+      "pricedLines": 0
+    }
+  },
+  "index": [
+    {
+      "id": "22PQQzg4jKR5",
+      "name": "*Roofing - DB Duration Shingle Roofing",
+      "description": "Shingle roof replacement with a selections section for Upgrades.",
+      "groups": [],
+      "lineCount": 84
+    },
+    {
+      "id": "22PHefqhcdaW",
+      "name": "*Roofing - Exposed Fastener",
+      "description": "Exposed Fastener Template from Job Nimbus",
+      "groups": [],
+      "lineCount": 51
+    },
+    {
+      "id": "22PTSS9tEUSs",
+      "name": "*Roofing - Standing Seam",
+      "description": "Standing Seam Template (as of 3/6/2026)",
+      "groups": [],
+      "lineCount": 85
+    },
+    {
+      "id": "22PLm9KJ7yJF",
+      "name": "Addition/House Build",
+      "description": "All elements to bulid a new house",
+      "groups": [],
+      "lineCount": 350
+    },
+    {
+      "id": "22PLm4qjpyXG",
+      "name": "Bathroom Remodel",
+      "description": "Bathroom template from JobNimbus",
+      "groups": [
+        "BATHROOM REMODEL",
+        "Phase 1 - General Requirements",
+        "Phase 2 - Rough-In",
+        "Phase 3 - Interiors",
+        "Phase 4 - Finishes",
+        "Permits",
+        "Measurements",
+        "Design",
+        "Project/Site Management",
+        "Site Preparation",
+        "Demolition",
+        "Site Clean Up",
+        "Framing Materials",
+        "Sheathing Materials",
+        "CHANGE ORDER",
+        "SELECTIONS",
+        "Flooring",
+        "Bathtub/Shower",
+        "Vanity",
+        "Countertop",
+        "Faucet",
+        "Electrical - Rough-In",
+        "HVAC",
+        "Plumbing - Rough-In",
+        "Drywall/Plaster",
+        "Paint",
+        "Flooring",
+        "Shower/Tub/Bath",
+        "Interior Trims & Finishes",
+        "Interior Doors",
+        "Cabinetry",
+        "Plumbing - Fixtures",
+        "Lighting/Outlets/Switches",
+        "Accessories",
+        "Toilet",
+        "Windows",
+        "Window",
+        "Rentals",
+        "BURDEN",
+        "GENERAL AND ADMINISTRATIVE",
+        "CLOCK IN ITEMS"
+      ],
+      "lineCount": 141
+    },
+    {
+      "id": "22PbMbkntBWs",
+      "name": "Clock In",
+      "description": null,
+      "groups": [],
+      "lineCount": 38
+    },
+    {
+      "id": "22PLxHbygz3M",
+      "name": "Countertop Replacement",
+      "description": "Replace countertop materials only",
+      "groups": [],
+      "lineCount": 89
+    },
+    {
+      "id": "22PLxKt8CEZX",
+      "name": "Covered Porch/Outdoor Living Area",
+      "description": "Build a covered porch/outdoor living area",
+      "groups": [],
+      "lineCount": 224
+    },
+    {
+      "id": "22PLxQwYJN6D",
+      "name": "Deck",
+      "description": "Build a deck",
+      "groups": [],
+      "lineCount": 108
+    },
+    {
+      "id": "22PM233XvGtS",
+      "name": "Door/Window Installation",
+      "description": "Installation of door(s) and/or window(s)",
+      "groups": [],
+      "lineCount": 107
+    },
+    {
+      "id": "22PbMdz3MvQM",
+      "name": "General and Administrative",
+      "description": null,
+      "groups": [],
+      "lineCount": 2
+    },
+    {
+      "id": "22PTgLRk7nk3",
+      "name": "Insurance Restoration Agreement",
+      "description": "Template for high volume storm damage/insurance claim calls",
+      "groups": [],
+      "lineCount": 1
+    },
+    {
+      "id": "22PHGfWHCxJA",
+      "name": "Kitchen Remodel",
+      "description": "Template for kitchen remodel.",
+      "groups": [],
+      "lineCount": 117
+    },
+    {
+      "id": "22PHDery34Ua",
+      "name": "Pan Head",
+      "description": "Typical elements from 05ME/Metals division of a Construction Project",
+      "groups": [],
+      "lineCount": 16
+    },
+    {
+      "id": "22PPB363cpwn",
+      "name": "PBA (Preliminary Building Agreement)",
+      "description": "Design phases to be billed to client for a PBA (Preliminary Building Agreement)",
+      "groups": [],
+      "lineCount": 4
+    },
+    {
+      "id": "22PeAarzVcL9",
+      "name": "Service Repair Agreement - Drywall & Paint",
+      "description": "Drywall and paint service repair: Service Call by zone, labor after the first hour across the patch visit and the planned finish visit, and a materials allowance.",
+      "groups": [],
+      "lineCount": 6
+    },
+    {
+      "id": "22PeAarzVcLA",
+      "name": "Service Repair Agreement - Electrical",
+      "description": "Licensed electrical service repair: Service Call by zone, labor after the first hour at the electrical rate, and a materials allowance.",
+      "groups": [],
+      "lineCount": 6
+    },
+    {
+      "id": "22PeAapaTR6x",
+      "name": "Service Repair Agreement - General Construction",
+      "description": "General construction service repair: Service Call by zone, labor after the first hour, and a materials allowance.",
+      "groups": [],
+      "lineCount": 37
+    },
+    {
+      "id": "22PeAak9iehp",
+      "name": "Service Repair Agreement - Roofing",
+      "description": "Roofing service repair: Service Call by zone, labor after the first hour, and a materials allowance.",
+      "groups": [],
+      "lineCount": 5
+    },
+    {
+      "id": "22PeAapaTR6w",
+      "name": "Service Repair Agreement - Siding & Gutters",
+      "description": "Siding and gutter service repair: Service Call by zone, labor after the first hour, and a materials allowance.",
+      "groups": [],
+      "lineCount": 6
+    },
+    {
+      "id": "22PLktTFGC6Y",
+      "name": "Siding",
+      "description": "Siding Template from Job Nimbus",
+      "groups": [],
+      "lineCount": 98
+    },
+    {
+      "id": "22PeAauEjbEZ",
+      "name": "Storm Tarp Service",
+      "description": "Emergency tarping to stop further damage: Service Call by zone plus tarp installed per square of coverage, two-square minimum.",
+      "groups": [],
+      "lineCount": 4
+    },
+    {
+      "id": "22PQaE9T5t8G",
+      "name": "Warranty Service Repair",
+      "description": "Cost Items for logging a Warrantied Service Repair",
+      "groups": [],
+      "lineCount": 2
+    },
+    {
+      "id": "22PeAauEjbEY",
+      "name": "Warranty Visit Agreement",
+      "description": "Warranty-suspected visit on a roof or project we installed.",
+      "groups": [],
+      "lineCount": 5
+    },
+    {
+      "id": "22PF3gnGCuiB",
+      "name": "X-Division 01 General Requirements",
+      "description": "Typical elements from 01GR/General Requirements division of a Construction Project",
+      "groups": [
+        "GENERAL REQUIREMENTS",
+        "Permits",
+        "Measurements",
+        "Design",
+        "Project/Site Management",
+        "Rentals"
+      ],
+      "lineCount": 23
+    },
+    {
+      "id": "22PF3jzmJQwf",
+      "name": "X-Division 02 Site Construction",
+      "description": "Typical elements from 02ST/Sitework Construction division of a Construction Project",
+      "groups": [],
+      "lineCount": 11
+    },
+    {
+      "id": "22PF3m8gBcLB",
+      "name": "X-Division 03 Concrete",
+      "description": "Typical elements from 03CC/Concrete division of a Construction Project",
+      "groups": [],
+      "lineCount": 22
+    },
+    {
+      "id": "22PFTBNHeeQH",
+      "name": "X-Division 04 Masonry",
+      "description": "Typical elements from 04MA/Masonry division of a Construction Project",
+      "groups": [],
+      "lineCount": 15
+    },
+    {
+      "id": "22PL8TBF6i4q",
+      "name": "X-Division 06 Wood & Plastics (Framing/Decks)",
+      "description": "Typical elements from 06WP/Wood & Plastics division of a Construction Project",
+      "groups": [],
+      "lineCount": 40
+    },
+    {
+      "id": "22PL8dfiaPz7",
+      "name": "X-Division 07 Thermal & Moisture",
+      "description": "Typical elements from 07TM/Thermal & Moisture division of a Construction Project",
+      "groups": [],
+      "lineCount": 90
+    },
+    {
+      "id": "22PL9HiQmEs6",
+      "name": "X-Division 08 Doors & Windows",
+      "description": "Typical elements from 08DW/Doors & Windows division of a Construction Project",
+      "groups": [],
+      "lineCount": 14
+    },
+    {
+      "id": "22PLCZU3cbqS",
+      "name": "X-Division 09 Finishes",
+      "description": "Typical elements from 09FN/Finishes division of a Construction Project",
+      "groups": [
+        "FINISHES",
+        "Flooring",
+        "Casing",
+        "Drywall/Plaster",
+        "Paint",
+        "Tile",
+        "Acoustical"
+      ],
+      "lineCount": 26
+    },
+    {
+      "id": "22PLi6gcHTbL",
+      "name": "X-Division 10 Specialties",
+      "description": "Typical elements from 10SP/Specialties division of a Construction Project",
+      "groups": [],
+      "lineCount": 11
+    },
+    {
+      "id": "22PLiFykNvQg",
+      "name": "X-Division 11 Equipment (Appliances)",
+      "description": "Typical elements from 11EQ/Equipment division of a Construction Project",
+      "groups": [],
+      "lineCount": 15
+    },
+    {
+      "id": "22PLiJ9XGzWm",
+      "name": "X-Division 12 Furnishings (Cabinetry)",
+      "description": "Typical elements from 12FR/Furnishings division of a Construction Project",
+      "groups": [],
+      "lineCount": 6
+    },
+    {
+      "id": "22PLiM8rxr2w",
+      "name": "X-Division 13 Special Construction",
+      "description": "Typical elements from 13SC/Special Construction division of a Construction Project",
+      "groups": [],
+      "lineCount": 0
+    },
+    {
+      "id": "22PLiMEn7BtP",
+      "name": "X-Division 14 Conveying",
+      "description": "Typical elements from 14CV/Conveying division of a Construction Project",
+      "groups": [],
+      "lineCount": 6
+    },
+    {
+      "id": "22PLiP42MDg3",
+      "name": "X-Division 15 Mechanical (Plumbing/HVAC)",
+      "description": "Typical elements from 15MC/Mechanical (Plumbing/HVAC) division of a Construction Project",
+      "groups": [],
+      "lineCount": 10
+    },
+    {
+      "id": "22PLiS5mLcWL",
+      "name": "X-Division 16 Electrical",
+      "description": "Typical elements from 16EL/Electrical division of a Construction Project",
+      "groups": [],
+      "lineCount": 8
+    },
+    {
+      "id": "22PLui6zd6bu",
+      "name": "X-Service Repair - Drywall",
+      "description": "Simple Service Repair Agreement for a drywalll service job",
+      "groups": [],
+      "lineCount": 2
+    },
+    {
+      "id": "22PLuhjDkbkr",
+      "name": "X-Service Repair - Electrical",
+      "description": "Simple Service Repair Agreement for an electrical service job",
+      "groups": [],
+      "lineCount": 2
+    },
+    {
+      "id": "22PLuhLmqnEg",
+      "name": "X-Service Repair - General Construction",
+      "description": "Simple Service Repair Agreement for a general construction service job",
+      "groups": [],
+      "lineCount": 2
+    },
+    {
+      "id": "22PLugxugZrz",
+      "name": "X-Service Repair - Roofing",
+      "description": "Simple Service Repair Agreement for a roofing service job",
+      "groups": [],
+      "lineCount": 41
+    },
+    {
+      "id": "22PLuhW3dMfM",
+      "name": "X-Service Repair - Siding",
+      "description": "Simple Service Repair Agreement for a siding service job",
+      "groups": [],
+      "lineCount": 40
+    }
+  ],
+  "templates": [
+    {
+      "id": "22PLCZU3cbqS",
+      "name": "X-Division 09 Finishes",
+      "description": "Typical elements from 09FN/Finishes division of a Construction Project",
+      "groups": [
+        {
+          "id": "22PTA4gWzNE2",
+          "name": "FINISHES",
+          "position": "n",
+          "parentId": "22PLCZU3cbqS",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMP",
+          "name": "Flooring",
+          "position": "k",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMS",
+          "name": "Casing",
+          "position": "l",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMT",
+          "name": "Drywall/Plaster",
+          "position": "m",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMY",
+          "name": "Paint",
+          "position": "n",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMb",
+          "name": "Tile",
+          "position": "o",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMd",
+          "name": "Acoustical",
+          "position": "p",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        }
+      ],
+      "lines": [
+        {
+          "id": "22PLht84FDJ6",
+          "name": "Trim - Crown Molding",
+          "description": "Prefinished poplar 3 1/4\" Colonial style crown molding trim; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "j",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8WCF5zb2",
+            "name": "Trim - Crown Molding",
+            "unitCost": 60,
+            "unitPrice": 87,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLht84FDJ7",
+          "name": "Trim - Casing",
+          "description": "Prefinished poplar 2 1/4\" Colonial door & window casing; 16' lengths",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "k",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDkQUYjD",
+            "name": "Trim - Casing",
+            "unitCost": 37.11,
+            "unitPrice": 53.80949999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMQ",
+          "name": "Flooring",
+          "description": "Flooring materials allowance for selection from our offered stock of Luxury Vinyl Plank flooring for client, up to $5/sf and allowing 10% for overages.\n\nAdditional flooring options are available at an upcharge per square foot",
+          "unit": "Square Foot",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMP",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2qynkQ",
+            "name": "Flooring",
+            "unitCost": 5,
+            "unitPrice": 7.249999999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMU",
+          "name": "Drywall Brd- Mat",
+          "description": "Materials necessary to hang drywall, installed generally as follows:\n- 5/8\" drywall board for all ceiling areas, except bathroom(s)\n- 1/2\" drywall board for all wall areas including garage, except bathroom(s)\n- 1/2\" green board for all ceiling and wall areas of bathroom(s)",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMT",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2cGYqw",
+            "name": "Drywall Board - Mat",
+            "unitCost": 1.02,
+            "unitPrice": 1.4789999999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMZ",
+          "name": "Primer",
+          "description": "Primer material for newly installed drywall.",
+          "unit": "Gallons",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMY",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2t6Uci",
+            "name": "Primer",
+            "unitCost": 30,
+            "unitPrice": 43.5,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLht84FDJ8",
+          "name": "Trim - Chair Rail",
+          "description": "Prefinished poplar 2 5/8\" chair rail molding; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8WecAJcW",
+            "name": "Trim - Chair Rail",
+            "unitCost": 58.62,
+            "unitPrice": 84.999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMR",
+          "name": "Flooring - Miscellaneous MAT",
+          "description": "Allowance for additional materials necessary for flooring installation, such as underlayment, transition(s), etc.",
+          "unit": "Square Foot",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMP",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PHGY7DE6sK",
+            "name": "Flooring - Misc. Material",
+            "unitCost": 0.75,
+            "unitPrice": 1.0875,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMV",
+          "name": "Drywall Brd- Labor",
+          "description": "Hanging of drywall board",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMT",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2cyGTZ",
+            "name": "Drywall Board Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLCchBuFMa",
+          "name": "Paint",
+          "description": "Includes good quality paint: two coats to walls, 1 coat to ceiling.  Does not include primer.\n\nPaint estimate affords client allowance for up to 2 color choices. Additional colors can be applied at an additional charge of $100/color change.",
+          "unit": "Gallons",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMY",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2xvbRA",
+            "name": "Paint",
+            "unitCost": 85,
+            "unitPrice": 123.24999999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMc",
+          "name": "Tile Package - Kitchen",
+          "description": "Allowance for tile materials and labor for installation of custom tiling in KITCHEN (Backsplash) between countertop and wall cabinet bottoms and area above stove/cook top and/or sink. Client should note that this is simply a place holder, estimated from a final AVERAGE cost per sqft as seen in previous clients' projects.",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMb",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2pZPGS",
+            "name": "Tile",
+            "unitCost": 20,
+            "unitPrice": 28.999999999999996,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLht84FDJ9",
+          "name": "Trim - Baseboard",
+          "description": "Prefinished poplar 3 1/4\" Colonial style baseboard trim; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDkUK5gW",
+            "name": "Trim - Baseboard",
+            "unitCost": 45.49,
+            "unitPrice": 65.9605,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLhvMncrwS",
+          "name": "Acoustic Ceiling Tile",
+          "description": "Acoustic ceiling tile materials",
+          "unit": "Square Foot",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMd",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhv2myhvk",
+            "name": "Acoustic Ceiling Tile",
+            "unitCost": 2,
+            "unitPrice": 2.9,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMW",
+          "name": "Drywall Mud Mat",
+          "description": "Materials necessary to mud, tape and sand drywall.",
+          "unit": "Square Foot",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMT",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2kbSB2",
+            "name": "Drywall Mud - Mat",
+            "unitCost": 1.31,
+            "unitPrice": 1.8995,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLhsr2Yx55",
+          "name": "Flooring - Sub",
+          "description": "Materials and/or labor for flooring installation",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMP",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLN8SFdxqy",
+            "name": "Flooring Sub",
+            "unitCost": 7.5,
+            "unitPrice": 10.875,
+            "costTypeName": "Subcontractor"
+          }
+        },
+        {
+          "id": "22PLht84FDJA",
+          "name": "Trim - Interior Jamb Extension",
+          "description": "Primed poplar 1 x 6 interior jamb; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8X9QRzL9",
+            "name": "Trim - Interior Jamb Extension",
+            "unitCost": 50,
+            "unitPrice": 72.5,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLhtLxcz9S",
+          "name": "Paint Labor",
+          "description": "Crew Labor for painting and/or priming",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMY",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLN6iLdCtV",
+            "name": "Paint Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLhuAQSEVj",
+          "name": "Tile Labor",
+          "description": "Cost per square foot to install tile materials.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMb",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhtg427Qv",
+            "name": "Tile Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLhvMncrwT",
+          "name": "Acoustic Ceiling Tile Labor",
+          "description": "Crew labor to install acoustic ceiling tile materials",
+          "unit": "Square Foot",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMd",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhv3SDtZ2",
+            "name": "Acoustic Ceiling Tile Labor",
+            "unitCost": 3.5,
+            "unitPrice": 6.363636,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLCchBuFMX",
+          "name": "Drywall Mud Labor",
+          "description": "Labor which includes mudding, taping and sanding walls, including flat finish on wall and knockdown finish on ceilings.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMT",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2mJ4yV",
+            "name": "Drywall Mud Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLhsr2Yx56",
+          "name": "Flooring Labor",
+          "description": "Labor for crew to install flooring materials.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMP",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhscfQUQU",
+            "name": "Flooring Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLht84FDJB",
+          "name": "Trim - Jamb Extension",
+          "description": "3\" jamb extension; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8X2XRdfQ",
+            "name": "Trim - Jamb Extension",
+            "unitCost": 42.08,
+            "unitPrice": 61.01599999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLhtLxcz9T",
+          "name": "Paint Labor - Sub",
+          "description": "Subcontractor for painting and/or priming",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMY",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLN6y6kK5V",
+            "name": "Paint Labor - Sub",
+            "unitCost": 3.95,
+            "unitPrice": 5.7275,
+            "costTypeName": "Subcontractor"
+          }
+        },
+        {
+          "id": "22PLhuAQSEVk",
+          "name": "Tile Sub",
+          "description": "Cost for labor and materials for sub to install tile.",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMb",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhttXnjb8",
+            "name": "Tile Sub",
+            "unitCost": 50,
+            "unitPrice": 72.5,
+            "costTypeName": "Subcontractor"
+          }
+        },
+        {
+          "id": "22PLhvUt4NxF",
+          "name": "Acoustic Ceiling Tile Sub",
+          "description": "Crew labor to install acoustic ceiling tile materials",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMd",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhvP6WfCF",
+            "name": "Acoustic Ceiling Tile Sub",
+            "unitCost": 6,
+            "unitPrice": 8.7,
+            "costTypeName": "Subcontractor"
+          }
+        },
+        {
+          "id": "22PLht84FDJC",
+          "name": "Trim - Stair Rail",
+          "description": "Stairwell handrail Material; figured by the linear foot.",
+          "unit": "Linear Feet",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "p",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8XGScyGe",
+            "name": "Trim - Stair Rail",
+            "unitCost": 3.1,
+            "unitPrice": 4.495,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLht84FDJD",
+          "name": "Trim Labor",
+          "description": "Crew labor to install interior finish trim.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "q",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLefx3GeQF",
+            "name": "Trim Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "22PF3gnGCuiB",
+      "name": "X-Division 01 General Requirements",
+      "description": "Typical elements from 01GR/General Requirements division of a Construction Project",
+      "groups": [
+        {
+          "id": "22PTA3VXfn5u",
+          "name": "GENERAL REQUIREMENTS",
+          "position": "n",
+          "parentId": "22PF3gnGCuiB",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3ikEm3Fr",
+          "name": "Permits",
+          "position": "l",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3ikEm3Fs",
+          "name": "Measurements",
+          "position": "m",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3ikEm3Ft",
+          "name": "Design",
+          "position": "n",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3jeyxCey",
+          "name": "Project/Site Management",
+          "position": "o",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3jeyxCez",
+          "name": "Rentals",
+          "position": "p",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        }
+      ],
+      "lines": [
+        {
+          "id": "22PF3jeyxCf2",
+          "name": "Rental - Buggy/Dumpster",
+          "description": "Buggy and/or Dumpster Rental",
+          "unit": "Hours",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "h",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDasAkQZ",
+            "name": "Rental - Buggy/Dumpster",
+            "unitCost": 6,
+            "unitPrice": 8.7,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf3",
+          "name": "Rental - Concrete Chain Saw",
+          "description": "1 day rental of Concrete Chain Saw from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "i",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaxp2pQ",
+            "name": "Rental - Concrete Chain Saw",
+            "unitCost": 160,
+            "unitPrice": 231.99999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf4",
+          "name": "Rental - 14\" Concrete Saw",
+          "description": "1 day rental of 14\" Concrete Saw from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "j",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDax7Qcx",
+            "name": "Rental - 14\" Concrete Saw",
+            "unitCost": 50,
+            "unitPrice": 72.5,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf5",
+          "name": "Rental - Grappler",
+          "description": "1 day rental of Grappler from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "k",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDauw2zs",
+            "name": "Rental - Grappler",
+            "unitCost": 165,
+            "unitPrice": 239.24999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxt",
+          "name": "HOVER Complete - Simple",
+          "description": "Entire Exterior, with 1 - 4 facets - 3D Report that captures exterior dimensions of a structure.",
+          "unit": "Each",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fs",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaj5SpL",
+            "name": "HOVER Complete - Simple",
+            "unitCost": 112.61,
+            "unitPrice": 112.61,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3ikEm3Fu",
+          "name": "Designer/CAD Design",
+          "description": "Hourly rate for design work. Billable at $125/hr",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Ft",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaeE4Jv",
+            "name": "Designer/CAD Design",
+            "unitCost": 100,
+            "unitPrice": 125,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf6",
+          "name": "Rental - Hydraulic Impactor",
+          "description": "1 day rental of Hydraulic Impactor from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDawP9nU",
+            "name": "Rental - Hydraulic Impactor",
+            "unitCost": 110,
+            "unitPrice": 159.5,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxp",
+          "name": "Designer Schematic",
+          "description": "The Schematic Design Phase: client meeting, site inspection, photo report, 2-D preliminary plans, one revision, and a preliminary ballpark estimate. Revision work beyond the allocated hours billed at $125/hr.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Ft",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDafayH8",
+            "name": "Designer - Schematic",
+            "unitCost": 100,
+            "unitPrice": 125,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxs",
+          "name": "Project Management",
+          "description": "General allowance for project management including securing materials, scheduling production team, inspection and consulting with owners and other necessary parties.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCey",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDadVavs",
+            "name": "Project Management (C)",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxu",
+          "name": "HOVER Complete - Average",
+          "description": "Entire Exterior, with 5 - 10 facets - 3D Report that captures exterior dimensions of a structure.",
+          "unit": "Each",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fs",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDajjnmG",
+            "name": "HOVER Complete - Average",
+            "unitCost": 112.61,
+            "unitPrice": 112.61,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf7",
+          "name": "Rental - Mini Excavator",
+          "description": "1 day rental of Mini Excavator from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDavcJdb",
+            "name": "Rental - Mini Excavator",
+            "unitCost": 195,
+            "unitPrice": 282.75,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxk",
+          "name": "Permit",
+          "description": "General line item for Permitting fees, not constrained by location",
+          "unit": null,
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fr",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PEjZMRaX6W",
+            "name": "Permit",
+            "unitCost": 0,
+            "unitPrice": null,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxq",
+          "name": "Designer - Developmental",
+          "description": "The Developmental Design Phase: materials selection meetings, refined 2-D plans with MEP fixture siting and finishes, one revision, and a finalized estimate. Revision work beyond the allocated hours billed at $125/hr.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Ft",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PDa443H59U",
+            "name": "Designer - Developmental",
+            "unitCost": 100,
+            "unitPrice": 125,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxv",
+          "name": "HOVER Complete - Complex",
+          "description": "Entire Exterior, with 11+ facets - 3D Report that captures exterior dimensions of a structure.",
+          "unit": "Each",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fs",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDakRr4h",
+            "name": "HOVER Complete - Complex",
+            "unitCost": 112.61,
+            "unitPrice": 112.61,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf8",
+          "name": "Rental - Post Hole Digger",
+          "description": "1 day rental of post hole digger from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDayZvT6",
+            "name": "Rental - Post Hole Digger",
+            "unitCost": 150,
+            "unitPrice": 217.49999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PPpWUpAJaL",
+          "name": "Sales On-Site Support",
+          "description": "Non-monetized line item to track Sales Team time assisting production team with the execution of the project.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Sales On-Site Support",
+          "groupId": "22PF3jeyxCey",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PNJmzSy4PK",
+            "name": "Sales On-Site Support",
+            "unitCost": 0,
+            "unitPrice": 0,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxr",
+          "name": "Designer - Con Docs",
+          "description": "The Construction Document Phase: fully dimensioned plans, sections, elevations and details with materials, window and door schedules, compiled into a construction document set; one final printed set.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Ft",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaewQ5n",
+            "name": "Designer - Con Docs",
+            "unitCost": 100,
+            "unitPrice": 125,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3j8eypW4",
+          "name": "CANVAS Report",
+          "description": "Interior Measurements Report for remodels and renovations: a dimensioned 2D plan, quantities and dimensions of walls, doors, openings, windows and counters, square footage of floors, walls and countertops, plus a 3D SketchUp model. Cost is per square foot.",
+          "unit": "Square Foot",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fs",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PF3iwpMgeA",
+            "name": "CANVAS Report",
+            "unitCost": 0.4,
+            "unitPrice": 0.58,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf9",
+          "name": "Rental - Skid Loader",
+          "description": "1 day rental of a Skid Loader from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDatWiw6",
+            "name": "Rental - Skid Loader",
+            "unitCost": 150,
+            "unitPrice": 217.49999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCfA",
+          "name": "Rental - Trencher (ride)",
+          "description": "1 day rental of a Ride On Trencher from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "p",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDauFNQT",
+            "name": "Rental - Trencher (ride)",
+            "unitCost": 200,
+            "unitPrice": 290,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCfB",
+          "name": "Rental - Excavator (Full Size-Week)",
+          "description": "1 WEEK rental of a full sized excavator",
+          "unit": "Week",
+          "costTypeName": "Other",
+          "costCodeName": "Site Construction",
+          "groupId": "22PF3jeyxCez",
+          "position": "q",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PDa8PzsGUc",
+            "name": "Rental - Excavator (Full Size-Week)",
+            "unitCost": 3750,
+            "unitPrice": 5437.5,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PFHFgZd6i3",
+          "name": "P-Pod",
+          "description": "On-site crew port-a-john",
+          "unit": "Week",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "r",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaspwrV",
+            "name": "P-Pod",
+            "unitCost": 150,
+            "unitPrice": 217.49999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PLiTmtAZzg",
+          "name": "Equipment Operation",
+          "description": "Crew labor necessary to run/operate rental equipment/tools",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "s",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLiTbpuyiY",
+            "name": "Equipment Operation",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        }
+      ]
+    }
+  ]
+}

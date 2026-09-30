@@ -266,7 +266,7 @@ function impactLabel(f: Finding): string {
   return esc(`${under ? 'short' : 'over'} ${formatMoney(magnitude)}`);
 }
 
-const CSS = `
+export const CSS = `
 :root {
   --bg: #fbfaf8; --card: #ffffff; --ink: #1a1a1a; --dim: #6b6b6b;
   --line: #e4e1dc; --red: #b3261e; --amber: #8a6100; --blue: #1a5f8a;
