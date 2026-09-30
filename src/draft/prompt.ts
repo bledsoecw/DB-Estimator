@@ -269,12 +269,12 @@ export function buildDraftContent(e: JobEvidence, templates: Template[]): Anthro
 
 export const HISTORY_SYSTEM = `${COMPANY}
 
-You are reading DB's own past work so the draft can lean on it. For each target — a subcontracted line, a labor line for a trade DB might sub, or a gap with no template line — you are shown the past cost items that match its search terms: real lines on real jobs, each tagged by how much it proves ([billed] a vendor bill DB paid, [sold] an approved estimate or invoice, [ordered] a work or purchase order, [quoted] a bid request, [draft] a budget or unsent document).
+You are reading DB's own past work so the draft can lean on it. For each target — a subcontracted line, a labor line for a trade DB might sub, or a gap with no template line — you are shown the past cost items that match its search terms: real lines on real jobs, each tagged by how much it proves ([billed] a vendor bill DB paid, [sold] an approved estimate or invoice, [ordered] a work or purchase order, [quoted] a bid request, [draft] a budget or unsent document). Where a matched line's document carried files, they are attached after the text: the sub's quote, a bid, an invoice, a change order. Read them. A size or a rate written on a sub's quote is written evidence, and it is what turns a lump sum into a cost per unit; say which file it came from.
 
 For each target say:
 - match: "match" when past work is the same kind of job (epoxy floor to epoxy floor), "partial" when it is related but not the same (a drywall sub for a skim coat), "none" when nothing shown applies. The same word appearing in a line name is not a match by itself: "Epoxy" in a tile-grout line is not an epoxy floor.
 - pastWork: the lines you are relying on, copied from what you were shown — job, what, where, when, vendor, quantity, unit, unit cost, line cost. Only lines you were shown. Prefer billed over sold over ordered over quoted over draft, and recent over old.
-- suggestedUnitCost: a cost per the TARGET's unit, derived from pastWork by arithmetic you show in suggestionBasis ("$5,712 lump sum for a ~420 SF sunroom floor = $13.60/SF"). Use an area or count only when it is written in the past job's own lines or description; if a lump sum cannot be put per unit because the past job's size is not shown, leave suggestedUnitCost null and say what would settle it. Never take a unit cost from a line whose cost is 0 or blank, and never guess a figure.
+- suggestedUnitCost: a cost per the TARGET's unit, derived from pastWork by arithmetic you show in suggestionBasis ("$5,712 lump sum for the 420 SF on the Rhino quote = $13.60/SF"). Use an area or count only when it is written in the past job's own lines, its description, or an attached file; if a lump sum cannot be put per unit because the past job's size is nowhere written, leave suggestedUnitCost null and say what would settle it. Never take a unit cost from a line whose cost is 0 or blank, and never guess a figure.
 - confidence: high when two or more billed or sold lines agree; medium for one good line; low for partial matches or old drafts.
 - typicallySubbed: for a Labor target, true when the past work shows DB using a subcontractor for this trade on two or more jobs, false when DB's own crew did it on two or more, null when the history does not say. usualVendor is the sub that appears most, or null.
 - summary: one or two plain sentences for the rep: what DB did before and what it cost.
@@ -348,9 +348,15 @@ export function buildHistoryContent(
   targets: HistoryTarget[],
   report: HistoryReport,
 ): Anthropic.ContentBlockParam[] {
+  const files: Anthropic.ContentBlockParam[] = [];
+  for (const a of report.attachments ?? []) {
+    files.push({ type: 'text', text: `From past job ${a.jobName}, found on ${a.file.foundOn}:` });
+    files.push(...attachmentBlocks({ file: a.file, bytes: a.bytes }));
+  }
   return [
     { type: 'text', text: historyTargetsText(summary, targets) },
     { type: 'text', text: historyText(report) },
+    ...files,
     {
       type: 'text',
       text:

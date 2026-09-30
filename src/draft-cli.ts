@@ -1,6 +1,7 @@
 /**
  * npm run draft -- <job> [--dry-run] [--out review] [--templates id,id] [--model ...]
  *                        [--fixture path] [--capture path] [--no-photos] [--no-history]
+ *                        [--learned path] [--relearn] [--relearn-after days]
  *
  * One job, drafted from the budget templates the way a rep would build it:
  * which template to add, which lines to keep with what quantity, which to
@@ -26,6 +27,7 @@ import { anthropicFromEnv, preflight } from './anthropic.ts';
 import { clientFromEnv } from './jobtread/client.ts';
 import { fetchJobEvidence, resolveJobId, type JobEvidence } from './draft/evidence.ts';
 import { searchHistory, type HistoryReport } from './draft/history.ts';
+import { DEFAULT_RELEARN_DAYS, LearnedStore } from './draft/learned.ts';
 import { fetchCostTypes } from './jobtread/queries.ts';
 import type { ApiCostType } from './jobtread/types.ts';
 import { fetchTemplate, fetchTemplateIndex, type Template, type TemplateSummary } from './draft/templates.ts';
@@ -33,6 +35,9 @@ import { evidenceText, templateIndexText } from './draft/prompt.ts';
 import { DEFAULT_MODEL, PRICING, anthropicStructuredCall, costOf } from './draft/model.ts';
 import { draftEstimate, type DraftFixture, type HistorySource } from './draft/draft.ts';
 import { draftJson, renderDraft } from './draft/render.ts';
+
+/** Holds DB's pricing; git-ignored, on the machine that runs the drafter. */
+export const DEFAULT_LEARNED_PATH = '.db-estimator/learned-prices.json';
 
 export interface DraftArgs {
   job: string;
@@ -44,18 +49,30 @@ export interface DraftArgs {
   capture: string | null;
   photos: boolean;
   history: boolean;
+  /** The learned price book. Findings are read from and written to it. */
+  learned: string;
+  relearn: boolean;
+  relearnAfterDays: number;
 }
 
 export function parseDraftArgs(argv: string[]): DraftArgs {
   const args: DraftArgs = {
     job: '', dryRun: false, out: 'review', model: DEFAULT_MODEL, templateIds: [],
     fixture: null, capture: null, photos: true, history: true,
+    learned: DEFAULT_LEARNED_PATH, relearn: false, relearnAfterDays: DEFAULT_RELEARN_DAYS,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--dry-run') args.dryRun = true;
     else if (a === '--no-photos') args.photos = false;
     else if (a === '--no-history') args.history = false;
+    else if (a === '--relearn') args.relearn = true;
+    else if (a === '--learned') args.learned = argv[++i] ?? args.learned;
+    else if (a === '--relearn-after') {
+      const n = Number(argv[++i]);
+      if (!Number.isFinite(n) || n <= 0) throw new Error('--relearn-after needs a number of days');
+      args.relearnAfterDays = n;
+    }
     else if (a === '--out') args.out = argv[++i] ?? args.out;
     else if (a === '--model') args.model = argv[++i] ?? args.model;
     else if (a === '--fixture') args.fixture = argv[++i] ?? null;
@@ -129,6 +146,12 @@ async function main(): Promise<number> {
 
   let historySource: HistorySource | undefined;
   let costTypes: ApiCostType[] | undefined;
+  const learned = args.history
+    ? LearnedStore.load(args.learned, { relearnAfterDays: args.relearnAfterDays, ignore: args.relearn })
+    : undefined;
+  if (learned && learned.entries.size) {
+    log(`learned price book: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'} in ${args.learned}${args.relearn ? ' (ignored this run: --relearn)' : ''}`);
+  }
 
   if (args.fixture) {
     const f = JSON.parse(readFileSync(args.fixture, 'utf8')) as DraftFixtureFile;
@@ -141,6 +164,7 @@ async function main(): Promise<number> {
       historySource = {
         search: async (terms) => ({ terms: saved.terms.filter((t) => terms.includes(t.term)) }),
         subMargin: subMarginOf(f.costTypes ?? []),
+        ...(learned ? { learned } : {}),
       };
     }
     const byId = new Map(f.templates.map((t) => [t.id, t]));
@@ -170,9 +194,13 @@ async function main(): Promise<number> {
       historySource = {
         search: async (terms) => {
           log(`searching past work for ${terms.map((t) => `"${t}"`).join(', ')}`);
-          return searchHistory(client, terms, { excludeJobId: job.id });
+          return searchHistory(client, terms, {
+            excludeJobId: job.id,
+            ...(args.photos ? {} : { download: null }),
+          });
         },
         subMargin: subMarginOf(costTypes),
+        ...(learned ? { learned } : {}),
       };
     }
   }
@@ -225,9 +253,15 @@ async function main(): Promise<number> {
     ...(historySource ? { history: historySource } : {}),
   });
 
+  if (learned && draft.history) {
+    learned.save(args.learned);
+    log(`learned price book saved: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}`);
+  }
+
   if (args.capture) {
+    // The report minus the downloaded bytes: a fixture holds what was found, not the files.
     const extra = {
-      ...(draft.history ? { history: draft.history.report } : {}),
+      ...(draft.history ? { history: { terms: draft.history.report.terms } } : {}),
       ...(costTypes ? { costTypes } : {}),
     };
     writeFileSync(args.capture, JSON.stringify(toFixture(organizationId, evidence, index, loaded, extra), null, 2));
@@ -252,6 +286,7 @@ async function main(): Promise<number> {
         draft.history.skipped
           ? `history: searched ${draft.history.terms.length} term${draft.history.terms.length === 1 ? '' : 's'}; ${draft.history.skipped}`
           : `history: ${draft.history.findings} finding${draft.history.findings === 1 ? '' : 's'} from ${draft.history.terms.length} term${draft.history.terms.length === 1 ? '' : 's'}` +
+            (draft.history.learned ? `, ${draft.history.learned} from the learned price book` : '') +
             (draft.totals.proposedForGaps.gaps ? `; proposes a price for ${draft.totals.proposedForGaps.gaps} gap${draft.totals.proposedForGaps.gaps === 1 ? '' : 's'}` : ''),
       );
     }

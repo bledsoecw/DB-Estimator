@@ -9,6 +9,13 @@
  * Coatings, $5,712 lump sum, approved and invoiced) and "skim" found
  * nothing at all, which is itself the answer.
  *
+ * The sub's quote is usually a file on the work order or change order the
+ * line sits on — "6466 Dennis Myers_Epoxy Quote.pdf" hangs off the Myers
+ * work order, and it is where the square footage lives that the line does
+ * not carry. So for the top jobs the files on the matched lines' documents
+ * are read too, and failing that the job's files whose name or description
+ * carries the search term. A job with 1,156 migrated files is never scanned.
+ *
  * This file only finds and describes. The model decides which past lines
  * apply and shows its arithmetic (prompt.ts); the code prices from the
  * number it cites (draft.ts). Read-only.
@@ -16,6 +23,7 @@
 
 import type { Reader } from '../jobtread/queries.ts';
 import { isTestJob } from '../jobtread/queries.ts';
+import { httpDownload, type Downloader, type ScopeFile } from '../scope/packet.ts';
 
 export type Where =
   | 'estimate' | 'change order' | 'invoice' | 'work order' | 'purchase order'
@@ -58,6 +66,21 @@ export interface HistoryJob {
   lines: HistoryLine[];
   /** Other lines on the strongest line's document, for scale: "Flooring 650 Square Foot". */
   context: { name: string; quantity: number | null; unit: string | null }[];
+  /** Quotes, bids and invoices found beside the matched lines. Sent when downloaded. */
+  files: HistoryFile[];
+}
+
+export interface HistoryFile extends ScopeFile {
+  /** Where it was found: on the matched line's document, or by searching the job's files for the term. */
+  foundOn: string;
+  /** Why it was left out, when it was. Null when it went to the model. */
+  skipped: string | null;
+}
+
+export interface HistoryAttachment {
+  jobName: string;
+  file: HistoryFile;
+  bytes: Uint8Array;
 }
 
 export interface HistoryHits {
@@ -69,6 +92,8 @@ export interface HistoryHits {
 
 export interface HistoryReport {
   terms: HistoryHits[];
+  /** Downloaded files, for the model. Not part of a fixture. */
+  attachments?: HistoryAttachment[];
 }
 
 export interface HistoryOptions {
@@ -77,7 +102,16 @@ export interface HistoryOptions {
   maxJobsPerTerm?: number;
   /** Fetch the other lines on each top job's strongest document. On by default. */
   context?: boolean;
+  /** How to fetch a file. null lists files without downloading; undefined downloads over HTTP. */
+  download?: Downloader | null;
 }
+
+export const FILE_LIMITS = {
+  perJob: 3,
+  total: 8,
+  maxFileBytes: 8 * 1024 * 1024,
+  maxTotalBytes: 24 * 1024 * 1024,
+};
 
 const PAGE = 50;
 const MAX_JOBS = 5;
@@ -111,6 +145,9 @@ export async function searchHistory(
   const maxJobs = opts.maxJobsPerTerm ?? MAX_JOBS;
   const out: HistoryHits[] = [];
   const seen = new Set<string>();
+  const attachments: HistoryAttachment[] = [];
+  const download = opts.download === undefined ? httpDownload : opts.download;
+  let totalBytes = 0;
   for (const raw of terms) {
     const term = raw.trim().toLowerCase();
     if (!term || seen.has(term)) continue;
@@ -118,11 +155,26 @@ export async function searchHistory(
     const hits = await searchTerm(client, term);
     const jobs = groupByJob(hits, opts.excludeJobId).slice(0, maxJobs);
     if (opts.context !== false) {
-      for (const job of jobs.slice(0, CONTEXT_JOBS)) await addContext(client, job);
+      for (const job of jobs.slice(0, CONTEXT_JOBS)) {
+        await addContext(client, job, term);
+        for (const f of job.files) {
+          if (f.skipped) continue;
+          if (attachments.length >= FILE_LIMITS.total) { f.skipped = `more than ${FILE_LIMITS.total} files already sent`; continue; }
+          if (totalBytes + f.size > FILE_LIMITS.maxTotalBytes) { f.skipped = 'over the size budget for one read'; continue; }
+          if (!download) continue;
+          try {
+            const bytes = await download(f.url);
+            attachments.push({ jobName: job.jobName, file: f, bytes });
+            totalBytes += bytes.length;
+          } catch (err) {
+            f.skipped = `could not be downloaded: ${err instanceof Error ? err.message : String(err)}`;
+          }
+        }
+      }
     }
     out.push({ term, raw: hits.length, jobs });
   }
-  return { terms: out };
+  return { terms: out, attachments };
 }
 
 async function searchTerm(client: Reader, term: string): Promise<RawHit[]> {
@@ -220,7 +272,7 @@ export function groupByJob(hits: RawHit[], excludeJobId?: string): HistoryJob[] 
   for (const h of hits) {
     if (!isEvidence(h, excludeJobId)) continue;
     const job = byJob.get(h.job!.id) ?? {
-      jobId: h.job!.id, jobName: h.job!.name, description: null, projectType: null, lines: [], context: [],
+      jobId: h.job!.id, jobName: h.job!.name, description: null, projectType: null, lines: [], context: [], files: [],
     };
     job.lines.push(toLine(h));
     byJob.set(job.jobId, job);
@@ -233,8 +285,19 @@ export function groupByJob(hits: RawHit[], excludeJobId?: string): HistoryJob[] 
   return jobs;
 }
 
-/** The job's description and project type, and the other lines beside its strongest match. */
-async function addContext(client: Reader, job: HistoryJob): Promise<void> {
+const FILE_FIELDS = { id: {}, name: {}, type: {}, size: {}, createdAt: {}, url: {}, description: {} } as const;
+
+interface RawFile {
+  id: string; name: string; type: string; size: number; createdAt: string; url: string; description: string | null;
+}
+
+/**
+ * The job's description and project type, the other lines beside its
+ * strongest match, and the files: on the top lines' documents first (the
+ * sub's quote is attached to the work order), then any job file named for
+ * the term.
+ */
+async function addContext(client: Reader, job: HistoryJob, term: string): Promise<void> {
   const res = await client.query<{
     job: {
       description: string | null;
@@ -251,18 +314,74 @@ async function addContext(client: Reader, job: HistoryJob): Promise<void> {
   const pt = res.job?.customFieldValues.nodes.find((n) => typeof n.value === 'string');
   job.projectType = pt ? (pt.value as string) : null;
 
-  const docId = job.lines[0]?.documentId ?? null;
-  if (!docId) return;
-  const doc = await client.query<{ document: { costItems: { nodes: { id: string; name: string; quantity: number | null; unit: { name: string } | null }[] } } | null }>({
-    document: {
-      $: { id: docId },
-      costItems: { $: { size: 40, sortBy: [{ field: 'position' }] }, nodes: { id: {}, name: {}, quantity: {}, unit: { name: {} } } },
+  const found: { file: RawFile; foundOn: string }[] = [];
+  const docIds = [...new Set(job.lines.slice(0, 3).map((l) => l.documentId).filter((d): d is string => !!d))];
+  for (const [i, docId] of docIds.entries()) {
+    const line = job.lines.find((l) => l.documentId === docId)!;
+    const doc = await client.query<{
+      document: {
+        costItems?: { nodes: { id: string; name: string; quantity: number | null; unit: { name: string } | null }[] };
+        files: { nodes: RawFile[] };
+      } | null;
+    }>({
+      document: {
+        $: { id: docId },
+        ...(i === 0
+          ? { costItems: { $: { size: 40, sortBy: [{ field: 'position' }] }, nodes: { id: {}, name: {}, quantity: {}, unit: { name: {} } } } }
+          : {}),
+        files: { $: { size: 10 }, nodes: FILE_FIELDS },
+      },
+    });
+    if (i === 0) {
+      const own = new Set(job.lines.map((l) => l.id));
+      job.context = (doc.document?.costItems?.nodes ?? [])
+        .filter((n) => !own.has(n.id))
+        .map((n) => ({ name: n.name, quantity: n.quantity, unit: n.unit?.name ?? null }));
+    }
+    for (const f of doc.document?.files.nodes ?? []) found.push({ file: f, foundOn: `the ${line.where}` });
+  }
+  const like = `%${term}%`;
+  const byName = await client.query<{ job: { files: { nodes: RawFile[] } } | null }>({
+    job: {
+      $: { id: job.jobId },
+      files: {
+        $: { size: 10, where: { or: [[['name'], 'like', like], [['description'], 'like', like]] }, sortBy: [{ field: 'createdAt', order: 'desc' }] },
+        nodes: FILE_FIELDS,
+      },
     },
   });
-  const own = new Set(job.lines.map((l) => l.id));
-  job.context = (doc.document?.costItems.nodes ?? [])
-    .filter((n) => !own.has(n.id))
-    .map((n) => ({ name: n.name, quantity: n.quantity, unit: n.unit?.name ?? null }));
+  for (const f of byName.job?.files.nodes ?? []) found.push({ file: f, foundOn: `the job's files, named for "${term}"` });
+  job.files = selectHistoryFiles(found);
+}
+
+const READABLE = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
+/**
+ * Which found files go to the model, and why the rest do not. Pure. PDFs
+ * first (a quote is a PDF), one copy of a file uploaded twice, at most
+ * FILE_LIMITS.perJob a job.
+ */
+export function selectHistoryFiles(found: { file: RawFile; foundOn: string }[]): HistoryFile[] {
+  const out: HistoryFile[] = [];
+  const seen = new Set<string>();
+  const ordered = [
+    ...found.filter((f) => f.file.type === 'application/pdf'),
+    ...found.filter((f) => f.file.type !== 'application/pdf'),
+  ];
+  let kept = 0;
+  for (const { file, foundOn } of ordered) {
+    const key = `${file.name.toLowerCase()}|${file.size}`;
+    const hf: HistoryFile = { ...file, description: file.description?.trim() || null, foundOn, skipped: null };
+    if (seen.has(key)) continue; // the same upload twice: not even worth listing
+    seen.add(key);
+    if (!READABLE.has(file.type)) hf.skipped = `not a PDF or photo (${file.type})`;
+    else if (/companycam_report/i.test(file.name)) hf.skipped = 'a photo report';
+    else if (file.size > FILE_LIMITS.maxFileBytes) hf.skipped = `larger than ${Math.round(FILE_LIMITS.maxFileBytes / 1024 / 1024)} MB`;
+    else if (kept >= FILE_LIMITS.perJob) hf.skipped = `more than ${FILE_LIMITS.perJob} files on this job; the first were sent`;
+    else kept++;
+    out.push(hf);
+  }
+  return out;
 }
 
 // ---- the text the model reads -------------------------------------------------
@@ -302,6 +421,14 @@ export function historyText(report: HistoryReport): string {
       }
       if (j.context.length) {
         out.push(`  Also on that document: ${j.context.map((c) => `${c.name} ${qty(c.quantity, c.unit)}`).join('; ')}`);
+      }
+      const sent = j.files.filter((f) => !f.skipped);
+      const left = j.files.filter((f) => f.skipped);
+      if (sent.length) {
+        out.push(`  Files from this job attached below: ${sent.map((f) => `"${f.name}"${f.description ? ` (${f.description})` : ''}, from ${f.foundOn}, ${f.createdAt.slice(0, 10)}`).join('; ')}`);
+      }
+      if (left.length) {
+        out.push(`  Files found but not attached: ${left.map((f) => `"${f.name}": ${f.skipped}`).join('; ')}`);
       }
     }
   }

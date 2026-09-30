@@ -142,6 +142,10 @@ export function draftSteps(d: Draft): string {
       out.push(`   - ${l.name}: ${l.history!.summary}${l.history!.usualVendor ? ` Usual sub: ${l.history!.usualVendor}.` : ''}`);
     }
   }
+  if (d.history?.learned) {
+    out.push('');
+    out.push(`${d.history.learned} item${d.history.learned === 1 ? '' : 's'} answered from the learned price book without a search.`);
+  }
   if (d.history?.skipped) {
     out.push('');
     out.push(`Past work was searched for ${d.history.terms.map((t) => `"${t}"`).join(', ')}: ${d.history.skipped}.`);
@@ -156,6 +160,13 @@ export function draftSteps(d: Draft): string {
   return out.join('\n');
 }
 
+function originNote(h: { origin: { kind: string; learnedAt?: string; fromJob?: string; expiresAt?: string; unitMismatch?: string | null } }): string {
+  const o = h.origin;
+  if (o.kind !== 'learned') return '';
+  return ` Learned ${(o.learnedAt ?? '').slice(0, 10)} on ${o.fromJob}; not searched again until ${(o.expiresAt ?? '').slice(0, 10)}.` +
+    (o.unitMismatch ? ` (${o.unitMismatch})` : '');
+}
+
 function historyLineText(l: DraftLine): string {
   const h = l.history!;
   let out = h.summary;
@@ -167,7 +178,7 @@ function historyLineText(l: DraftLine): string {
   } else if (h.match !== 'none') {
     out += ` ${h.suggestionBasis}`;
   }
-  return `${out} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
+  return `${out}${originNote(h)} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
 }
 
 function historyGapText(g: DraftGap): string {
@@ -180,7 +191,7 @@ function historyGapText(g: DraftGap): string {
   } else if (h.match !== 'none') {
     out += ` ${h.suggestionBasis}`;
   }
-  return `${out} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
+  return `${out}${originNote(h)} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
 }
 
 function pastWorkRows(h: HistoryFinding): string {
@@ -256,7 +267,7 @@ export function draftJson(d: Draft): unknown {
         : null,
     })),
     history: d.history
-      ? { terms: d.history.terms, findings: d.history.findings, skipped: d.history.skipped, searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName) })) }
+      ? { terms: d.history.terms, findings: d.history.findings, learned: d.history.learned, skipped: d.history.skipped, searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName), files: t.jobs.flatMap((j) => j.files.filter((f) => !f.skipped).map((f) => f.name)) })) }
       : null,
     questions: d.questions,
     rejected: d.rejected,
@@ -381,7 +392,7 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
     const subbed = d.lines.filter((l) => l.costTypeName === 'Labor' && l.history?.typicallySubbed === true);
     if (!subbed.length && !d.history) return '';
     return `<section class="findings">
-    <div class="bar"><h2>What history says</h2>${d.history ? `<p class="tally">searched ${d.history.terms.map((t) => `"${esc(t)}"`).join(', ')}</p>` : ''}</div>
+    <div class="bar"><h2>What history says</h2>${d.history ? `<p class="tally">${d.history.terms.length ? `searched ${d.history.terms.map((t) => `"${esc(t)}"`).join(', ')}` : 'nothing searched'}${d.history.learned ? ` &middot; ${d.history.learned} from the learned price book` : ''}</p>` : ''}</div>
     ${d.history?.skipped ? `<p class="detail">${esc(d.history.skipped)}.</p>` : ''}
     ${subbed.map((l) => `<article class="card sev-info"><div class="chip">Usually subcontracted</div><h3>${esc(l.name)}</h3><p class="detail">${esc(l.history!.summary)}${l.history!.usualVendor ? ` Usual sub: ${esc(l.history!.usualVendor)}.` : ''} Drafted here as crew labor.</p></article>`).join('\n')}
   </section>`;

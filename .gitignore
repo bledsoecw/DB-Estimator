@@ -42,6 +42,9 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 
+# The learned price book: what past-work searches found, kept on Carl's machine
+.db-estimator/
+
 # Local data — plan sets and pricing data must never land in git
 # Rendered audit reports carry customer names and real pricing. They are for
 # Carl's machine and for email, not for git and not for anyone's cloud.

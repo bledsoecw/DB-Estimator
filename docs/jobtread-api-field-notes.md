@@ -218,6 +218,11 @@ Selected fields (full type has ~45):
   `document.account { name, type: "vendor" }` — Rhino Concrete Coatings on the Myers epoxy
   work order — and `toOrganizationName` carries it too; on a customer document `account` is
   the customer. Roughly 30 KB of nodes per query passes; the search asks for 50 at a time.
+  A sub's quote is a file on the document it priced: `document.files` on the Myers epoxy
+  work order holds "6466 Dennis Myers_Epoxy Quote.pdf" (description "Epoxy Quote"), and the
+  change order holds a copy. `job.files` filters on `name` and `description` with `like`, so
+  a job with 1,156 migrated files can still be asked for the four named "epoxy".
+  `costItem.files` exists but its nodes have no `description` field.
 - **Query-size refusal.** A query is refused with HTTP 413 `Request Entity Too Large`, in
   plain text, when the page sizes it DECLARES multiply out too far. VERIFIED 2026-09-30 that
   this is decided before the query runs, from the shape and not the data:

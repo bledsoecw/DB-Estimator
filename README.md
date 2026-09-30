@@ -105,7 +105,7 @@ npm run audit -- --recent 20 --status approved --out review          # a batch
 npm run audit -- --catalog --out review                              # the whole catalog
 npm run draft -- 261323 --dry-run                                    # what the drafter would read
 npm run draft -- 261323 --out review                                 # draft the budget (needs a key)
-npm test                                                            # 166 tests
+npm test                                                            # 173 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -309,6 +309,7 @@ npm run draft -- 261323 --dry-run          # sends nothing; writes what the mode
 npm run draft -- 261323 --out review       # needs ANTHROPIC_API_KEY in .env
 npm run draft -- 261323 --templates 22PLCZU3cbqS,22PF3gnGCuiB   # you pick the templates
 npm run draft -- 261323 --no-history                             # skip the past-work step
+npm run draft -- 261323 --relearn                                # ignore the learned price book this once
 ```
 
 The job is the six-digit number that starts its name, the hyphenated number
@@ -331,9 +332,12 @@ subcontracted line, every gap, and any labor line for a trade DB might sub,
 the model names search terms, the code finds the matching lines on past jobs
 in JobTread (estimates, change orders, work orders, vendor bills, invoices,
 each tagged by how much it proves and by the sub who did it), and a third
-short call says what DB did last time and what it cost. A cost it cites is
+short call says what DB did last time and what it cost, reading the sub's
+quote where one is attached to the past work order. A cost it cites is
 priced at the subcontractor margin and shown as a **proposal** beside the
-template rate or on the gap; proposals never enter the totals.
+template rate or on the gap; proposals never enter the totals. What it finds
+is kept in a local **learned price book** (`.db-estimator/`, git-ignored) and
+reused for a year before that trade is searched again.
 
 The page is written as the steps the rep takes in JobTread — add this
 template, keep these lines, delete those, set these quantities, put these in

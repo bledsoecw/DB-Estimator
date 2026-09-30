@@ -96,12 +96,18 @@ So the draft has a third, short call:
    how much they prove: **billed** (a vendor bill DB paid), **sold** (an
    approved estimate, change order or invoice), **ordered** (a work or
    purchase order), **quoted** (a bid request), **draft**. For the top jobs
-   it also reads the other lines on the same document, so a lump sum can be
-   put against the job's size when that size was written down.
-3. The model reads the matches and, per target, says whether DB has done
-   this before, cites the lines it relies on, and gives a unit cost only when
-   the arithmetic from those lines is shown. A lump sum with no area behind
-   it stays a lump sum and the model says what would settle it. For a labor
+   it also reads the other lines on the same document, and the **files on
+   the matched lines' documents**: the sub's quote is attached to the work
+   order or change order it priced, and that is where the square footage a
+   lump-sum line does not carry is written. Failing that, the job's files
+   whose name or description carries the search term. PDFs first, one copy
+   of a file uploaded twice, three files a job, eight a read; a job with a
+   thousand migrated files is never scanned.
+3. The model reads the matches and the attached files and, per target, says
+   whether DB has done this before, cites the lines and files it relies on,
+   and gives a unit cost only when the arithmetic is shown. A size written
+   on a sub's quote is written evidence. A lump sum with no size anywhere
+   stays a lump sum and the model says what would settle it. For a labor
    line it says whether DB usually subs that trade, and to whom.
 
 The code then prices what history proposes at the Subcontractor cost type's
@@ -114,14 +120,37 @@ for the flagged items and that Carl confirms.
 On 261323 the history read as follows. Epoxy: one job, 246466 Myers, an
 "Epoxy Sub Pckg" at $5,712 from Rhino Concrete Coatings, approved, ordered
 and invoiced in August and September 2026, with no square footage on the
-change order. Skim coat: nothing, by name or description; the nearest thing
+change order — but "6466 Dennis Myers_Epoxy Quote.pdf" is attached to the
+work order and the change order, and the quote carries the measurements.
+Carl pointed that out after the first version read lines only; the files
+step exists because of it. Skim coat: nothing, by name or description; the nearest thing
 is a drywall sub. Painting: DB subs it often, mostly as lump sums from Jeff
 Southworth's Drywall & Painting, and 261257 Reynolds carries a
 "Seal/Prime & Paint Ceiling" line at $3.95 a square foot. When there is no
 match at all the third call is skipped and the page says what was searched.
 
-`--no-history` turns the step off. A `--capture` saves the history that was
-read, so a replay from the fixture is offline.
+### The learned price book
+
+Carl's second rule, the same day: once a past price has been found for a
+kind of work, keep it, and only look again after a long time, a year, in
+case the sub's pricing moved. So every history finding is written to a local
+price book, `.db-estimator/learned-prices.json`, under the search terms that
+produced it, with when it was learned and on which job. On the next job a
+target whose terms hit a fresh entry is answered from the book: no search,
+no model call, and the page says "Learned 2026-09-30 on 261323 Haag_Remodel;
+not searched again until 2027-09-30". A learned cost per square foot is not
+carried onto a line priced in hours; the summary and the past work still
+are. "Nothing found" is remembered for thirty days only, because the next
+job may be the first of its kind.
+
+The file is plain JSON, readable and editable by hand: delete an entry to
+forget it. It holds DB's pricing, so it is git-ignored and lives on the
+machine that runs the drafter. `--relearn` ignores the book for one run and
+overwrites what it finds; `--relearn-after 180` shortens the year;
+`--learned path` moves the file.
+
+`--no-history` turns the whole step off. A `--capture` saves the history
+that was read, so a replay from the fixture is offline.
 
 ## What the rep gets
 

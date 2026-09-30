@@ -24,9 +24,17 @@ import {
   type DraftReply, type DraftReplyGap, type DraftReplyQuestion, type HistoryFinding, type HistoryTarget, type PickReply,
 } from './prompt.ts';
 import type { HistoryReport } from './history.ts';
+import type { LearnedStore } from './learned.ts';
 import { groupPath, scopeLines, type Template, type TemplateLine, type TemplateSummary } from './templates.ts';
 
 export type Confidence = 'high' | 'medium' | 'low';
+
+/** Where a history finding came from: this run's search, or the learned price book. */
+export type HistoryOrigin =
+  | { kind: 'searched' }
+  | { kind: 'learned'; learnedAt: string; fromJob: string; term: string; expiresAt: string; unitMismatch: string | null };
+
+export type AttachedFinding = HistoryFinding & { origin: HistoryOrigin };
 
 export interface DraftLine {
   /** The template line's id — what the rep keeps in JobTread. */
@@ -53,7 +61,7 @@ export interface DraftLine {
   /** Search terms the model gave for DB's past work of this kind. */
   lookBack: string[];
   /** What DB did last time, when history was read for this line. */
-  history: HistoryFinding | null;
+  history: AttachedFinding | null;
   /** History's unit cost and the price at DB's subcontractor margin; null when history gave none. */
   historyUnitCost: Money | null;
   historyUnitPrice: Money | null;
@@ -61,7 +69,7 @@ export interface DraftLine {
 
 /** A gap, plus what history says about it and the price that would follow. */
 export type DraftGap = DraftReplyGap & {
-  history: HistoryFinding | null;
+  history: AttachedFinding | null;
   /** From history's unit cost × the gap's quantity, at the subcontractor margin. A proposal, never a total. */
   proposed: { unitCost: Money; unitPrice: Money | null; cost: Money; price: Money | null } | null;
 };
@@ -127,7 +135,14 @@ export interface Draft {
     proposedForGaps: { cost: Money; price: Money | null; gaps: number };
   };
   /** The past-work step: what was searched and what came of it. Null when it did not run. */
-  history: { terms: string[]; report: HistoryReport; findings: number; skipped: string | null } | null;
+  history: {
+    terms: string[];
+    report: HistoryReport;
+    findings: number;
+    skipped: string | null;
+    /** Targets answered from the learned price book, so nothing was searched for them. */
+    learned: number;
+  } | null;
   usage: Usage;
   cost: number | null;
 }
@@ -136,6 +151,8 @@ export interface HistorySource {
   search: (terms: string[]) => Promise<HistoryReport>;
   /** The Subcontractor cost type's margin as a fraction (0.3), for pricing what history proposes. */
   subMargin: number | null;
+  /** What earlier runs learned. Absent means search everything every time. */
+  learned?: LearnedStore;
 }
 
 export interface DraftOptions {
@@ -242,28 +259,61 @@ export async function draftEstimate(
   // ---- 3. what DB did last time -----------------------------------------------
   let history: Draft['history'] = null;
   if (opts.history) {
-    const targets = historyTargets(lines, gaps);
-    const terms = uniqueTerms(targets);
+    const allTargets = historyTargets(lines, gaps);
+    const store = opts.history.learned;
+
+    // What the price book already knows is applied first and not searched again.
+    const learnedFindings: AttachedFinding[] = [];
+    const toSearch: HistoryTarget[] = [];
+    for (const t of allTargets) {
+      const e = store?.lookup(t.lookBack) ?? null;
+      if (!e) { toSearch.push(t); continue; }
+      const unitMismatch =
+        e.finding.suggestedUnitCost !== null && e.unit !== null && t.unit !== null && e.unit !== t.unit
+          ? `learned per ${e.unit}; this is in ${t.unit}, so the unit cost is not carried over`
+          : null;
+      learnedFindings.push({
+        ...e.finding,
+        target: { kind: t.kind, id: t.id },
+        suggestedUnitCost: unitMismatch ? null : e.finding.suggestedUnitCost,
+        origin: {
+          kind: 'learned', learnedAt: e.learnedAt, fromJob: e.fromJob, term: e.term,
+          expiresAt: store!.expiresAt(e).toISOString(), unitMismatch,
+        },
+      });
+    }
+    attachHistory(lines, gaps, learnedFindings, opts.history.subMargin);
+
+    const terms = uniqueTerms(toSearch);
+    let report: HistoryReport = { terms: [] };
+    let findings = 0;
+    let skipped: string | null = null;
     if (terms.length > 0) {
-      const report = await opts.history.search(terms);
+      report = await opts.history.search(terms);
       const found = report.terms.some((t) => t.jobs.length > 0);
       if (!found) {
-        history = { terms, report, findings: 0, skipped: 'no past DB work matched any search term' };
+        skipped = 'no past DB work matched any search term';
+        rememberNone(store, toSearch, evidence.jobName);
       } else {
         const h = await runStructured(
           call,
           {
             model, system: HISTORY_SYSTEM,
-            content: buildHistoryContent(d.data.summary, targets, report),
+            content: buildHistoryContent(d.data.summary, toSearch, report),
             schema: HistorySchema, maxTokens: HISTORY_MAX_TOKENS,
           },
           'read the history',
         );
         usage = addUsage(usage, h.usage);
         addCost(h.cost);
-        attachHistory(lines, gaps, h.data.findings, opts.history.subMargin);
-        history = { terms, report, findings: h.data.findings.length, skipped: null };
+        const searched: AttachedFinding[] = h.data.findings.map((f) => ({ ...f, origin: { kind: 'searched' } }));
+        attachHistory(lines, gaps, searched, opts.history.subMargin);
+        findings = searched.length;
+        remember(store, toSearch, searched, evidence.jobName);
       }
+    }
+    if (allTargets.length > 0) {
+      history = { terms, report, findings, skipped, learned: learnedFindings.length };
     }
   }
 
@@ -350,7 +400,7 @@ export function uniqueTerms(targets: HistoryTarget[]): string[] {
 export function attachHistory(
   lines: DraftLine[],
   gaps: DraftGap[],
-  findings: HistoryFinding[],
+  findings: AttachedFinding[],
   subMargin: number | null,
 ): void {
   const margin = subMargin === null ? null : rateFromApi(subMargin);
@@ -383,6 +433,40 @@ export function attachHistory(
         };
       }
     }
+  }
+}
+
+/** Store what the search found, under every term of the target it answered. */
+export function remember(
+  store: LearnedStore | undefined,
+  targets: HistoryTarget[],
+  findings: AttachedFinding[],
+  jobName: string,
+): void {
+  if (!store) return;
+  const byId = new Map(targets.map((t) => [t.id, t]));
+  for (const f of findings) {
+    const t = byId.get(f.target.id);
+    if (!t || t.lookBack.length === 0) continue;
+    const { origin: _origin, ...finding } = f;
+    store.remember(t.lookBack, { fromJob: jobName, targetName: t.name, unit: t.unit, finding });
+  }
+}
+
+/** Nothing matched any term: remember that too, briefly, so the next job does not search again next week. */
+function rememberNone(store: LearnedStore | undefined, targets: HistoryTarget[], jobName: string): void {
+  if (!store) return;
+  for (const t of targets) {
+    if (t.lookBack.length === 0) continue;
+    store.remember(t.lookBack, {
+      fromJob: jobName, targetName: t.name, unit: t.unit,
+      finding: {
+        target: { kind: t.kind, id: t.id }, match: 'none',
+        summary: 'No past DB work matched this when it was last searched.',
+        pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low',
+        typicallySubbed: null, usualVendor: null,
+      },
+    });
   }
 }
 
