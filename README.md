@@ -55,22 +55,28 @@ Read-only. It checks one JobTread estimate against policy and writes nothing.
 
 ### Getting it onto your machine
 
-The auditor is on the branch `claude/gifted-keller-prgxh5`. It is not on `main`.
+The auditor and the drafter are on the branch `claude/magical-goldberg-325cjd`. There is no `main`.
 
 ```bash
 cd /c/dev                                              # wherever you keep repos
 git clone https://github.com/bledsoecw/DB-Estimator.git
 cd DB-Estimator
-git checkout claude/gifted-keller-prgxh5
+git fetch origin
+git checkout claude/magical-goldberg-325cjd
 npm install
 ```
+
+Already have the clone? Skip the first two lines and start at `git fetch origin`. A
+branch pushed after your last fetch is invisible to `git checkout` until you fetch, and
+the error for that is `pathspec ... did not match any file(s) known to git`, which reads
+like a typo and is not one.
 
 Run those one line at a time and read each result. If the clone fails, the `cd`
 fails too, and every command after it runs against whatever repository you were
 already sitting in — which looks like `Missing script: "doctor"` or
 `cp: cannot stat '.env.example'` and sends you hunting for the wrong bug. Before
 going on, `pwd` should end in `/DB-Estimator` and `git branch --show-current`
-should print `claude/gifted-keller-prgxh5`.
+should print `claude/magical-goldberg-325cjd`.
 
 Needs Node 22.9 or newer; `npm install` refuses an older one and names the
 version it wants.
