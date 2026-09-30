@@ -41,6 +41,8 @@ export interface DraftLine {
   price: Money;
   /** false when the template line points at no priced catalog item, or one at $0. */
   priced: boolean;
+  /** A catalog item at exactly $0 cost and $0 price: a time-tracking line, kept so the crew can clock to it. */
+  tracking: boolean;
   basis: string;
   evidence: { source: string; quote: string }[];
   option: string | null;
@@ -55,6 +57,22 @@ export interface Totals {
   price: Money;
   lines: number;
   unpriced: number;
+}
+
+export interface OptionChoice {
+  name: string;
+  totals: Totals;
+}
+
+/**
+ * One selection the rep builds. Two or more choices means the customer picks
+ * one ("Flooring": LVP or Epoxy). One choice is a yes-or-no add-on the
+ * customer may decline ("Ceiling paint").
+ */
+export interface OptionGroup {
+  group: string;
+  required: boolean;
+  choices: OptionChoice[];
 }
 
 export interface TemplatePlan {
@@ -86,7 +104,7 @@ export interface Draft {
   rejected: { lineId: string; reason: string }[];
   /** Template ids the picker named that are not in the index. */
   rejectedPicks: { templateId: string; reason: string }[];
-  totals: { base: Totals; options: { name: string; totals: Totals }[]; all: Totals };
+  totals: { base: Totals; options: OptionGroup[]; all: Totals };
   usage: Usage;
   cost: number | null;
 }
@@ -265,6 +283,8 @@ export function priceLines(
     const unitPrice = moneyFromApi(hit.l.priced?.unitPrice);
     const qty = qtyFromApi(r.quantity);
     const priced = hit.l.priced !== null && (unitCost !== ZERO || unitPrice !== ZERO);
+    const tracking =
+      hit.l.priced !== null && hit.l.priced.unitCost === 0 && hit.l.priced.unitPrice === 0;
     lines.push({
       lineId: hit.l.id,
       name: hit.l.name,
@@ -279,6 +299,7 @@ export function priceLines(
       cost: roundToCents(mulQty(unitCost, qty)),
       price: roundToCents(mulQty(unitPrice, qty)),
       priced,
+      tracking,
       basis: r.basis,
       evidence: r.evidence,
       option: r.option?.trim() || null,
@@ -300,13 +321,32 @@ export function totalsOf(lines: DraftLine[]): Totals {
   return { cost, price, lines: lines.length, unpriced };
 }
 
-/** Base scope, then each option on its own, then everything together. */
+/**
+ * "Group — Choice" is one alternative within a group; a bare name is a
+ * yes-or-no add-on. Written this way by the prompt, read this way here.
+ */
+export function parseOption(option: string): { group: string; choice: string | null } {
+  const m = /^(.*?)\s+[\u2014\u2013-]\s+(.*)$/.exec(option.trim());
+  if (m && m[1]!.trim() && m[2]!.trim()) return { group: m[1]!.trim(), choice: m[2]!.trim() };
+  return { group: option.trim(), choice: null };
+}
+
+/** Base scope, then each option group with its choices, then everything together. */
 export function totalsByOption(lines: DraftLine[]): Draft['totals'] {
   const base = lines.filter((l) => l.option === null);
-  const names = [...new Set(lines.map((l) => l.option).filter((o): o is string => o !== null))];
-  return {
-    base: totalsOf(base),
-    options: names.map((name) => ({ name, totals: totalsOf(lines.filter((l) => l.option === name)) })),
-    all: totalsOf(lines),
-  };
+  const groups = new Map<string, Map<string, DraftLine[]>>();
+  for (const l of lines) {
+    if (l.option === null) continue;
+    const { group, choice } = parseOption(l.option);
+    const byChoice = groups.get(group) ?? new Map<string, DraftLine[]>();
+    const key = choice ?? group;
+    byChoice.set(key, [...(byChoice.get(key) ?? []), l]);
+    groups.set(group, byChoice);
+  }
+  const options: OptionGroup[] = [...groups.entries()].map(([group, byChoice]) => ({
+    group,
+    required: byChoice.size >= 2,
+    choices: [...byChoice.entries()].map(([name, ls]) => ({ name, totals: totalsOf(ls) })),
+  }));
+  return { base: totalsOf(base), options, all: totalsOf(lines) };
 }

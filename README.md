@@ -105,7 +105,7 @@ npm run audit -- --recent 20 --status approved --out review          # a batch
 npm run audit -- --catalog --out review                              # the whole catalog
 npm run draft -- 261323 --dry-run                                    # what the drafter would read
 npm run draft -- 261323 --out review                                 # draft the budget (needs a key)
-npm test                                                            # 158 tests
+npm test                                                            # 159 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.

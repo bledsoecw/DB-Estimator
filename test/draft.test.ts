@@ -22,7 +22,7 @@ import { fetchJobEvidence, resolveJobId } from '../src/draft/evidence.ts';
 import { evidenceText, templateIndexText, templateLinesText } from '../src/draft/prompt.ts';
 import { anthropicStructuredCall, type StructuredArgs, type StructuredCall } from '../src/draft/model.ts';
 import { z } from 'zod';
-import { draftEstimate, type DraftFixture } from '../src/draft/draft.ts';
+import { draftEstimate, parseOption, type DraftFixture } from '../src/draft/draft.ts';
 import { draftJson, draftSteps, renderDraft } from '../src/draft/render.ts';
 import { estimateDraftTokens, parseDraftArgs } from '../src/draft-cli.ts';
 
@@ -76,6 +76,7 @@ const DRAFT = {
     { lineId: '22PLCchBuFMR', quantity: 706, basis: 'same area', evidence: ev('Laminate Vinyl Plank'), option: 'Flooring — LVP', confidence: 'high' },
     { lineId: '22PLhsr2Yx56', quantity: 24, basis: '706 SF at ~30 SF an hour', evidence: ev('Laminate Vinyl Plank'), option: 'Flooring — LVP', confidence: 'medium' },
     { lineId: '22PLhsr2Yx55', quantity: 706, basis: 'epoxy by the sub, per SF', evidence: ev('Epoxy Flooring'), option: 'Flooring — Epoxy', confidence: 'medium' },
+    { lineId: '22PLhtLxcz9T', quantity: 706, basis: 'ceiling footprint, sprayed by a sub', evidence: ev('Painting the ceiling is an option'), option: 'Ceiling paint', confidence: 'low' },
     { lineId: '22PF3i5ZiGxs', quantity: 4, basis: 'small job', evidence: ev('sprucing up the basement'), option: null, confidence: 'medium' },
     { lineId: '22PF3i5ZiGxk', quantity: 1, basis: 'Van Wert permit', evidence: [{ source: 'job', quote: 'City: Van Wert' }], option: null, confidence: 'low' },
     { lineId: '22PPpWUpAJaL', quantity: 0, basis: 'time tracking only', evidence: ev('n/a'), option: null, confidence: 'high' },
@@ -175,16 +176,25 @@ test('the drafter picks templates, prices kept lines from the catalog, and rejec
   assert.match(d.rejected[0]!.reason, /not a line in any chosen template/);
   assert.match(d.rejected[1]!.reason, /quantity -2/);
 
-  // Base scope leaves the options out; each option is its own total.
+  const sos = d.lines.find((l) => l.name === 'Sales On-Site Support')!;
+  assert.equal(sos.tracking, true, 'a $0/$0 catalog item is a time-tracking line, not an unpriced one');
+  assert.equal(permit.tracking, false);
+
+  // Base scope leaves the options out. "Group — Choice" is one of several; a
+  // bare name is a yes-or-no add-on.
   assert.equal(d.totals.base.lines, 7);
   assert.equal(d.totals.base.unpriced, 2);
-  assert.deepEqual(d.totals.options.map((o) => o.name), ['Flooring — LVP', 'Flooring — Epoxy']);
-  assert.equal(formatMoney(d.totals.options[1]!.totals.price), '$7,677.75', '706 × 10.875');
-  assert.equal(d.totals.all.lines, 11);
+  assert.deepEqual(
+    d.totals.options.map((o) => [o.group, o.required, o.choices.map((c) => c.name)]),
+    [['Flooring', true, ['LVP', 'Epoxy']], ['Ceiling paint', false, ['Ceiling paint']]],
+  );
+  assert.equal(formatMoney(d.totals.options[0]!.choices[1]!.totals.price), '$7,677.75', '706 × 10.875');
+  assert.equal(formatMoney(d.totals.options[1]!.choices[0]!.totals.price), '$4,043.62', '706 × 5.7275');
+  assert.equal(d.totals.all.lines, 12);
 
   // What the rep deletes is everything in scope that was not kept.
-  assert.equal(d.plans[0]!.kept.length, 8);
-  assert.equal(d.plans[0]!.removed.length, 18);
+  assert.equal(d.plans[0]!.kept.length, 9);
+  assert.equal(d.plans[0]!.removed.length, 17);
   assert.equal(d.plans[1]!.kept.length, 3);
   assert.equal(d.plans[1]!.removed.length, 20);
 
@@ -234,14 +244,17 @@ test('the steps read as a recipe for JobTread, and the page carries them', async
   const d = await draftEstimate(fx.evidence, fx.index, load, fake([PICK, DRAFT]));
   const steps = draftSteps(d);
   assert.match(steps, /^261323 Haag_Remodel — budget draft\n/);
-  assert.match(steps, /1\. Budget tab › Add from catalog › "X-Division 09 Finishes" \(the main template\)\.\n   Keep 8 lines, delete the other 18\.\n/);
+  assert.match(steps, /^Base scope: .* — leaves out 1 flagged item with no template line \(step 5\)$/m);
+  assert.match(steps, /^Option "Flooring", one choice required:\n   LVP: \$8,286\.28 price.*\n   Epoxy: \$7,677\.75 price/m);
+  assert.match(steps, /^Add-on "Ceiling paint", customer may decline: \$4,043\.62 price/m);
+  assert.match(steps, /1\. Budget tab › Add from catalog › "X-Division 09 Finishes" \(the main template\)\.\n   Keep 9 lines, delete the other 17\.\n/);
   assert.match(steps, /FINISHES › Paint › Paint: 6 Gallons — 909 SF of wall/);
   assert.match(steps, /\[option: Flooring — LVP\]/);
   assert.match(steps, /Permit: 1 +\[no catalog price — type it\]/);
+  assert.match(steps, /Sales On-Site Support: 0 Hours \[time tracking, \$0\]/);
   assert.match(steps, /Delete: Trim - Crown Molding; Trim - Casing/);
   assert.match(steps, /2\. Budget tab › Add from catalog › "X-Division 01 General Requirements"\./);
-  assert.match(steps, /3\. Selection groups, one choice required/);
-  assert.match(steps, /"Flooring — Epoxy": Flooring - Sub/);
+  assert.match(steps, /3\. Selection groups, so the customer picks on the estimate:\n   - "Flooring", one choice required: LVP: Flooring; Flooring - Miscellaneous MAT; Flooring Labor · Epoxy: Flooring - Sub\n   - "Ceiling paint", optional add-on \(may pick none\): Paint Labor - Sub/);
   assert.match(steps, /4\. General Description:\n   Skim-coat and paint/);
   assert.match(steps, /5\. Not in any template — take to Carl before the estimate goes out:\n   - Move basement contents before and after \(Labor, 4 Hours\)/);
   assert.match(steps, /6\. Confirm before it goes out:\n   - Paint the ceiling or not\?/);
@@ -254,6 +267,10 @@ test('the steps read as a recipe for JobTread, and the page carries them', async
   assert.match(html, /Main template: X-Division 09 Finishes/);
   assert.match(html, /Also add: X-Division 01 General Requirements/);
   assert.match(html, /no catalog price/);
+  assert.match(html, /time tracking, \$0/);
+  assert.match(html, /the base price leaves it out/);
+  assert.match(html, /<strong>Flooring<\/strong>, one choice required:/);
+  assert.match(html, /<strong>Ceiling paint<\/strong>, optional add-on/);
   assert.match(html, /Not in any template/);
   assert.match(html, /Named by the model, not in the templates/);
   assert.match(html, /Copy the steps/);
@@ -261,7 +278,12 @@ test('the steps read as a recipe for JobTread, and the page carries them', async
   assert.match(html, /test run/);
   assert.match(html, /A draft, not an estimate/);
 
-  const json = draftJson(d) as { lines: { name: string; price: string | null }[]; totals: { base: { price: string } } };
+  const json = draftJson(d) as {
+    lines: { name: string; price: string | null }[];
+    totals: { base: { price: string }; options: { group: string; required: boolean; choices: { name: string; price: string }[] }[] };
+  };
+  assert.equal(json.totals.options[0]!.required, true);
+  assert.equal(json.totals.options[1]!.choices[0]!.price, '$4,043.62');
   assert.doesNotThrow(() => JSON.stringify(json));
   assert.equal(json.lines.find((l) => l.name === 'Paint')!.price, '$739.50');
   assert.equal(json.lines.find((l) => l.name === 'Permit')!.price, null);
@@ -475,4 +497,12 @@ test('the real call streams, asks for the schema, and reads the parsed reply off
   assert.equal(p.output_config.format.type, 'json_schema');
   assert.equal(p.output_config.effort, 'high');
   assert.equal(p.system, 'sys');
+});
+
+test('an option name is read the way the prompt asks the model to write it', () => {
+  assert.deepEqual(parseOption('Flooring — LVP'), { group: 'Flooring', choice: 'LVP' });
+  assert.deepEqual(parseOption('Flooring - Epoxy'), { group: 'Flooring', choice: 'Epoxy' });
+  assert.deepEqual(parseOption('Ceiling paint'), { group: 'Ceiling paint', choice: null });
+  assert.deepEqual(parseOption('  Contents moving '), { group: 'Contents moving', choice: null });
+  assert.deepEqual(parseOption('Vanity — Semi-custom'), { group: 'Vanity', choice: 'Semi-custom' }, 'a hyphen inside a word is not a separator');
 });

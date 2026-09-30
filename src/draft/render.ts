@@ -15,7 +15,7 @@ import { marginOf } from '../domain.ts';
 import { CSS } from '../report.ts';
 import { STRUCTURAL_GROUPS, groupPath } from './templates.ts';
 import type { JobEvidence } from './evidence.ts';
-import type { Draft, DraftLine, TemplatePlan, Totals } from './draft.ts';
+import { parseOption, type Draft, type DraftLine, type TemplatePlan, type Totals } from './draft.ts';
 
 function esc(s: string): string {
   return s
@@ -53,8 +53,20 @@ export function draftSteps(d: Draft): string {
     out.push('Take it to Carl before building anything.');
     return out.join('\n');
   }
-  out.push(`Base scope: ${totalsLine(d.totals.base)}`);
-  for (const o of d.totals.options) out.push(`Option "${o.name}": ${totalsLine(o.totals)}`);
+  out.push(
+    `Base scope: ${totalsLine(d.totals.base)}` +
+      (d.gaps.length
+        ? ` — leaves out ${d.gaps.length} flagged item${d.gaps.length === 1 ? '' : 's'} with no template line (step ${gapStep(d)})`
+        : ''),
+  );
+  for (const o of d.totals.options) {
+    if (o.required) {
+      out.push(`Option "${o.group}", one choice required:`);
+      for (const c of o.choices) out.push(`   ${c.name}: ${totalsLine(c.totals)}`);
+    } else {
+      out.push(`Add-on "${o.group}", customer may decline: ${totalsLine(o.choices[0]!.totals)}`);
+    }
+  }
   out.push('');
 
   let step = 0;
@@ -70,7 +82,7 @@ export function draftSteps(d: Draft): string {
       for (const l of p.kept) {
         out.push(`     - ${[...l.groupPath, l.name].join(' › ')}: ${qty(l.quantity)} ${l.unit ?? ''}` +
           (l.option ? ` [option: ${l.option}]` : '') +
-          (l.priced ? '' : ' [no catalog price — type it]') +
+          (l.tracking ? ' [time tracking, $0]' : l.priced ? '' : ' [no catalog price — type it]') +
           ` — ${l.basis} (${CONFIDENCE_LABEL[l.confidence]})`);
       }
     }
@@ -80,10 +92,19 @@ export function draftSteps(d: Draft): string {
   }
   if (d.totals.options.length) {
     step++;
-    out.push(`${step}. Selection groups, one choice required, so the customer picks on the estimate:`);
+    out.push(`${step}. Selection groups, so the customer picks on the estimate:`);
     for (const o of d.totals.options) {
-      const names = d.lines.filter((l) => l.option === o.name).map((l) => l.name);
-      out.push(`   - "${o.name}": ${names.join('; ')}`);
+      const linesOf = (choice: string): string =>
+        d.lines
+          .filter((l) => l.option !== null && parseOption(l.option).group === o.group &&
+            (parseOption(l.option).choice ?? o.group) === choice)
+          .map((l) => l.name)
+          .join('; ');
+      if (o.required) {
+        out.push(`   - "${o.group}", one choice required: ${o.choices.map((c) => `${c.name}: ${linesOf(c.name)}`).join(' · ')}`);
+      } else {
+        out.push(`   - "${o.group}", optional add-on (may pick none): ${linesOf(o.choices[0]!.name)}`);
+      }
     }
   }
   if (d.scopeOfWork) {
@@ -111,6 +132,14 @@ export function draftSteps(d: Draft): string {
   out.push('');
   out.push(`Leave ${[...STRUCTURAL_GROUPS].join(', ')} untouched. Nothing here was written to JobTread.`);
   return out.join('\n');
+}
+
+/** The number the "Not in any template" step gets, so the header can point at it. */
+function gapStep(d: Draft): number {
+  let step = d.plans.length;
+  if (d.totals.options.length) step++;
+  if (d.scopeOfWork) step++;
+  return step + 1;
 }
 
 /** The draft as data, bigint money as dollar strings. The future write-path payload. */
@@ -144,6 +173,7 @@ export function draftJson(d: Draft): unknown {
       unitPrice: l.priced ? formatMoney(l.unitPrice) : null,
       cost: l.priced ? formatMoney(l.cost) : null,
       price: l.priced ? formatMoney(l.price) : null,
+      tracking: l.tracking,
       option: l.option,
       basis: l.basis,
       confidence: l.confidence,
@@ -153,7 +183,15 @@ export function draftJson(d: Draft): unknown {
     questions: d.questions,
     rejected: d.rejected,
     rejectedPicks: d.rejectedPicks,
-    totals: { base: t(d.totals.base), options: d.totals.options.map((o) => ({ name: o.name, ...(t(o.totals) as object) })), all: t(d.totals.all) },
+    totals: {
+      base: t(d.totals.base),
+      options: d.totals.options.map((o) => ({
+        group: o.group,
+        required: o.required,
+        choices: o.choices.map((c) => ({ name: c.name, ...(t(c.totals) as object) })),
+      })),
+      all: t(d.totals.all),
+    },
     usage: d.usage,
     cost: d.cost,
   };
@@ -202,13 +240,15 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
         flagged
           ? `${flagged} item${flagged === 1 ? '' : 's'} flagged for Carl`
           : 'Every line comes from a budget template.'
-      }${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
+      }${d.gaps.length ? ` &middot; the base price leaves ${d.gaps.length === 1 ? 'it' : 'them'} out` : ''}${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
         d.totals.base.unpriced ? ` &middot; ${d.totals.base.unpriced} line${d.totals.base.unpriced === 1 ? '' : 's'} to price by hand` : ''
       }</p>`}
 
   ${d.totals.options.length ? `<section class="options">
     <h2>Options the customer picks</h2>
-    <ul>${d.totals.options.map((o) => `<li><strong>${esc(o.name)}</strong> &mdash; ${esc(totalsLine(o.totals))}</li>`).join('')}</ul>
+    <ul>${d.totals.options.map((o) => o.required
+      ? `<li><strong>${esc(o.group)}</strong>, one choice required:<ul>${o.choices.map((c) => `<li>${esc(c.name)} &mdash; ${esc(totalsLine(c.totals))}</li>`).join('')}</ul></li>`
+      : `<li><strong>${esc(o.group)}</strong>, optional add-on &mdash; ${esc(totalsLine(o.choices[0]!.totals))}</li>`).join('')}</ul>
   </section>` : ''}
 
   <section class="summary">
@@ -315,7 +355,8 @@ function lineRow(l: DraftLine): string {
     : '';
   return `<tr class="conf-${l.confidence}">
     <td><div class="path">${esc(l.groupPath.join(' › '))}</div><div class="name">${esc(l.name)}</div>${
-      l.option ? `<span class="tag">${esc(l.option)}</span>` : ''}${l.priced ? '' : '<span class="tag warn">no catalog price</span>'}</td>
+      l.option ? `<span class="tag">${esc(l.option)}</span>` : ''}${
+      l.tracking ? '<span class="tag dim">time tracking, $0</span>' : l.priced ? '' : '<span class="tag warn">no catalog price</span>'}</td>
     <td class="num">${esc(qty(l.quantity))}<div class="unit">${esc(l.unit ?? '')}</div></td>
     <td class="num">${money(l.unitPrice, l.priced)}<div class="unit">${l.priced ? `cost ${formatMoney(l.unitCost)}` : ''}</div></td>
     <td class="num">${money(l.price, l.priced)}</td>
@@ -348,6 +389,7 @@ tr.conf-high .conf { color: var(--green); }
 .tag { display: inline-block; margin-top: 4px; padding: 1px 7px; border-radius: 9px; font-size: 11px;
   background: var(--blue); color: #fff; }
 .tag.warn { background: var(--amber); }
+.tag.dim { background: var(--dim); }
 .ev { margin-top: 4px; }
 .ev summary { cursor: pointer; font-size: 11.5px; }
 .ev ul { margin: 4px 0 0; padding-left: 16px; font-size: 12px; }

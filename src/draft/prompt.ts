@@ -56,13 +56,14 @@ Rules:
 1. Keep a line only when the evidence says that work or material is part of this job. Every line you do not keep is deleted from the template. Do not keep a line "just in case" — doubt goes in questions.
 2. Quantity comes from evidence: a measurement or count written in the notes or the job description, a count you can make in a photo, or arithmetic on written dimensions (show it: "18'4\\" × 38'6\\" = 706 SF"). Do not measure anything from a photo. When a line's description already includes waste or overage, do not add more; when you add waste yourself, say so in the basis.
 3. Labor lines in Hours need your estimate of crew hours. Give the basis (crew size × days, or hours per unit of work) and mark confidence honestly. The rep will check these first.
-4. When the customer is to choose between alternatives (two flooring types, paint the ceiling or not), keep the lines for every alternative and put the same option name on each line of one alternative — "Flooring — LVP", "Flooring — Epoxy", "Ceiling paint". Lines with no option are the base scope.
+4. Options come in two kinds, and the name tells the rep which to build. When the customer chooses ONE of several alternatives (two flooring types), name the option "Group — Choice" and put it on every line of that choice: "Flooring — LVP" on the LVP lines, "Flooring — Epoxy" on the epoxy lines; the rep builds one selection group per Group with one choice required. When something is a yes-or-no add-on the customer may decline (paint the ceiling, move the contents), use a bare name with no dash — "Ceiling paint" — and the rep builds it as an optional selection. Lines with no option are the base scope.
+4a. A line whose description says it is non-monetized or for time tracking (Sales On-Site Support) is not a scope decision: keep it with quantity 0 so the crew can clock to it, and do not count it as work.
 5. Scope the evidence calls for that no line in these templates covers goes in gaps: what the work is, a unit, a quantity when the evidence gives one, the cost type, and the evidence. Never keep a line under a different meaning to cover it. Carl decides each gap.
 6. Do not price, mark up or compare to margins; do not mention money.
 7. Every kept line, gap and question cites its evidence: the comment (who and date), the photo file name, or "job description". A quantity with no evidence is a question, not a number.
 8. scopeOfWork is what the customer reads on the estimate's General Description line: three to eight plain sentences saying what is included, what is excluded, what is optional, and what the customer supplies or does themselves.
 9. summary is two sentences saying what the job is, as the evidence describes it.
-10. questions are what the rep must confirm with the customer or the team before the estimate goes out.
+10. questions are what the rep must confirm with the customer or the team before the estimate goes out: at most six, ordered by how much the answer changes the price. Leave out what the estimate already handles (a color choice, picking from stock).
 
 Write for the rep: plain words, and line names exactly as listed. Reference lines by their id.`;
 

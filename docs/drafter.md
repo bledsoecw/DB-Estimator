@@ -70,6 +70,11 @@ Rules the model is held to, from the roadmap's "failures must be visible":
 - labor hours are its estimate, with a stated basis and an honest
   confidence, because the rep will check those first;
 - when a line's description already includes waste, none is added;
+- an option named "Group — Choice" is one of several the customer picks
+  between; a bare name is a yes-or-no add-on the customer may decline;
+- a non-monetized time-tracking line (Sales On-Site Support) is kept at
+  quantity 0, not treated as scope;
+- at most six questions, ordered by how much the answer changes the price;
 - pricing, markup and margin are not its business and are not mentioned.
 
 ## What the rep gets
@@ -119,6 +124,36 @@ The prompt, for the record:
 Decision: the drafter runs on the Anthropic API with a capped key. The write
 path, when it comes, is roadmap §7 against the Pave API directly, not a chat
 panel asked to type.
+
+## The first live run — 261323, 2026-09-30
+
+Two calls, about fifty cents. The picker chose `X-Division 09 Finishes` with
+`01 General Requirements` and `02 Site Construction` beside it, which is what
+a rep would reach for on a basement refresh. The draft kept 12 lines across
+the three, every quantity traced to the measurement in Robert's note with
+the arithmetic shown, and it read the photos: steel posts, a block pier, the
+sump pit and the laundry platform slowing the LVP install; peeling paint and
+cracks on the walls; an old coating on the slab. It split flooring into LVP
+and epoxy for the customer to choose and made ceiling paint and contents
+moving optional. It flagged two gaps rather than bend a line: skim-coating
+concrete walls has no template line, and it would not use the drywall mud
+lines for it. That is a real catalog question for Carl.
+
+Four things were wrong, all fixed the same day:
+
+1. The base price left the skim coat out, because the skim coat was in the
+   gaps, and said nothing about it. The total now says how many flagged items
+   it leaves out, and the page says so beside the number.
+2. Ceiling paint and contents moving are yes-or-no add-ons, not either-or
+   choices, but every option was rendered as "one choice required". The
+   option name now carries the difference ("Flooring — LVP" is one of
+   several; "Ceiling paint" is an add-on) and the steps build each the right
+   way.
+3. It deleted Sales On-Site Support, the $0 time-tracking line every
+   construction budget carries. Non-monetized lines are now kept at
+   quantity 0 and shown as tracking, not as unpriced.
+4. Ten questions. Six changed the price; the rest were things the estimate
+   already handles. Capped at six, ordered by what they change.
 
 ## Running it
 
