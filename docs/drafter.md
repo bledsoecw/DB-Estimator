@@ -244,6 +244,32 @@ Four things were wrong on the first run, all fixed the same day:
 4. Ten questions. Six changed the price; the rest were things the estimate
    already handles. Capped at six, ordered by what they change.
 
+## The fourth live run — 261323, 2026-09-30, with contingency and the ballpark
+
+The first run after the regional ballpark and the contingency step. What
+worked: Rhino's epoxy quote was read and turned into $7.00/SF against the
+template's $7.50; both $55/hour crew rates were confirmed from sold lines;
+the skim coat, which the model now flags rather than fitting under the
+drywall-mud lines, came back priced from the area at $1.25/SF labor and
+$0.45/SF material, labelled as not DB pricing; moving the contents became
+an add-on on X-Division 02's Site Prep Labor instead of a gap. Three things
+were wrong, fixed the same evening:
+
+1. "1 line to price by hand" was Sales On-Site Support, the $0 tracking
+   line. Tracking lines no longer count as unpriced.
+2. Contingency was figured on the $2,500 base alone, while the customer
+   must pick a floor that costs twice that. Each option now carries its
+   share (contingency on base + option, minus contingency on base, so the
+   shares add to the cent), the header shows the total with each required
+   choice, and the step tells the rep to add each taken option's cost to
+   `Contingency Base`.
+3. The by-hand instruction said "after Phase 4" on X-Division templates
+   that have no phases. It now says "at the end of the scope".
+
+Still the rep's call, and the questions on the page say so: whether the skim
+coat is base scope or an upgrade; which product holds on damp, efflorescing
+block; whether the garage is in the job at all.
+
 ## A ballpark where history has nothing
 
 Carl, 30 Sep 2026: for items with no template line and no history, "create

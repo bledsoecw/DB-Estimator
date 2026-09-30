@@ -31,6 +31,11 @@ function proposalMoney(p: GapProposals): string {
 
 const REGIONAL_NOTE = 'NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out';
 
+/** "Flooring — LVP" for one of several choices; the bare name for an add-on. */
+function optionLabel(o: { group: string; name: string; required: boolean }): string {
+  return o.required ? `${o.group} — ${o.name}` : o.name;
+}
+
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -79,6 +84,9 @@ export function draftSteps(d: Draft): string {
       `Contingency ${c.rate}% on ${formatMoney(c.base)} base cost = ${formatMoney(c.amount)}, at cost;` +
         ` with it the base scope is ${formatMoney(add(d.totals.base.price, c.amount))} price (step ${contingencyStepNumber(d)})`,
     );
+    if (c.options.length) {
+      out.push(`   Options add their own share: ${c.options.map((o) => `${optionLabel(o)} +${formatMoney(o.amount)}`).join(' · ')}`);
+    }
   }
   if (d.totals.proposedForGaps.gaps > 0) {
     const pf = d.totals.proposedForGaps;
@@ -101,6 +109,20 @@ export function draftSteps(d: Draft): string {
     } else {
       out.push(`Add-on "${o.group}", customer may decline: ${totalsLine(o.choices[0]!.totals)}`);
     }
+  }
+  // One required choice is the common case (the floor); the customer's real number is base + that choice.
+  const required = d.totals.options.filter((o) => o.required);
+  if (required.length === 1 && d.contingency) {
+    const c = d.contingency;
+    const group = required[0]!;
+    out.push(
+      `With each choice (base + choice + contingency; add-ons not included): ` +
+        group.choices.map((ch) => {
+          const share = c.options.find((o) => o.required && o.group === group.group && o.name === ch.name);
+          const price = add(add(d.totals.base.price, ch.totals.price), add(c.amount, share?.amount ?? ZERO));
+          return `${group.group} — ${ch.name} ${formatMoney(price)}`;
+        }).join(' · '),
+    );
   }
   out.push('');
 
@@ -138,13 +160,20 @@ export function draftSteps(d: Draft): string {
       );
     } else {
       out.push(
-        `   No chosen template carries the contingency group yet. Add a group "${CONTINGENCY_GROUP}" after Phase 4 and put the catalog item` +
+        `   No chosen template carries the contingency group yet. Add a group "${CONTINGENCY_GROUP}" at the end of the scope` +
+          ` (after Phase 4 where the template has one) and put the catalog item` +
           ` "${CONTINGENCY_LINE}" in it (1 Lump Sum at $1.00 cost and $1.00 price) with the quantity formula ${CONTINGENCY_FORMULA};` +
           ` then set the job parameters ${CONTINGENCY_PARAMETERS.rate} = ${c.rate} and ${CONTINGENCY_PARAMETERS.base} = ${parameterDollars(c.base)}:` +
           ` ${formatMoney(c.amount)}, at cost.`,
       );
     }
-    out.push(`   Unused contingency is credited at closeout. If the customer takes an option, add ${c.rate}% of its cost to the base.`);
+    if (c.options.length) {
+      out.push(
+        `   Add the cost of each option the customer takes to ${CONTINGENCY_PARAMETERS.base}: ` +
+          c.options.map((o) => `${optionLabel(o)} ${parameterDollars(o.cost)} (+${formatMoney(o.amount)} contingency)`).join('; ') + '.',
+      );
+    }
+    out.push('   Unused contingency is credited at closeout.');
   }
   if (d.totals.options.length) {
     step++;
@@ -339,6 +368,9 @@ export function draftJson(d: Draft): unknown {
           why: d.contingency.why,
           base: formatMoney(d.contingency.base),
           amount: formatMoney(d.contingency.amount),
+          options: d.contingency.options.map((o) => ({
+            option: optionLabel(o), required: o.required, cost: formatMoney(o.cost), amount: formatMoney(o.amount),
+          })),
           parameters: { [CONTINGENCY_PARAMETERS.rate]: d.contingency.rate, [CONTINGENCY_PARAMETERS.base]: Number(parameterDollars(d.contingency.base)) },
           line: d.contingency.line,
         }
@@ -491,7 +523,8 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
         ? `${esc([...d.contingency.line.group, CONTINGENCY_LINE].join(' › '))} in ${esc(d.contingency.line.templateName)}`
         : `not in the chosen templates yet: add "${esc(CONTINGENCY_GROUP)}" after Phase 4 with the catalog item "${esc(CONTINGENCY_LINE)}" and the quantity formula <code>${esc(CONTINGENCY_FORMULA)}</code>`}</td></tr>
       <tr><td>${esc(CONTINGENCY_PARAMETERS.rate)}</td><td>${d.contingency.rate}</td></tr>
-      <tr><td>${esc(CONTINGENCY_PARAMETERS.base)}</td><td>${esc(parameterDollars(d.contingency.base))}</td></tr>
+      <tr><td>${esc(CONTINGENCY_PARAMETERS.base)}</td><td>${esc(parameterDollars(d.contingency.base))}${d.contingency.options.length ? ', plus the cost of each option taken' : ''}</td></tr>
+      ${d.contingency.options.map((o) => `<tr><td>${esc(optionLabel(o))}</td><td>${esc(parameterDollars(o.cost))} more base, +${formatMoney(o.amount)} contingency</td></tr>`).join('\n      ')}
     </table>
   </section>` : ''}
 

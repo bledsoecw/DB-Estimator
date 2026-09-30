@@ -229,6 +229,17 @@ export function contingencyItemMutation(
   };
 }
 
+/** One option's share: what the customer's taking it adds to the contingency. */
+export interface ContingencyOption {
+  group: string;
+  name: string;
+  /** true for one of several choices ("Flooring — LVP"); false for a yes-or-no add-on. */
+  required: boolean;
+  cost: Money;
+  /** contingency(base + this option) − contingency(base), so the shares add up to the cent. */
+  amount: Money;
+}
+
 /** What the recipe tells the rep, given the template's state and the amount. */
 export interface ContingencyStep {
   rate: ContingencyRate;
@@ -236,6 +247,8 @@ export interface ContingencyStep {
   /** The base-scope cost the rate applies to. */
   base: Money;
   amount: Money;
+  /** Each option the customer may take, with what it adds. The floor choice is usually the biggest cost on the job. */
+  options: ContingencyOption[];
   /** Set when the primary template already carries the line: keep it, set the parameters. */
   line: { templateId: string; templateName: string; lineId: string; group: string[] } | null;
 }

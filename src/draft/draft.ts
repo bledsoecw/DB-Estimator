@@ -18,7 +18,7 @@
  */
 
 import {
-  type Money, ZERO, add, moneyFromApi, mulQty, priceFromCostAtMargin, qtyFromApi, rateFromApi, roundToCents,
+  type Money, ZERO, add, moneyFromApi, mulQty, priceFromCostAtMargin, qtyFromApi, rateFromApi, roundToCents, sub,
 } from '../money.ts';
 import type { JobEvidence } from './evidence.ts';
 import {
@@ -415,7 +415,7 @@ export async function draftEstimate(
       proposedForGaps: proposedForGaps(gaps, 'history'),
       regionalForGaps: proposedForGaps(gaps, 'regional'),
     },
-    contingency: contingencyStep(evidence, d.data.contingency, byOption.base.cost, templates),
+    contingency: contingencyStep(evidence, d.data.contingency, byOption.base.cost, templates, byOption.options),
     history,
     usage,
     cost,
@@ -434,6 +434,7 @@ export function contingencyStep(
   reply: { rate: number; why: string } | undefined,
   base: Money,
   templates: Template[],
+  options: OptionGroup[] = [],
 ): ContingencyStep | null {
   if ((evidence.jobType ?? '').trim().toLowerCase() === 'roofing') return null;
   const rate = chooseRate(reply?.rate);
@@ -445,7 +446,18 @@ export function contingencyStep(
       break;
     }
   }
-  return { rate, why: reply?.why?.trim() ?? '', base, amount: contingencyAmount(base, rate), line };
+  const amount = contingencyAmount(base, rate);
+  // Each option's share is the difference, not rate × option cost, so base + shares rounds the same as one figure.
+  const shares = options.flatMap((o) =>
+    o.choices.map((c) => ({
+      group: o.group,
+      name: c.name,
+      required: o.required,
+      cost: c.totals.cost,
+      amount: sub(contingencyAmount(add(base, c.totals.cost), rate), amount),
+    })),
+  );
+  return { rate, why: reply?.why?.trim() ?? '', base, amount, options: shares, line };
 }
 
 /** Subcontracted lines, lines the model wanted looked up, and every gap. */
@@ -678,6 +690,7 @@ export function priceLines(
   return { lines, rejected };
 }
 
+/** Totals over lines. A $0 time-tracking line is not "to price by hand": nobody types a price on it. */
 export function totalsOf(lines: DraftLine[]): Totals {
   let cost = ZERO;
   let price = ZERO;
@@ -685,7 +698,7 @@ export function totalsOf(lines: DraftLine[]): Totals {
   for (const l of lines) {
     cost = add(cost, l.cost);
     price = add(price, l.price);
-    if (!l.priced) unpriced++;
+    if (!l.priced && !l.tracking) unpriced++;
   }
   return { cost, price, lines: lines.length, unpriced };
 }
@@ -717,5 +730,7 @@ export function totalsByOption(lines: DraftLine[]): Pick<Draft['totals'], 'base'
     required: byChoice.size >= 2,
     choices: [...byChoice.entries()].map(([name, ls]) => ({ name, totals: totalsOf(ls) })),
   }));
+  // The choices the customer must make come before the add-ons they may decline.
+  options.sort((a, b) => Number(b.required) - Number(a.required));
   return { base: totalsOf(base), options, all: totalsOf(lines) };
 }
