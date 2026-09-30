@@ -142,9 +142,19 @@ export function orderedLines(t: Template): TemplateLine[] {
   return out;
 }
 
-/** The lines the model may keep or drop: not specifications, not structural. */
+/**
+ * The contingency line (draft/contingency.ts) is not scope either: the code
+ * sets it from the base cost and the policy rate, so the model never keeps or
+ * drops it and the rep is never told to delete it.
+ */
+export function isContingencyLine(t: Template, line: TemplateLine): boolean {
+  if (/^project contingency$/i.test(line.name.trim())) return true;
+  return groupPath(t, line.groupId).some((n) => /contingency/i.test(n));
+}
+
+/** The lines the model may keep or drop: not specifications, not structural, not contingency. */
 export function scopeLines(t: Template): TemplateLine[] {
-  return orderedLines(t).filter((l) => !l.isSpecification && !isStructural(t, l));
+  return orderedLines(t).filter((l) => !l.isSpecification && !isStructural(t, l) && !isContingencyLine(t, l));
 }
 
 // ---- reading them ------------------------------------------------------------

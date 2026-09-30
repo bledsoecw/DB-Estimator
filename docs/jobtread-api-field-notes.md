@@ -1072,3 +1072,51 @@ as ours.
     "documents": { "$": { "size": 2, "where": [["externalId"], "=", "probe"] },
                    "count": {}, "nodes": { "id": {}, "externalId": {} } } } }
 ```
+
+## Writing a catalog group with a line in it — VERIFIED 2026-09-30
+
+The first mutations this project issued, for the contingency line
+(`docs/contingency.md`). What the Pave API accepted and refused:
+
+- `createCostGroup.$` takes exactly one context — `organizationId` (a new
+  top-level catalog group), `parentCostGroupId` (a child group), `jobId` or
+  `documentId` — plus `name`, `description`, `lineItems`, and an optional
+  `positionAfter: { type: 'costGroup' | 'costItem', id }`. A child created
+  with `positionAfter` the sibling at position `p` landed at `q`; without it a
+  first child lands at `n`.
+- `lineItems` is a list of `oneOf` inputs whose discriminator is **`_type`**:
+  `"costGroup"` or `"costItem"`. New versus existing is told by the presence
+  of `id`. So a nested new line is `{ "_type": "costItem", "name": …, … }`,
+  and a nested new group is `{ "_type": "costGroup", "name": …, "lineItems": […] }`.
+  The schema shows the variants as `newCostItem` / `existingCostItem`, but
+  those names are not what goes on the wire.
+- **A line in a catalog group must point at an ungrouped catalog item.** A
+  `costItem` under a catalog group without `organizationCostItemId` is
+  refused: *"An organizationCostItemId must be provided to create a cost item
+  in a catalog cost group."* This is the same rule the drafter reads templates
+  by: template lines carry no price and take it from the item. `unitCost` and
+  `unitPrice` on the template line come back `null`; `quantityFormula`,
+  `unitId`, `costTypeId`, `costCodeId` and `description` are stored on the
+  line.
+- `createCostItem.$` with `organizationId` alone makes an ungrouped catalog
+  item, priced (`unitCost: 1, unitPrice: 1` stored as given). Its result is
+  `createdCostItem`; `createCostGroup`'s is `createdCostGroup`; both accept a
+  selection of the created record, including nested connections.
+- A query with a bad field is refused before anything runs: the first probe
+  named `parentCostGroup` under `descendentCostItems.nodes` and nothing was
+  created. Whether a mutation that fails part-way is rolled back was not
+  tested; the `lineItems` nesting was used so each template is one call.
+- `deleteCostGroup.$ { id }` removes a group and everything under it; the
+  result is `{}`.
+- Job parameters: `job.parameters` is a list of `{ name, value? }` (types
+  number, option, formula, and the measurement kinds). Job 25-0003 carries
+  `[{ Area: 1000 }, { Depth }]` where only `Area` was filled: the `Depth`
+  entry exists because a template formula names it, which is the evidence
+  that JobTread creates a parameter a formula refers to when the template is
+  added. REPORTED from that one job; not yet watched happening.
+- Live formulas in the catalog are `round({Area}/8.5)`, `ceil(({Area} *
+  {Depth}) / 27)` and the like: parameters in braces, `round`/`ceil`,
+  arithmetic. JobTread's marketing says formulas may also reference other
+  cost items' quantity, unit cost and unit price; the syntax is not in
+  anything reachable from here, and nothing lets a line sum the budget, so
+  the contingency line takes its base as a parameter.

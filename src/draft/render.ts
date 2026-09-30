@@ -10,13 +10,26 @@
  * It decides nothing and writes nothing to JobTread.
  */
 
-import { type Money, ZERO, formatMoney, formatPercent } from '../money.ts';
+import { type Money, ZERO, add, formatMoney, formatPercent, toNumber } from '../money.ts';
 import { marginOf } from '../domain.ts';
 import { CSS } from '../report.ts';
 import { STRUCTURAL_GROUPS, groupPath } from './templates.ts';
 import type { JobEvidence } from './evidence.ts';
-import { parseOption, type Draft, type DraftGap, type DraftLine, type TemplatePlan, type Totals } from './draft.ts';
+import { parseOption, type Draft, type DraftGap, type DraftLine, type GapProposals, type TemplatePlan, type Totals } from './draft.ts';
+import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
 import type { HistoryFinding } from './prompt.ts';
+
+/** What the rep types into the Contingency Base parameter: plain dollars, no symbol or commas. */
+function parameterDollars(m: Money): string {
+  return toNumber(m).toFixed(2);
+}
+
+/** "$1,963.68 price ($1,080.00 cost)" or "$1,080.00 cost" when no margin priced it. */
+function proposalMoney(p: GapProposals): string {
+  return p.price === null ? `${formatMoney(p.cost)} cost` : `${formatMoney(p.price)} price (${formatMoney(p.cost)} cost)`;
+}
+
+const REGIONAL_NOTE = 'NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out';
 
 function esc(s: string): string {
   return s
@@ -60,11 +73,25 @@ export function draftSteps(d: Draft): string {
         ? ` — leaves out ${d.gaps.length} flagged item${d.gaps.length === 1 ? '' : 's'} with no template line (step ${gapStep(d)})`
         : ''),
   );
+  if (d.contingency) {
+    const c = d.contingency;
+    out.push(
+      `Contingency ${c.rate}% on ${formatMoney(c.base)} base cost = ${formatMoney(c.amount)}, at cost;` +
+        ` with it the base scope is ${formatMoney(add(d.totals.base.price, c.amount))} price (step ${contingencyStepNumber(d)})`,
+    );
+  }
   if (d.totals.proposedForGaps.gaps > 0) {
     const pf = d.totals.proposedForGaps;
     out.push(
-      `History proposes ${pf.price === null ? `${formatMoney(pf.cost)} cost` : `${formatMoney(pf.price)} price (${formatMoney(pf.cost)} cost)`}` +
+      `History proposes ${proposalMoney(pf)}` +
         ` for ${pf.gaps} of the flagged item${d.gaps.length === 1 ? '' : 's'} — a proposal for Carl, not in the totals above`,
+    );
+  }
+  if (d.totals.regionalForGaps.gaps > 0) {
+    const rf = d.totals.regionalForGaps;
+    out.push(
+      `Regional ballpark ${proposalMoney(rf)} for ${rf.gaps} of the flagged item${d.gaps.length === 1 ? '' : 's'}` +
+        ` DB has no history for — ${REGIONAL_NOTE}; not in the totals above`,
     );
   }
   for (const o of d.totals.options) {
@@ -98,6 +125,26 @@ export function draftSteps(d: Draft): string {
     if (p.removed.length) {
       out.push(`   Delete: ${p.removed.map((l) => l.name).join('; ')}`);
     }
+  }
+  if (d.contingency) {
+    step++;
+    const c = d.contingency;
+    out.push(`${step}. Contingency at ${c.rate}%${c.why ? `: ${c.why}` : '.'}`);
+    if (c.line) {
+      out.push(
+        `   Keep ${[...c.line.group, CONTINGENCY_LINE].join(' › ')} from "${c.line.templateName}".` +
+          ` Set the job parameters ${CONTINGENCY_PARAMETERS.rate} = ${c.rate} and ${CONTINGENCY_PARAMETERS.base} = ${parameterDollars(c.base)}` +
+          ` (the budget's cost total before this line): the line comes to ${formatMoney(c.amount)}, at cost.`,
+      );
+    } else {
+      out.push(
+        `   No chosen template carries the contingency group yet. Add a group "${CONTINGENCY_GROUP}" after Phase 4 and put the catalog item` +
+          ` "${CONTINGENCY_LINE}" in it (1 Lump Sum at $1.00 cost and $1.00 price) with the quantity formula ${CONTINGENCY_FORMULA};` +
+          ` then set the job parameters ${CONTINGENCY_PARAMETERS.rate} = ${c.rate} and ${CONTINGENCY_PARAMETERS.base} = ${parameterDollars(c.base)}:` +
+          ` ${formatMoney(c.amount)}, at cost.`,
+      );
+    }
+    out.push(`   Unused contingency is credited at closeout. If the customer takes an option, add ${c.rate}% of its cost to the base.`);
   }
   if (d.totals.options.length) {
     step++;
@@ -188,10 +235,17 @@ function historyLineText(l: DraftLine): string {
 function historyGapText(g: DraftGap): string {
   const h = g.history!;
   let out = h.summary;
-  if (g.proposed) {
+  if (g.proposed?.source === 'history') {
     out += ` Proposed from history: ${formatMoney(g.proposed.unitCost)}/${g.unit} × ${qty(g.quantity!)} = ${formatMoney(g.proposed.cost)} cost` +
       (g.proposed.price !== null ? `, ${formatMoney(g.proposed.price)} price` : '') +
       ` — Carl confirms. ${h.suggestionBasis}`;
+  } else if (g.regionalUnitCost !== null) {
+    out += ` Regional ballpark: ${formatMoney(g.regionalUnitCost)}/${g.unit} cost` +
+      (g.regionalUnitPrice !== null ? ` (${formatMoney(g.regionalUnitPrice)} price)` : '') +
+      (g.proposed
+        ? ` × ${qty(g.quantity!)} = ${formatMoney(g.proposed.cost)} cost${g.proposed.price !== null ? `, ${formatMoney(g.proposed.price)} price` : ''}`
+        : ', quantity still to be confirmed') +
+      ` — ${REGIONAL_NOTE}. ${h.regionalBasis}`;
   } else if (h.match !== 'none') {
     out += ` ${h.suggestionBasis}`;
   }
@@ -206,9 +260,15 @@ function pastWorkRows(h: HistoryFinding): string {
     .join('');
 }
 
+/** The contingency step comes right after the templates. */
+function contingencyStepNumber(d: Draft): number {
+  return d.plans.length + 1;
+}
+
 /** The number the "Not in any template" step gets, so the header can point at it. */
 function gapStep(d: Draft): number {
   let step = d.plans.length;
+  if (d.contingency) step++;
   if (d.totals.options.length) step++;
   if (d.scopeOfWork) step++;
   return step + 1;
@@ -261,8 +321,11 @@ export function draftJson(d: Draft): unknown {
     })),
     gaps: d.gaps.map((g) => ({
       ...g,
+      regionalUnitCost: g.regionalUnitCost === null ? null : formatMoney(g.regionalUnitCost),
+      regionalUnitPrice: g.regionalUnitPrice === null ? null : formatMoney(g.regionalUnitPrice),
       proposed: g.proposed
         ? {
+            source: g.proposed.source,
             unitCost: formatMoney(g.proposed.unitCost),
             unitPrice: g.proposed.unitPrice === null ? null : formatMoney(g.proposed.unitPrice),
             cost: formatMoney(g.proposed.cost),
@@ -270,8 +333,18 @@ export function draftJson(d: Draft): unknown {
           }
         : null,
     })),
+    contingency: d.contingency
+      ? {
+          rate: d.contingency.rate,
+          why: d.contingency.why,
+          base: formatMoney(d.contingency.base),
+          amount: formatMoney(d.contingency.amount),
+          parameters: { [CONTINGENCY_PARAMETERS.rate]: d.contingency.rate, [CONTINGENCY_PARAMETERS.base]: Number(parameterDollars(d.contingency.base)) },
+          line: d.contingency.line,
+        }
+      : null,
     history: d.history
-      ? { terms: d.history.terms, findings: d.history.findings, learned: d.history.learned, skipped: d.history.skipped, searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName), files: t.jobs.flatMap((j) => j.files.filter((f) => !f.skipped).map((f) => f.name)) })) }
+      ? { terms: d.history.terms, findings: d.history.findings, learned: d.history.learned, regional: d.history.regional, skipped: d.history.skipped, searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName), files: t.jobs.flatMap((j) => j.files.filter((f) => !f.skipped).map((f) => f.name)) })) }
       : null,
     questions: d.questions,
     rejected: d.rejected,
@@ -288,6 +361,11 @@ export function draftJson(d: Draft): unknown {
         cost: formatMoney(d.totals.proposedForGaps.cost),
         price: d.totals.proposedForGaps.price === null ? null : formatMoney(d.totals.proposedForGaps.price),
         gaps: d.totals.proposedForGaps.gaps,
+      },
+      regionalForGaps: {
+        cost: formatMoney(d.totals.regionalForGaps.cost),
+        price: d.totals.regionalForGaps.price === null ? null : formatMoney(d.totals.regionalForGaps.price),
+        gaps: d.totals.regionalForGaps.gaps,
       },
     },
     usage: d.usage,
@@ -328,7 +406,8 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
       <div class="fig"><span class="k">Base cost</span><span class="v">${formatMoney(d.totals.base.cost)}</span></div>
       <div class="fig"><span class="k">Margin</span><span class="v">${
         d.totals.base.price > ZERO ? formatPercent(marginOf(d.totals.base.price, d.totals.base.cost)) : '—'
-      }</span></div>
+      }</span></div>${d.contingency ? `
+      <div class="fig"><span class="k">+ ${d.contingency.rate}% contingency</span><span class="v">${formatMoney(add(d.totals.base.price, d.contingency.amount))}</span></div>` : ''}
     </div>
   </header>
 
@@ -339,7 +418,8 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
           ? `${flagged} item${flagged === 1 ? '' : 's'} flagged for Carl`
           : 'Every line comes from a budget template.'
       }${d.gaps.length ? ` &middot; the base price leaves ${d.gaps.length === 1 ? 'it' : 'them'} out` : ''}${
-        d.totals.proposedForGaps.gaps ? ` &middot; history proposes ${d.totals.proposedForGaps.price === null ? formatMoney(d.totals.proposedForGaps.cost) + ' cost' : formatMoney(d.totals.proposedForGaps.price)} for ${d.totals.proposedForGaps.gaps === d.gaps.length ? 'them' : `${d.totals.proposedForGaps.gaps} of them`}` : ''}${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
+        d.totals.proposedForGaps.gaps ? ` &middot; history proposes ${d.totals.proposedForGaps.price === null ? formatMoney(d.totals.proposedForGaps.cost) + ' cost' : formatMoney(d.totals.proposedForGaps.price)} for ${d.totals.proposedForGaps.gaps === d.gaps.length ? 'them' : `${d.totals.proposedForGaps.gaps} of them`}` : ''}${
+        d.totals.regionalForGaps.gaps ? ` &middot; a regional ballpark of ${d.totals.regionalForGaps.price === null ? formatMoney(d.totals.regionalForGaps.cost) + ' cost' : formatMoney(d.totals.regionalForGaps.price)} for ${d.totals.regionalForGaps.gaps === d.gaps.length ? 'them' : `${d.totals.regionalForGaps.gaps} of them`}, not DB pricing` : ''}${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
         d.totals.base.unpriced ? ` &middot; ${d.totals.base.unpriced} line${d.totals.base.unpriced === 1 ? '' : 's'} to price by hand` : ''
       }</p>`}
 
@@ -363,7 +443,7 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
     <div class="bar"><h2>Not in any template <span class="count">${d.gaps.length}</span></h2>
       <p class="tally">Carl decides each one before the estimate goes out</p></div>
     ${d.gaps.map((g) => `<article class="card sev-pricing">
-      <div class="chip">Flagged</div>
+      <div class="chip">${g.proposed?.source === 'history' ? 'Flagged · priced from history' : g.regionalUnitCost !== null ? 'Flagged · regional ballpark, not DB pricing' : 'Flagged'}</div>
       <h3>${esc(g.scope)}</h3>
       <p class="detail">${esc(g.why)}</p>
       <table class="math">
@@ -401,6 +481,19 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
     ${subbed.map((l) => `<article class="card sev-info"><div class="chip">Usually subcontracted</div><h3>${esc(l.name)}</h3><p class="detail">${esc(l.history!.summary)}${l.history!.usualVendor ? ` Usual sub: ${esc(l.history!.usualVendor)}.` : ''} Drafted here as crew labor.</p></article>`).join('\n')}
   </section>`;
   })()}
+
+  ${d.contingency ? `<section class="scope">
+    <h2>Contingency, ${d.contingency.rate}%</h2>
+    <p class="detail">${esc(d.contingency.why || 'DB carries a visible contingency on every construction budget.')}
+      ${formatMoney(d.contingency.base)} base cost &times; ${d.contingency.rate}% = <strong>${formatMoney(d.contingency.amount)}</strong>, at cost. Unused contingency is credited at closeout.</p>
+    <table class="math">
+      <tr><td>line</td><td>${d.contingency.line
+        ? `${esc([...d.contingency.line.group, CONTINGENCY_LINE].join(' › '))} in ${esc(d.contingency.line.templateName)}`
+        : `not in the chosen templates yet: add "${esc(CONTINGENCY_GROUP)}" after Phase 4 with the catalog item "${esc(CONTINGENCY_LINE)}" and the quantity formula <code>${esc(CONTINGENCY_FORMULA)}</code>`}</td></tr>
+      <tr><td>${esc(CONTINGENCY_PARAMETERS.rate)}</td><td>${d.contingency.rate}</td></tr>
+      <tr><td>${esc(CONTINGENCY_PARAMETERS.base)}</td><td>${esc(parameterDollars(d.contingency.base))}</td></tr>
+    </table>
+  </section>` : ''}
 
   ${d.scopeOfWork ? `<section class="scope">
     <h2>General Description</h2>

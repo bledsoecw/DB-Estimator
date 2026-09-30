@@ -22,7 +22,7 @@ import { attachmentBlocks } from '../scope/prompt.ts';
 import type { JobEvidence } from './evidence.ts';
 import { historyText, type HistoryReport } from './history.ts';
 import {
-  STRUCTURAL_GROUPS, groupPath, isStructural, orderedLines, type Template, type TemplateSummary,
+  STRUCTURAL_GROUPS, groupPath, isContingencyLine, isStructural, orderedLines, type Template, type TemplateSummary,
 } from './templates.ts';
 
 export const MAX_PICKS = 4;
@@ -66,6 +66,7 @@ Rules:
 9. summary is two sentences saying what the job is, as the evidence describes it.
 10. questions are what the rep must confirm with the customer or the team before the estimate goes out: at most six, ordered by how much the answer changes the price. Leave out what the estimate already handles (a color choice, picking from stock).
 11. lookBack is a list of one to three short search terms for finding DB's past work of the same kind ("epoxy", "floor coating"; "skim coat", "skim"). Give them on every Subcontractor line, on every gap, and on any Labor line for a trade DB might subcontract (painting, flooring, drywall, tile, concrete). Leave the list empty on everything else. The terms are matched against past line names and descriptions, so use the words a rep would have typed, not sentences.
+12. contingency.rate is the contingency DB carries on this job, by its policy: 5 when everything stays in place (replace in kind, nothing moves), 8 for a remodel where anything moves (a fixture, a wall, an opening) or the finish is stripped to the substrate, 10 for an addition, structural work, or an older home where hidden conditions are likely. Say why in one sentence from the evidence. The code prices it; you do not.
 
 Write for the rep: plain words, and line names exactly as listed. Reference lines by their id.`;
 
@@ -115,6 +116,8 @@ export const DraftSchema = z.object({
     }),
   ),
   questions: z.array(z.object({ question: z.string(), why: z.string() })),
+  /** The contingency rate DB's policy gives this job: 5, 8 or 10. */
+  contingency: z.object({ rate: z.number(), why: z.string() }),
 });
 export type DraftReply = z.infer<typeof DraftSchema>;
 export type DraftReplyLine = DraftReply['lines'][number];
@@ -194,9 +197,10 @@ const MAX_DESCRIPTION = 600;
 export function templateLinesText(t: Template): string {
   const out: string[] = [];
   const all = orderedLines(t);
-  const scope = all.filter((l) => !l.isSpecification && !isStructural(t, l));
+  const scope = all.filter((l) => !l.isSpecification && !isStructural(t, l) && !isContingencyLine(t, l));
   const structural = all.filter((l) => isStructural(t, l)).length;
   const specs = all.filter((l) => l.isSpecification && !isStructural(t, l)).length;
+  const contingency = all.filter((l) => isContingencyLine(t, l) && !isStructural(t, l)).length;
 
   out.push(`# Template: ${t.name} (${t.id}) — ${scope.length} lines you may keep`);
   if (t.description) out.push(t.description.replace(/\s+/g, ' '));
@@ -223,6 +227,7 @@ export function templateLinesText(t: Template): string {
     );
   }
   if (specs) notes.push(`${specs} specification lines are not listed`);
+  if (contingency) notes.push('the Project Contingency line is not listed: the code sets it from your contingency.rate');
   if (notes.length) out.push(`\nNot listed: ${notes.join('; ')}.`);
   return out.join('\n');
 }
@@ -278,8 +283,9 @@ For each target say:
 - confidence: high when two or more billed or sold lines agree; medium for one good line; low for partial matches or old drafts.
 - typicallySubbed: for a Labor target, true when the past work shows DB using a subcontractor for this trade on two or more jobs, false when DB's own crew did it on two or more, null when the history does not say. usualVendor is the sub that appears most, or null.
 - summary: one or two plain sentences for the rep: what DB did before and what it cost.
+- regionalUnitCost, for GAP targets only: when history gives no suggestedUnitCost for a gap, give a ballpark cost per the gap's unit for DB's own market — Van Wert, Ohio and the surrounding small towns of northwest Ohio and northeast Indiana, not a national average and not a metro rate — for the kind of work the gap describes and the cost type it carries (a Labor gap is DB's own crew at a small-contractor wage; a Subcontractor gap is what a local sub would charge DB; a Materials gap is the supply-house price). Write regionalBasis as the assumption in one or two sentences ("a two-man crew at about $45/hour loaded; moving a basement of contents is two to four hours"). It is a ballpark for the rep to sanity-check, not a price; the code labels it so. Leave it null when the gap has no unit that a cost can be put per, when its quantity is what is unknown, or when it is a line target: template lines already have a price and never get a regional figure. Do not give a regional figure where you gave a suggestedUnitCost.
 
-Do not price anything that is not a target. Do not mention margins or markup: the code prices from the cost you cite, at DB's subcontractor margin. Reference targets by their id exactly as given.`;
+Do not price anything that is not a target. Do not mention margins or markup: the code prices from the cost you cite, at the margin DB applies to that cost type. Reference targets by their id exactly as given.`;
 
 export const HistorySchema = z.object({
   findings: z.array(
@@ -306,6 +312,9 @@ export const HistorySchema = z.object({
       confidence: z.enum(['high', 'medium', 'low']),
       typicallySubbed: z.boolean().nullable(),
       usualVendor: z.string().nullable(),
+      /** A gap only, and only when history gave nothing: a ballpark per unit for DB's own market. */
+      regionalUnitCost: z.number().nullable(),
+      regionalBasis: z.string(),
     }),
   ),
 });
@@ -325,6 +334,8 @@ export interface HistoryTarget {
   /** What the template would price it at, per unit, when there is one. */
   templateUnitCost: number | null;
   lookBack: string[];
+  /** Something the model should know about this target that the search did not produce. */
+  note?: string;
 }
 
 export function historyTargetsText(summary: string, targets: HistoryTarget[]): string {
@@ -339,6 +350,13 @@ export function historyTargetsText(summary: string, targets: HistoryTarget[]): s
         ` · terms: ${t.lookBack.map((x) => `"${x}"`).join(', ') || 'none'}`,
     );
     out.push(`  basis: ${t.basis}`);
+    if (t.note) out.push(`  note: ${t.note}`);
+  }
+  const gaps = targets.filter((t) => t.kind === 'gap').length;
+  if (gaps) {
+    out.push(
+      `\n${gaps} of these are gaps with no template line. A gap that history cannot price gets a regional ballpark (regionalUnitCost) instead; line targets never do.`,
+    );
   }
   return out.join('\n');
 }
@@ -361,7 +379,8 @@ export function buildHistoryContent(
       type: 'text',
       text:
         'For each target, say whether DB has done this before, cite the past lines that apply, and give a ' +
-        'unit cost only when the arithmetic from those lines is shown. Return the findings in the required format.',
+        'unit cost only when the arithmetic from those lines is shown. For a gap that history leaves unpriced, ' +
+        'give the regional ballpark and its assumption. Return the findings in the required format.',
     },
   ];
 }

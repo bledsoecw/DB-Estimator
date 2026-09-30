@@ -24,6 +24,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { anthropicFromEnv, preflight } from './anthropic.ts';
+import { formatMoney } from './money.ts';
 import { clientFromEnv } from './jobtread/client.ts';
 import { fetchJobEvidence, resolveJobId, type JobEvidence } from './draft/evidence.ts';
 import { searchHistory, type HistoryReport } from './draft/history.ts';
@@ -288,8 +289,13 @@ async function main(): Promise<number> {
           ? `history: searched ${draft.history.terms.length} term${draft.history.terms.length === 1 ? '' : 's'}; ${draft.history.skipped}`
           : `history: ${draft.history.findings} finding${draft.history.findings === 1 ? '' : 's'} from ${draft.history.terms.length} term${draft.history.terms.length === 1 ? '' : 's'}` +
             (draft.history.learned ? `, ${draft.history.learned} from the learned price book` : '') +
-            (draft.totals.proposedForGaps.gaps ? `; proposes a price for ${draft.totals.proposedForGaps.gaps} gap${draft.totals.proposedForGaps.gaps === 1 ? '' : 's'}` : ''),
+            (draft.totals.proposedForGaps.gaps ? `; proposes a price for ${draft.totals.proposedForGaps.gaps} gap${draft.totals.proposedForGaps.gaps === 1 ? '' : 's'}` : '') +
+            (draft.history.regional ? `; regional ballpark for ${draft.history.regional} gap${draft.history.regional === 1 ? '' : 's'} (not DB pricing)` : ''),
       );
+    }
+    if (draft.contingency) {
+      const c = draft.contingency;
+      log(`contingency: ${c.rate}% on ${formatMoney(c.base)} base cost = ${formatMoney(c.amount)} at cost${c.line ? '' : ' (no template line: add the group by hand)'}`);
     }
   }
   log(`page written to ${stem}.html; data in ${stem}.json`);

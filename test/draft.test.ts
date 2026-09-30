@@ -87,6 +87,7 @@ const DRAFT = {
     { scope: 'Move basement contents before and after', why: 'no template line for moving the customer\'s things', unit: 'Hours', quantity: 4, costType: 'Labor', basis: 'two people, two hours', evidence: ev('Assistance with moving basement equipment and contents will be included as a separate labor line item'), lookBack: ['skim coat', 'skim'] },
   ],
   questions: [{ question: 'Paint the ceiling or not?', why: 'the note says the decision is tentative' }],
+  contingency: { rate: 7, why: 'The walls are skimmed to the concrete, so hidden conditions are likely.' },
 };
 
 // ---- what the model is shown --------------------------------------------------
@@ -244,7 +245,7 @@ test('the steps read as a recipe for JobTread, and the page carries them', async
   const d = await draftEstimate(fx.evidence, fx.index, load, fake([PICK, DRAFT]));
   const steps = draftSteps(d);
   assert.match(steps, /^261323 Haag_Remodel — budget draft\n/);
-  assert.match(steps, /^Base scope: .* — leaves out 1 flagged item with no template line \(step 5\)$/m);
+  assert.match(steps, /^Base scope: .* — leaves out 1 flagged item with no template line \(step 6\)$/m);
   assert.match(steps, /^Option "Flooring", one choice required:\n   LVP: \$8,286\.28 price.*\n   Epoxy: \$7,677\.75 price/m);
   assert.match(steps, /^Add-on "Ceiling paint", customer may decline: \$4,043\.62 price/m);
   assert.match(steps, /1\. Budget tab › Add from catalog › "X-Division 09 Finishes" \(the main template\)\.\n   Keep 9 lines, delete the other 17\.\n/);
@@ -254,10 +255,10 @@ test('the steps read as a recipe for JobTread, and the page carries them', async
   assert.match(steps, /Sales On-Site Support: 0 Hours \[time tracking, \$0\]/);
   assert.match(steps, /Delete: Trim - Crown Molding; Trim - Casing/);
   assert.match(steps, /2\. Budget tab › Add from catalog › "X-Division 01 General Requirements"\./);
-  assert.match(steps, /3\. Selection groups, so the customer picks on the estimate:\n   - "Flooring", one choice required: LVP: Flooring; Flooring - Miscellaneous MAT; Flooring Labor · Epoxy: Flooring - Sub\n   - "Ceiling paint", optional add-on \(may pick none\): Paint Labor - Sub/);
-  assert.match(steps, /4\. General Description:\n   Skim-coat and paint/);
-  assert.match(steps, /5\. Not in any template — take to Carl before the estimate goes out:\n   - Move basement contents before and after \(Labor, 4 Hours\)/);
-  assert.match(steps, /6\. Confirm before it goes out:\n   - Paint the ceiling or not\?/);
+  assert.match(steps, /4\. Selection groups, so the customer picks on the estimate:\n   - "Flooring", one choice required: LVP: Flooring; Flooring - Miscellaneous MAT; Flooring Labor · Epoxy: Flooring - Sub\n   - "Ceiling paint", optional add-on \(may pick none\): Paint Labor - Sub/);
+  assert.match(steps, /5\. General Description:\n   Skim-coat and paint/);
+  assert.match(steps, /6\. Not in any template — take to Carl before the estimate goes out:\n   - Move basement contents before and after \(Labor, 4 Hours\)/);
+  assert.match(steps, /7\. Confirm before it goes out:\n   - Paint the ceiling or not\?/);
   assert.match(steps, /named 2 lines that are not in these templates; they were NOT added/);
   assert.match(steps, /Nothing here was written to JobTread/);
 
@@ -505,4 +506,35 @@ test('an option name is read the way the prompt asks the model to write it', () 
   assert.deepEqual(parseOption('Ceiling paint'), { group: 'Ceiling paint', choice: null });
   assert.deepEqual(parseOption('  Contents moving '), { group: 'Contents moving', choice: null });
   assert.deepEqual(parseOption('Vanity — Semi-custom'), { group: 'Vanity', choice: 'Semi-custom' }, 'a hyphen inside a word is not a separator');
+});
+
+test('every construction draft ends its template steps with contingency: the snapped policy rate on the base cost, at cost', async () => {
+  const d = await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT]), { templateIds: [FIN, GR] });
+  assert.equal(d.contingency?.rate, 8, 'the model said 7; the policy knows 5, 8 and 10');
+  assert.equal(formatMoney(d.contingency!.base), '$4,120.79', 'the base-scope cost, options left out');
+  assert.equal(formatMoney(d.contingency!.amount), '$329.66');
+  assert.equal(d.contingency?.line, null, 'the X-Division templates carry no contingency line yet');
+
+  const steps = draftSteps(d);
+  assert.match(steps, /^Contingency 8% on \$4,120\.79 base cost = \$329\.66, at cost; with it the base scope is \$7,195\.81 price \(step 3\)$/m);
+  assert.match(steps, /^3\. Contingency at 8%: The walls are skimmed to the concrete, so hidden conditions are likely\.\n   No chosen template carries the contingency group yet\. Add a group "Phase 5 - Contingency" after Phase 4 and put the catalog item "Project Contingency" in it \(1 Lump Sum at \$1\.00 cost and \$1\.00 price\) with the quantity formula \{Contingency Base\} \* \{Contingency Rate\} \/ 100; then set the job parameters Contingency Rate = 8 and Contingency Base = 4120\.79: \$329\.66, at cost\.\n   Unused contingency is credited at closeout\. If the customer takes an option, add 8% of its cost to the base\.$/m);
+  assert.match(steps, /^4\. Selection groups/m);
+  assert.match(steps, /leaves out 1 flagged item with no template line \(step 6\)/);
+
+  const html = renderDraft(fx.evidence, d);
+  assert.match(html, /<span class="k">\+ 8% contingency<\/span><span class="v">\$7,195\.81<\/span>/);
+  assert.match(html, /<h2>Contingency, 8%<\/h2>/);
+  assert.match(html, /<tr><td>Contingency Base<\/td><td>4120\.79<\/td><\/tr>/);
+  const json = draftJson(d) as { contingency: { rate: number; amount: string; parameters: Record<string, number>; line: null } };
+  assert.equal(json.contingency.amount, '$329.66');
+  assert.deepEqual(json.contingency.parameters, { 'Contingency Rate': 8, 'Contingency Base': 4120.79 });
+
+  // A roofing job carries none, and the steps close up.
+  const roof = await draftEstimate({ ...fx.evidence, jobType: 'Roofing' }, fx.index, load, fake([DRAFT]), { templateIds: [FIN, GR] });
+  assert.equal(roof.contingency, null);
+  const roofSteps = draftSteps(roof);
+  assert.doesNotMatch(roofSteps, /Contingency/);
+  assert.match(roofSteps, /^3\. Selection groups/m);
+  assert.match(roofSteps, /\(step 5\)/);
+  assert.equal((draftJson(roof) as { contingency: null }).contingency, null);
 });

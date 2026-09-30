@@ -2222,3 +2222,34 @@ Kristen's half of the problem and the drafter is the reps'. Kristen's paperwork 
 contract — work orders and purchase orders from the same lines regrouped by who does the
 work, and the folder — is the phase after the drafter has been used live, and it is the
 one that gives her design time back.
+
+### 20.4 Addendum, 2026-09-30 evening — regional ballpark, contingency, and the first write
+
+Carl's two asks after the third live run:
+
+1. *For items with no template line and no history, create the line items
+   with estimated costs based on our area, and make note to the sales rep.*
+   Done in the history call: a gap that history cannot price gets a regional
+   ballpark per unit for northwest Ohio, priced at the gap's cost-type margin,
+   labelled "regional ballpark, not DB pricing — confirm with Carl or a sub
+   bid", kept out of the totals and out of the learned price book. Template
+   lines never get one.
+2. *Add contingency with a formula rate based on whatever is normal, and add
+   the contingency line to every construction budget template below Phase 4
+   as a new group.* Done in JobTread: catalog item `Project Contingency`
+   ($1.00 / $1.00, Lump Sum, Other, General Requirements) and a
+   `Phase 5 - Contingency` group after Phase 4 in the seven phased
+   construction templates, each with one line on that item and the quantity
+   formula `{Contingency Base} * {Contingency Rate} / 100`. The rate policy
+   is §9 decision 2 of the preconstruction redesign (5 / 8 / 10, at cost,
+   unused credited at closeout). The drafter prints the rate it chose, the
+   base and the two parameters on every construction draft. Record and
+   undo instructions: `docs/contingency.md`.
+
+This was the project's first write to JobTread. It went through a new
+`src/jobtread/writer.ts` — a second grant key, an allowlist of three
+mutations, no retries — with the read-only client and its guard untouched.
+The disposable-test-job rule (§7.3) was kept in spirit: a throwaway catalog
+group was created, read, repositioned and deleted before any template was
+touched. `npm run contingency` is the repeatable, verifying form of the same
+change.

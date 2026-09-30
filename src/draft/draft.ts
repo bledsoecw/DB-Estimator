@@ -9,6 +9,12 @@
  * templates is REJECTED and listed — never silently dropped and never
  * invented — because "the model made that up" is exactly what Carl asked
  * to see.
+ *
+ * Two numbers are not the templates' and are labelled as such: what history
+ * proposes for a gap (DB's own past work, a proposal for Carl) and, when
+ * history has nothing, a regional ballpark for the gap (an area estimate
+ * for the rep to sanity-check, never DB pricing). Neither enters a total.
+ * The contingency line is the code's: the policy rate on the base cost.
  */
 
 import {
@@ -25,7 +31,10 @@ import {
 } from './prompt.ts';
 import type { HistoryReport } from './history.ts';
 import type { LearnedStore } from './learned.ts';
-import { groupPath, scopeLines, type Template, type TemplateLine, type TemplateSummary } from './templates.ts';
+import { chooseRate, contingencyAmount, contingencyLine, type ContingencyStep } from './contingency.ts';
+import {
+  groupPath, isContingencyLine, scopeLines, type Template, type TemplateLine, type TemplateSummary,
+} from './templates.ts';
 
 export type Confidence = 'high' | 'medium' | 'low';
 
@@ -67,11 +76,25 @@ export interface DraftLine {
   historyUnitPrice: Money | null;
 }
 
+/** Who put a number on a gap: DB's own past work, or a ballpark for the area. */
+export type ProposalSource = 'history' | 'regional';
+
+export interface GapProposal {
+  source: ProposalSource;
+  unitCost: Money;
+  unitPrice: Money | null;
+  cost: Money;
+  price: Money | null;
+}
+
 /** A gap, plus what history says about it and the price that would follow. */
 export type DraftGap = DraftReplyGap & {
   history: AttachedFinding | null;
-  /** From history's unit cost × the gap's quantity, at the subcontractor margin. A proposal, never a total. */
-  proposed: { unitCost: Money; unitPrice: Money | null; cost: Money; price: Money | null } | null;
+  /** Unit cost × the gap's quantity, at the margin for its cost type. A proposal, never a total. */
+  proposed: GapProposal | null;
+  /** The regional ballpark per unit when the model gave one, whether or not a quantity let it total. */
+  regionalUnitCost: Money | null;
+  regionalUnitPrice: Money | null;
 };
 export type DraftQuestion = DraftReplyQuestion;
 
@@ -96,6 +119,13 @@ export interface OptionGroup {
   group: string;
   required: boolean;
   choices: OptionChoice[];
+}
+
+/** What is proposed for the gaps from one source. Shown beside the total, never inside it. */
+export interface GapProposals {
+  cost: Money;
+  price: Money | null;
+  gaps: number;
 }
 
 export interface TemplatePlan {
@@ -131,9 +161,13 @@ export interface Draft {
     base: Totals;
     options: OptionGroup[];
     all: Totals;
-    /** What history proposes for the gaps. Shown beside the total, never inside it. */
-    proposedForGaps: { cost: Money; price: Money | null; gaps: number };
+    /** What DB's own history proposes for the gaps. */
+    proposedForGaps: GapProposals;
+    /** What the regional ballpark gives the gaps history could not price. */
+    regionalForGaps: GapProposals;
   };
+  /** The contingency line: the policy rate on the base cost. Null for a roofing job. */
+  contingency: ContingencyStep | null;
   /** The past-work step: what was searched and what came of it. Null when it did not run. */
   history: {
     terms: string[];
@@ -142,6 +176,8 @@ export interface Draft {
     skipped: string | null;
     /** Targets answered from the learned price book, so nothing was searched for them. */
     learned: number;
+    /** Gaps that got a regional ballpark because history had nothing. */
+    regional: number;
   } | null;
   usage: Usage;
   cost: number | null;
@@ -171,6 +207,8 @@ const PICK_MAX_TOKENS = 8_000;
 const DRAFT_MAX_TOKENS = 32_000;
 const HISTORY_MAX_TOKENS = 16_000;
 const MAX_TERMS = 10;
+
+const NO_PROPOSALS: GapProposals = { cost: ZERO, price: ZERO, gaps: 0 };
 
 /** Everything the CLI freezes to disk with --capture, and reads back with --fixture. */
 export interface DraftFixture {
@@ -239,7 +277,8 @@ export async function draftEstimate(
     jobId: evidence.jobId, jobName: evidence.jobName, model, pickSummary, noFit,
     summary: pickSummary, scopeOfWork: '', plans: [], lines: [], gaps: [], questions: [],
     rejected: [], rejectedPicks,
-    totals: { base: totalsOf([]), options: [], all: totalsOf([]), proposedForGaps: { cost: ZERO, price: ZERO, gaps: 0 } },
+    totals: { base: totalsOf([]), options: [], all: totalsOf([]), proposedForGaps: NO_PROPOSALS, regionalForGaps: NO_PROPOSALS },
+    contingency: null,
     history: null,
     usage, cost,
   });
@@ -258,13 +297,16 @@ export async function draftEstimate(
   addCost(d.cost);
 
   const { lines, rejected } = priceLines(d.data, templates);
-  const gaps: DraftGap[] = d.data.gaps.map((g) => ({ ...g, history: null, proposed: null }));
+  const gaps: DraftGap[] = d.data.gaps.map((g) => ({
+    ...g, history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null,
+  }));
 
-  // ---- 3. what DB did last time -----------------------------------------------
+  // ---- 3. what DB did last time, and a ballpark where it did nothing -----------
   let history: Draft['history'] = null;
   if (opts.history) {
     const allTargets = historyTargets(lines, gaps);
     const store = opts.history.learned;
+    const margins = opts.history.margins;
 
     // What the price book already knows is applied first and not searched again.
     const learnedFindings: AttachedFinding[] = [];
@@ -286,38 +328,56 @@ export async function draftEstimate(
         },
       });
     }
-    attachHistory(lines, gaps, learnedFindings, opts.history.margins);
+    attachHistory(lines, gaps, learnedFindings, margins);
 
     const terms = uniqueTerms(toSearch);
     let report: HistoryReport = { terms: [] };
+    if (terms.length > 0) report = await opts.history.search(terms);
+    const found = report.terms.some((t) => t.jobs.length > 0);
+    let skipped: string | null = terms.length > 0 && !found ? 'no past DB work matched any search term' : null;
+    if (!found) rememberNone(store, toSearch, evidence.jobName);
+
+    // Who goes to the model: every searched target when something was found;
+    // and every gap still without a number, so it gets a regional ballpark
+    // even when history — searched now or learned earlier — has nothing.
+    const forModel: HistoryTarget[] = found ? [...toSearch] : toSearch.filter((t) => t.kind === 'gap');
+    gaps.forEach((g, i) => {
+      const id = `gap-${i}`;
+      if (g.proposed !== null || forModel.some((t) => t.id === id)) return;
+      const t = allTargets.find((x) => x.id === id);
+      if (!t) return;
+      const h = g.history;
+      forModel.push({
+        ...t,
+        note: h
+          ? `DB's past work was already read for this (${h.origin.kind === 'learned' ? `learned ${h.origin.learnedAt.slice(0, 10)}` : 'this run'}): ${h.match}. ${h.summary} Give the regional ballpark.`
+          : 'Give the regional ballpark.',
+      });
+    });
+
     let findings = 0;
-    let skipped: string | null = null;
-    if (terms.length > 0) {
-      report = await opts.history.search(terms);
-      const found = report.terms.some((t) => t.jobs.length > 0);
-      if (!found) {
-        skipped = 'no past DB work matched any search term';
-        rememberNone(store, toSearch, evidence.jobName);
-      } else {
-        const h = await runStructured(
-          call,
-          {
-            model, system: HISTORY_SYSTEM,
-            content: buildHistoryContent(d.data.summary, toSearch, report),
-            schema: HistorySchema, maxTokens: HISTORY_MAX_TOKENS,
-          },
-          'read the history',
-        );
-        usage = addUsage(usage, h.usage);
-        addCost(h.cost);
-        const searched: AttachedFinding[] = h.data.findings.map((f) => ({ ...f, origin: { kind: 'searched' } }));
-        attachHistory(lines, gaps, searched, opts.history.margins);
-        findings = searched.length;
-        remember(store, toSearch, searched, evidence.jobName);
-      }
+    if (forModel.length > 0 && (found || forModel.some((t) => t.kind === 'gap'))) {
+      const h = await runStructured(
+        call,
+        {
+          model, system: HISTORY_SYSTEM,
+          content: buildHistoryContent(d.data.summary, forModel, report),
+          schema: HistorySchema, maxTokens: HISTORY_MAX_TOKENS,
+        },
+        'read the history',
+      );
+      usage = addUsage(usage, h.usage);
+      addCost(h.cost);
+      const searched: AttachedFinding[] = h.data.findings.map((f) => ({ ...f, origin: { kind: 'searched' } }));
+      attachHistory(lines, gaps, searched, margins);
+      findings = searched.length;
+      remember(store, toSearch, searched, evidence.jobName);
+    } else if (terms.length === 0 && forModel.length === 0 && allTargets.length > 0 && learnedFindings.length === 0) {
+      skipped = 'nothing to search: no target carried a search term';
     }
     if (allTargets.length > 0) {
-      history = { terms, report, findings, skipped, learned: learnedFindings.length };
+      const regional = gaps.filter((g) => g.regionalUnitCost !== null).length;
+      history = { terms, report, findings, skipped, learned: learnedFindings.length, regional };
     }
   }
 
@@ -335,6 +395,7 @@ export async function draftEstimate(
     };
   });
 
+  const byOption = totalsByOption(lines);
   return {
     jobId: evidence.jobId,
     jobName: evidence.jobName,
@@ -349,11 +410,42 @@ export async function draftEstimate(
     questions: d.data.questions,
     rejected,
     rejectedPicks,
-    totals: { ...totalsByOption(lines), proposedForGaps: proposedForGaps(gaps) },
+    totals: {
+      ...byOption,
+      proposedForGaps: proposedForGaps(gaps, 'history'),
+      regionalForGaps: proposedForGaps(gaps, 'regional'),
+    },
+    contingency: contingencyStep(evidence, d.data.contingency, byOption.base.cost, templates),
     history,
     usage,
     cost,
   };
+}
+
+/**
+ * The contingency line for this draft: the policy rate the model chose,
+ * snapped to 5 / 8 / 10, on the base-scope cost, at cost. A roofing job
+ * carries none — the policy is for construction budgets. When a chosen
+ * template already has the line, the step says to keep it and set the two
+ * job parameters; otherwise it says how to add it by hand.
+ */
+export function contingencyStep(
+  evidence: Pick<JobEvidence, 'jobType'>,
+  reply: { rate: number; why: string } | undefined,
+  base: Money,
+  templates: Template[],
+): ContingencyStep | null {
+  if ((evidence.jobType ?? '').trim().toLowerCase() === 'roofing') return null;
+  const rate = chooseRate(reply?.rate);
+  let line: ContingencyStep['line'] = null;
+  for (const t of templates) {
+    const l = contingencyLine(t);
+    if (l) {
+      line = { templateId: t.id, templateName: t.name, lineId: l.id, group: groupPath(t, l.groupId) };
+      break;
+    }
+  }
+  return { rate, why: reply?.why?.trim() ?? '', base, amount: contingencyAmount(base, rate), line };
 }
 
 /** Subcontracted lines, lines the model wanted looked up, and every gap. */
@@ -394,13 +486,14 @@ export function uniqueTerms(targets: HistoryTarget[]): string[] {
 }
 
 /**
- * Put each finding on its line or gap and price what history proposes.
+ * Put each finding on its line or gap and price what it proposes.
  *
- * The model cites a unit cost from past lines; the code turns it into
- * Money and into a price at the margin JobTread applies to that line's cost
- * type: a crew-labor rate at the Labor margin, a sub's rate at the
- * Subcontractor margin. A finding for an id nobody asked about is dropped:
- * it cannot be shown on anything.
+ * The model cites a unit cost from past lines, or — for a gap history could
+ * not price — a regional ballpark; the code turns either into Money and into
+ * a price at the margin JobTread applies to that line's cost type: a
+ * crew-labor rate at the Labor margin, a sub's rate at the Subcontractor
+ * margin. History wins over regional when both are given. A finding for an
+ * id nobody asked about is dropped: it cannot be shown on anything.
  */
 export function attachHistory(
   lines: DraftLine[],
@@ -413,6 +506,16 @@ export function attachHistory(
     const m = margins[costTypeName];
     if (m === undefined || m >= 1) return null;
     return roundToCents(priceFromCostAtMargin(cost, rateFromApi(m)));
+  };
+  const proposal = (source: ProposalSource, unitCost: Money, costTypeName: string, q: bigint): GapProposal => {
+    const unitPrice = price(unitCost, costTypeName);
+    return {
+      source,
+      unitCost,
+      unitPrice,
+      cost: roundToCents(mulQty(unitCost, q)),
+      price: unitPrice === null ? null : roundToCents(mulQty(unitPrice, q)),
+    };
   };
   const byLine = new Map(lines.map((l) => [l.lineId, l]));
   for (const f of findings) {
@@ -429,22 +532,26 @@ export function attachHistory(
       const g = m ? gaps[Number(m[1])] : undefined;
       if (!g) continue;
       g.history = f;
-      if (f.suggestedUnitCost !== null && f.suggestedUnitCost > 0 && g.quantity !== null && g.quantity > 0) {
-        const unitCost = moneyFromApi(f.suggestedUnitCost);
-        const unitPrice = price(unitCost, g.costType);
-        const q = qtyFromApi(g.quantity);
-        g.proposed = {
-          unitCost,
-          unitPrice,
-          cost: roundToCents(mulQty(unitCost, q)),
-          price: unitPrice === null ? null : roundToCents(mulQty(unitPrice, q)),
-        };
+      const q = g.quantity !== null && g.quantity > 0 ? qtyFromApi(g.quantity) : null;
+      const regional = f.regionalUnitCost ?? null;
+      if (f.suggestedUnitCost !== null && f.suggestedUnitCost > 0) {
+        g.regionalUnitCost = null;
+        g.regionalUnitPrice = null;
+        g.proposed = q === null ? null : proposal('history', moneyFromApi(f.suggestedUnitCost), g.costType, q);
+      } else if (regional !== null && regional > 0) {
+        g.regionalUnitCost = moneyFromApi(regional);
+        g.regionalUnitPrice = price(g.regionalUnitCost, g.costType);
+        g.proposed = q === null ? null : proposal('regional', g.regionalUnitCost, g.costType, q);
       }
     }
   }
 }
 
-/** Store what the search found, under every term of the target it answered. */
+/**
+ * Store what the search found, under every term of the target it answered.
+ * The regional ballpark is not stored: the book holds DB's pricing, and a
+ * guess about the area is not that.
+ */
 export function remember(
   store: LearnedStore | undefined,
   targets: HistoryTarget[],
@@ -457,7 +564,10 @@ export function remember(
     const t = byId.get(f.target.id);
     if (!t || t.lookBack.length === 0) continue;
     const { origin: _origin, ...finding } = f;
-    store.remember(t.lookBack, { fromJob: jobName, targetName: t.name, unit: t.unit, finding });
+    store.remember(t.lookBack, {
+      fromJob: jobName, targetName: t.name, unit: t.unit,
+      finding: { ...finding, regionalUnitCost: null, regionalBasis: '' },
+    });
   }
 }
 
@@ -472,18 +582,18 @@ function rememberNone(store: LearnedStore | undefined, targets: HistoryTarget[],
         target: { kind: t.kind, id: t.id }, match: 'none',
         summary: 'No past DB work matched this when it was last searched.',
         pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low',
-        typicallySubbed: null, usualVendor: null,
+        typicallySubbed: null, usualVendor: null, regionalUnitCost: null, regionalBasis: '',
       },
     });
   }
 }
 
-export function proposedForGaps(gaps: DraftGap[]): Draft['totals']['proposedForGaps'] {
+export function proposedForGaps(gaps: DraftGap[], source: ProposalSource): GapProposals {
   let cost = ZERO;
   let price: Money | null = ZERO;
   let n = 0;
   for (const g of gaps) {
-    if (!g.proposed) continue;
+    if (!g.proposed || g.proposed.source !== source) continue;
     n++;
     cost = add(cost, g.proposed.cost);
     price = price === null || g.proposed.price === null ? null : add(price, g.proposed.price);
@@ -522,9 +632,11 @@ export function priceLines(
       const s = structural.get(r.lineId);
       rejected.push({
         lineId: r.lineId,
-        reason: s
-          ? `"${s.l.name}" is a time-tracking or fee line the rep does not touch`
-          : 'not a line in any chosen template',
+        reason: !s
+          ? 'not a line in any chosen template'
+          : isContingencyLine(s.t, s.l)
+            ? `"${s.l.name}" is set by the contingency step from the base cost, not kept by hand`
+            : `"${s.l.name}" is a time-tracking or fee line the rep does not touch`,
       });
       continue;
     }
@@ -583,13 +695,13 @@ export function totalsOf(lines: DraftLine[]): Totals {
  * yes-or-no add-on. Written this way by the prompt, read this way here.
  */
 export function parseOption(option: string): { group: string; choice: string | null } {
-  const m = /^(.*?)\s+[\u2014\u2013-]\s+(.*)$/.exec(option.trim());
+  const m = /^(.*?)\s+[—–-]\s+(.*)$/.exec(option.trim());
   if (m && m[1]!.trim() && m[2]!.trim()) return { group: m[1]!.trim(), choice: m[2]!.trim() };
   return { group: option.trim(), choice: null };
 }
 
 /** Base scope, then each option group with its choices, then everything together. */
-export function totalsByOption(lines: DraftLine[]): Omit<Draft['totals'], 'proposedForGaps'> {
+export function totalsByOption(lines: DraftLine[]): Pick<Draft['totals'], 'base' | 'options' | 'all'> {
   const base = lines.filter((l) => l.option === null);
   const groups = new Map<string, Map<string, DraftLine[]>>();
   for (const l of lines) {

@@ -14,7 +14,8 @@
     "audit": "node --env-file-if-exists=.env --experimental-strip-types src/cli.ts",
     "doctor": "node --env-file-if-exists=.env --experimental-strip-types src/cli.ts --doctor",
     "scope": "node --env-file-if-exists=.env --experimental-strip-types src/scope-cli.ts",
-    "draft": "node --env-file-if-exists=.env --experimental-strip-types src/draft-cli.ts"
+    "draft": "node --env-file-if-exists=.env --experimental-strip-types src/draft-cli.ts",
+    "contingency": "node --env-file-if-exists=.env --experimental-strip-types src/contingency-cli.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

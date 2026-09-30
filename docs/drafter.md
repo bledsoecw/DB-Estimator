@@ -7,8 +7,10 @@ notes and photos are on the job, and nobody has two hours to build the
 budget. It produces the budget the way a rep does, and nothing else.
 
 Status: built and tested offline on 2026-09-30 against job 261323
-Haag_Remodel; not yet run live, because that needs an Anthropic API key on
-the machine that runs it. Writes nothing to JobTread.
+Haag_Remodel, then run live three times the same day (notes below). The
+drafter writes nothing to JobTread. The one write this project has made is
+the contingency group in the construction templates, recorded in
+`docs/contingency.md`.
 
 ## How DB builds an estimate today, and what the drafter reproduces
 
@@ -242,6 +244,49 @@ Four things were wrong on the first run, all fixed the same day:
 4. Ten questions. Six changed the price; the rest were things the estimate
    already handles. Capped at six, ordered by what they change.
 
+## A ballpark where history has nothing
+
+Carl, 30 Sep 2026: for items with no template line and no history, "create
+the line items with the estimated costs based on our area", and tell the
+rep. So the third call has a second job. Every gap that neither history nor
+the learned price book could price goes to the model — even when no search
+term matched anything, in which case the call is made for the gaps alone —
+and the model gives `regionalUnitCost`: a cost per the gap's unit for DB's
+own market (Van Wert and the small towns of northwest Ohio and northeast
+Indiana, not a national average) for the kind of work and the cost type the
+gap carries, with the assumption written out ("a two-man crew at about
+$45/hour loaded; moving a basement of contents is two to four hours").
+
+The code prices it at the margin for the gap's cost type, exactly as it
+prices a history proposal, and then keeps the two apart everywhere:
+
+- history wins: a gap with a cited past cost never gets a regional figure;
+- the page labels it **"Regional ballpark … NOTE TO REP: an estimate for
+  our area, not DB pricing; confirm with Carl or a sub bid before it goes
+  out"**, on the gap and in the header line beside the base total;
+- it never enters a total, and it is **never written to the learned price
+  book** — the book holds what DB actually paid, and a guess about the area
+  is not that;
+- template lines never get one: they already have a price.
+
+A gap whose quantity is what is unknown still gets the unit figure, marked
+"quantity still to be confirmed".
+
+## Contingency
+
+Every construction draft (job type not Roofing) ends its template steps
+with a contingency step. The model chooses the rate under DB's policy
+(decided 28 Sep 2026: 5% when everything stays in place, 8% for a remodel
+where anything moves, 10% for additions, structural work or hidden
+conditions) and says why from the evidence; the code snaps it to one of the
+three, applies it to the base-scope cost, and prints the amount and the two
+job parameters the rep types — `Contingency Rate` and `Contingency Base`.
+When a chosen template carries the `Project Contingency` line (the seven
+phased construction templates do, since 2026-09-30), the step says to keep
+it; when none does, an X-Division draft, it says how to add the group and
+the catalog item by hand. The line is never the model's to keep or drop,
+and it is priced at cost. `docs/contingency.md` has the whole story.
+
 ## Running it
 
 ```
@@ -294,14 +339,17 @@ he trusts.
 
 ## Not built yet
 
-- **The write path.** The JSON is the payload; pushing it as a job budget
-  is roadmap §7, still off. The steps on the page are what the rep does by
-  hand today.
+- **The write path for budgets.** The JSON is the payload; pushing it as a
+  job budget is roadmap §7, still off. The steps on the page are what the
+  rep does by hand today. The only write so far is the template change in
+  `docs/contingency.md`, through `src/jobtread/writer.ts` under a separate
+  grant with three allowed mutations.
 - **Gaps against the whole catalog.** A gap is flagged with a unit, a
-  quantity and a cost type, and history may propose a cost. It does not yet
-  search the 718 priced but ungrouped catalog items for one that already
-  exists; that is a cheap addition once the first live drafts show what the
-  gaps look like.
+  quantity and a cost type; history may propose a cost, and a regional
+  ballpark stands in where history has nothing. It does not yet search the
+  718 priced but ungrouped catalog items for one that already exists; that
+  is a cheap addition once the first live drafts show what the gaps look
+  like.
 - **The auditor on the draft.** Every kept line is priced from the catalog,
   so the pricing checks pass by construction; the comparables band (this
   draft's margin against approved jobs of its size) is the one worth

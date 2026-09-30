@@ -339,6 +339,23 @@ template rate or on the gap; proposals never enter the totals. What it finds
 is kept in a local **learned price book** (`.db-estimator/`, git-ignored) and
 reused for a year before that trade is searched again.
 
+**Where DB has nothing, it gives a regional ballpark and says so.** A gap
+that neither history nor the price book can price gets a cost per unit for
+DB's own market (Van Wert and northwest Ohio), with the assumption written
+out, priced at that cost type's margin and labelled **"regional ballpark, not
+DB pricing — confirm with Carl or a sub bid"**. It never enters a total and
+is never written to the price book.
+
+**Every construction draft carries contingency.** The model picks the rate
+under DB's policy (5% in place, 8% when anything moves, 10% for additions,
+structural or hidden conditions) and the page shows the amount on the base
+cost, at cost, with the two job parameters to type: `Contingency Rate` and
+`Contingency Base`. The seven phased construction templates now carry a
+`Phase 5 - Contingency › Project Contingency` line for it; `npm run
+contingency` is the script that put it there and would put it in a new
+template (dry run by default; `--apply` needs a separate
+`JOBTREAD_WRITE_GRANT_KEY`). `docs/contingency.md` records what changed.
+
 The page is written as the steps the rep takes in JobTread — add this
 template, keep these lines, delete those, set these quantities, put these in
 a selection group, write this in General Description — with a Copy button.
