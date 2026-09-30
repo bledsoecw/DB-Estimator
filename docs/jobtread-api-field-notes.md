@@ -211,12 +211,21 @@ Selected fields (full type has ~45):
   The auditor's `budget.drift` rule exists because of this.
 - The org's job template puts three zero-cost groups in every budget — `CLOCK IN ITEMS`,
   `BURDEN`, `GENERAL AND ADMINISTRATIVE` — 42 lines on this job, none on any document.
-- **Response limit.** A query is refused with `Request Entity Too Large` when the response
-  outgrows a limit JobTread does not publish; the request body is tiny, so the name is
-  misleading. Selecting `description` on both the line and its `jobCostItem` for 43 lines
-  hit it, and so did `documentCostItems { nodes { id } }` on 85 budget lines.
-  `documentCostItems { count }` on 85 lines fits, and the 43 lines' descriptions fit on
-  their own — so the auditor fetches descriptions in a second, separately paged query.
+- **Query-size refusal.** A query is refused with HTTP 413 `Request Entity Too Large`, in
+  plain text, when the page sizes it DECLARES multiply out too far. VERIFIED 2026-09-30 that
+  this is decided before the query runs, from the shape and not the data:
+  `organization.costGroups(size 15) { descendentCostGroups(size 100) { name } }` is refused
+  although the answer is a few kilobytes of group names, while
+  `costGroup(id) { descendentCostGroups(size 100), descendentCostItems(size 30, with
+  descriptions and organizationCostItem) }` on the 350-line Addition template returns 30 KB.
+  Five `costGroup(id)` roots aliased in one query, each with a 100-group connection, pass.
+  Earlier sightings fit the same rule: `description` on both the line and its `jobCostItem`
+  for 43 lines, and `documentCostItems { nodes { id } }` on 85 budget lines, were refused;
+  `documentCostItems { count }` on 85 lines fits. **Rule of thumb: never nest a sized
+  connection inside a sized connection; fan out across aliased single-id roots instead, and
+  keep one connection per root under about 100 with heavy fields at 30.** The auditor fetches
+  descriptions in a second paged query and the drafter reads the template index as a flat
+  page plus group names five templates at a time (`src/draft/templates.ts`).
 
 ### `position` is a fractional index, not an integer
 

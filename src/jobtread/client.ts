@@ -114,7 +114,14 @@ export class JobTreadClient {
       try {
         parsed = JSON.parse(text);
       } catch {
-        throw new JobTreadError('Pave returned a non-JSON body', res.status, text.slice(0, 2000));
+        // A 413 here is JobTread refusing the query's declared page sizes, not
+        // a proxy: it says "Request Entity Too Large" in plain text. Name both.
+        const head = text.trim().replace(/\s+/g, ' ').slice(0, 120);
+        throw new JobTreadError(
+          `Pave returned HTTP ${res.status} with a non-JSON body${head ? `: ${head}` : ''}`,
+          res.status,
+          text.slice(0, 2000),
+        );
       }
 
       if (!res.ok) {

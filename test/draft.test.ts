@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 
 import { formatMoney } from '../src/money.ts';
 import type { Reader } from '../src/jobtread/queries.ts';
+import { JobTreadError } from '../src/jobtread/client.ts';
 import {
   fetchTemplate, fetchTemplateIndex, scopeLines, type Template,
 } from '../src/draft/templates.ts';
@@ -370,13 +371,22 @@ test('the job is read with its notes, files and budget, and every file counts as
   assert.match(evidenceText(e), /already carries 1 priced lines in 1 scope group\(s\) \(Paint\)/);
 });
 
-test('the template list and a template are read in pages', async () => {
+test('the template list is one flat page plus group names five at a time, and a template pages its lines', async () => {
   const r = reader((q) => {
     if ('organization' in q) {
       const args = (q['organization'] as { costGroups: { $: { page?: string } } }).costGroups.$;
       return args.page
-        ? { organization: { costGroups: { nextPage: null, nodes: [{ id: 't2', name: 'Two', description: null, descendentCostGroups: { nodes: [] }, descendentCostItems: { count: 1 } }] } } }
-        : { organization: { costGroups: { nextPage: 'p2', nodes: [{ id: 't1', name: 'One', description: ' d ', descendentCostGroups: { nodes: [{ name: 'A' }] }, descendentCostItems: { count: 3 } }] } } };
+        ? { organization: { costGroups: { nextPage: null, nodes: [{ id: 't2', name: 'Two', description: null, descendentCostItems: { count: 1 } }] } } }
+        : { organization: { costGroups: { nextPage: 'p2', nodes: [{ id: 't1', name: 'One', description: ' d ', descendentCostItems: { count: 3 } }] } } };
+    }
+    if ('t0' in q) {
+      // group names, aliased single-id roots
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(q)) {
+        const id = (v as { $: { id: string } }).$.id;
+        out[k] = { id, descendentCostGroups: { nodes: id === 't1' ? [{ name: 'A' }, { name: 'CLOCK IN ITEMS' }] : [] } };
+      }
+      return out;
     }
     const cg = q['costGroup'] as Record<string, unknown>;
     if ('name' in cg) {
@@ -390,9 +400,16 @@ test('the template list and a template are read in pages', async () => {
   });
   const index = await fetchTemplateIndex(r);
   assert.deepEqual(index, [
-    { id: 't1', name: 'One', description: 'd', groups: ['A'], lineCount: 3 },
+    { id: 't1', name: 'One', description: 'd', groups: ['A', 'CLOCK IN ITEMS'], lineCount: 3 },
     { id: 't2', name: 'Two', description: null, groups: [], lineCount: 1 },
   ]);
+  // No query nests a sized connection inside a sized connection: that is what JobTread refuses.
+  for (const q of r.queries) {
+    if ('organization' in q) {
+      const nodes = (q['organization'] as { costGroups: { nodes: Record<string, unknown> } }).costGroups.nodes;
+      assert.equal('descendentCostGroups' in nodes, false);
+    }
+  }
   const t = await fetchTemplate(r, 't1');
   assert.deepEqual(t.lines.map((l) => l.id), ['l1', 'l2']);
   assert.equal(t.lines[0]!.priced!.unitPrice, 123.25);
@@ -405,4 +422,25 @@ test('the template list and a template are read in pages', async () => {
       organizationCostItem: { id: 'cat', name: 'Paint', unitCost: 85, unitPrice: 123.25, costType: { name: 'Materials' } },
     };
   }
+});
+
+test('a template JobTread refuses at 30 lines a page is read again at 15, then 8', async () => {
+  const sizes: number[] = [];
+  const r = reader((q) => {
+    const cg = q['costGroup'] as { descendentCostItems: { $: { size: number } } };
+    const size = cg.descendentCostItems.$.size;
+    sizes.push(size);
+    if (size > 8) throw new JobTreadError('Pave returned HTTP 413 with a non-JSON body: Request Entity Too Large', 413, 'Request Entity Too Large');
+    return { costGroup: {
+      id: 't1', name: 'One', description: null,
+      descendentCostGroups: { count: 0, nextPage: null, nodes: [] },
+      descendentCostItems: { count: 0, nextPage: null, nodes: [] },
+    } };
+  });
+  const t = await fetchTemplate(r, 't1');
+  assert.deepEqual(sizes, [30, 15, 8]);
+  assert.equal(t.name, 'One');
+
+  const other = reader(() => { throw new JobTreadError('HTTP 500 from Pave', 500); });
+  await assert.rejects(fetchTemplate(other, 't1'), /HTTP 500/, 'only a 413 is retried smaller');
 });

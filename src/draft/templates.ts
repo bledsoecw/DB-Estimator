@@ -13,6 +13,7 @@
  * Read-only. Nothing here writes to JobTread.
  */
 
+import { JobTreadError } from '../jobtread/client.ts';
 import type { Reader } from '../jobtread/queries.ts';
 
 /** One template as it appears in the picker's list: enough to choose by. */
@@ -157,28 +158,32 @@ const TOP_LEVEL = {
 } as const;
 
 /**
- * Small pages on purpose. JobTread caps the response body, not the page, and
- * a template line carries a description of up to 4,096 characters; a hundred
- * of them at once came back "Request Entity Too Large".
+ * JobTread refuses a query with "Request Entity Too Large" when the declared
+ * page sizes multiply out too far — BEFORE running it, so the real data size
+ * is irrelevant. Fifteen templates × a 100-group connection inside each is
+ * refused although the answer is a few kilobytes; one template × 100 groups
+ * is fine, and so are five such single-id roots aliased in one query. So the
+ * index is read as one flat page of templates, then the group names five
+ * templates at a time, and a template's lines page at 30 with a smaller retry.
  */
-const INDEX_PAGE = 15;
 const GROUP_PAGE = 100;
 const LINE_PAGE = 30;
+const LINE_PAGES_ON_REFUSAL = [LINE_PAGE, 15, 8];
+const NAMES_PER_QUERY = 5;
 
 interface RawSummary {
   id: string;
   name: string;
   description: string | null;
-  descendentCostGroups: { nodes: { name: string }[] };
   descendentCostItems: { count: number };
 }
 
 /** All forty-odd budget templates, by name, with what a picker needs. */
 export async function fetchTemplateIndex(client: Reader): Promise<TemplateSummary[]> {
-  const out: TemplateSummary[] = [];
+  const flat: RawSummary[] = [];
   let page: string | null = null;
   for (;;) {
-    const args: Record<string, unknown> = { size: INDEX_PAGE, where: TOP_LEVEL, sortBy: [{ field: 'name' }] };
+    const args: Record<string, unknown> = { size: 100, where: TOP_LEVEL, sortBy: [{ field: 'name' }] };
     if (page) args['page'] = page;
     const res: { organization: { costGroups: { nextPage: string | null; nodes: RawSummary[] } } } =
       await client.query({
@@ -187,26 +192,45 @@ export async function fetchTemplateIndex(client: Reader): Promise<TemplateSummar
           costGroups: {
             $: args,
             nextPage: {},
-            nodes: {
-              id: {}, name: {}, description: {},
-              descendentCostGroups: { $: { size: GROUP_PAGE }, nodes: { name: {} } },
-              descendentCostItems: { count: {} },
-            },
+            nodes: { id: {}, name: {}, description: {}, descendentCostItems: { count: {} } },
           },
         },
       });
     const c = res.organization.costGroups;
-    for (const n of c.nodes) {
-      out.push({
-        id: n.id,
-        name: n.name,
-        description: n.description?.trim() || null,
-        groups: n.descendentCostGroups.nodes.map((g) => g.name),
-        lineCount: n.descendentCostItems.count,
-      });
-    }
+    flat.push(...c.nodes);
     if (!c.nextPage || c.nodes.length === 0) break;
     page = c.nextPage;
+  }
+
+  const names = await fetchGroupNames(client, flat.map((t) => t.id));
+  return flat.map((n) => ({
+    id: n.id,
+    name: n.name,
+    description: n.description?.trim() || null,
+    groups: names.get(n.id) ?? [],
+    lineCount: n.descendentCostItems.count,
+  }));
+}
+
+/** Group names for many templates, a few single-id roots per query. */
+async function fetchGroupNames(client: Reader, ids: string[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>();
+  for (let i = 0; i < ids.length; i += NAMES_PER_QUERY) {
+    const batch = ids.slice(i, i + NAMES_PER_QUERY);
+    const query: Record<string, unknown> = {};
+    batch.forEach((id, k) => {
+      query[`t${k}`] = {
+        _: 'costGroup',
+        $: { id },
+        id: {},
+        descendentCostGroups: { $: { size: GROUP_PAGE }, nodes: { name: {} } },
+      };
+    });
+    const res = await client.query<Record<string, { id: string; descendentCostGroups: { nodes: { name: string }[] } } | null>>(query);
+    for (const k of Object.keys(query)) {
+      const t = res[k];
+      if (t) out.set(t.id, t.descendentCostGroups.nodes.map((g) => g.name));
+    }
   }
   return out;
 }
@@ -261,8 +285,25 @@ interface Conn<T> {
   nodes: T[];
 }
 
-/** One template with every group and line, paged. */
+/** One template with every group and line, paged; smaller pages if JobTread refuses the first. */
 export async function fetchTemplate(client: Reader, id: string): Promise<Template> {
+  let refused: unknown;
+  for (const size of LINE_PAGES_ON_REFUSAL) {
+    try {
+      return await fetchTemplateAt(client, id, size);
+    } catch (err) {
+      if (!isRefusal(err)) throw err;
+      refused = err;
+    }
+  }
+  throw refused;
+}
+
+function isRefusal(err: unknown): boolean {
+  return err instanceof JobTreadError && err.status === 413;
+}
+
+async function fetchTemplateAt(client: Reader, id: string, linePage: number): Promise<Template> {
   const head = await client.query<{
     costGroup: {
       id: string; name: string; description: string | null;
@@ -275,7 +316,7 @@ export async function fetchTemplate(client: Reader, id: string): Promise<Templat
       id: {}, name: {}, description: {},
       descendentCostGroups: { $: { size: GROUP_PAGE }, count: {}, nextPage: {}, nodes: GROUP_FIELDS },
       descendentCostItems: {
-        $: { size: LINE_PAGE, sortBy: [{ field: 'position' }] },
+        $: { size: linePage, sortBy: [{ field: 'position' }] },
         count: {}, nextPage: {}, nodes: LINE_FIELDS,
       },
     },
@@ -285,7 +326,7 @@ export async function fetchTemplate(client: Reader, id: string): Promise<Templat
 
   const groups = await drainGroup<RawGroup>(client, id, 'descendentCostGroups', GROUP_FIELDS, g.descendentCostGroups, GROUP_PAGE, {});
   const lines = await drainGroup<RawLine>(
-    client, id, 'descendentCostItems', LINE_FIELDS, g.descendentCostItems, LINE_PAGE,
+    client, id, 'descendentCostItems', LINE_FIELDS, g.descendentCostItems, linePage,
     { sortBy: [{ field: 'position' }] },
   );
 
