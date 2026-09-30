@@ -159,17 +159,17 @@ const DRAFT = {
 const finding = (id: string, extra: Record<string, unknown>) => ({
   target: { kind: 'gap', id }, match: 'none', summary: 'Nothing in DB history.', pastWork: [], suggestedUnitCost: null, suggestionBasis: '',
   confidence: 'medium', typicallySubbed: null, usualVendor: null, regionalUnitCost: null, regionalBasis: '',
-  catalog: { kind: 'none', id: null, quantity: null, basis: '' }, ...extra,
+  catalog: { kind: 'none', id: null, quantity: null, basis: '', sectionGroupId: null }, ...extra,
 });
 const REPLY = {
   findings: [
     finding('gap-0', {
       match: 'match', summary: 'DB bought R15 wall batts from Fidelity for the Myers sunroom at about $0.91/SF.', suggestedUnitCost: 0.91, suggestionBasis: '$62/bag over 67.81 SF.',
-      catalog: { kind: 'templateLine', id: 'lineBattAdd', quantity: 909, basis: 'Same 909 SF of gross wall; the line is per square foot.' },
+      catalog: { kind: 'templateLine', id: 'lineBattAdd', quantity: 909, basis: 'Same 909 SF of gross wall; the line is per square foot.', sectionGroupId: '22PLCchBuFMT' },
     }),
-    finding('gap-1', { catalog: { kind: 'catalogItem', id: 'itemVapor', quantity: 4, basis: '909 SF of wall; a 10 × 25 roll covers 250 SF, so 4 rolls with laps.' } }),
-    finding('gap-2', { catalog: { kind: 'catalogItem', id: 'itemCrew', quantity: 6, basis: 'Two of the crew, three hours, to staple poly and set batts on 114 LF.' } }),
-    finding('gap-3', { regionalUnitCost: 90, regionalBasis: 'A small-town electrician at about $90 a box to extend to a new wall face.' }),
+    finding('gap-1', { catalog: { kind: 'catalogItem', id: 'itemVapor', quantity: 4, basis: '909 SF of wall; a 10 × 25 roll covers 250 SF, so 4 rolls with laps.', sectionGroupId: '22PLCchBuFMT' } }),
+    finding('gap-2', { catalog: { kind: 'catalogItem', id: 'itemCrew', quantity: 6, basis: 'Two of the crew, three hours, to staple poly and set batts on 114 LF.', sectionGroupId: null } }),
+    finding('gap-3', { regionalUnitCost: 90, regionalBasis: 'A small-town electrician at about $90 a box to extend to a new wall face.', catalog: { kind: 'none', id: null, quantity: null, basis: '', sectionGroupId: 'not-a-group' } }),
   ],
 };
 
@@ -224,19 +224,27 @@ test('a gap the catalog covers becomes a kept, priced line in its option; the re
   assert.equal(formatMoney(d.contingency!.options[0]!.cost), '$13,066.33', '12,662.37 + 73.96 + 330.00');
 
   const steps = draftSteps(d);
-  assert.match(steps, /^Base scope: [^\n]* — leaves out 1 flagged item with no line anywhere in the catalog \(step 7\); 3 flagged items found in other templates or the catalog, priced and included \(step 3\)$/m);
-  assert.match(steps, /^3\. Found in other templates and the catalog — add just these lines \(Budget tab › Add from catalog › search the name\):\n   - Addition\/House Build › NEW HOME BUILD SCOPE › Phase 2 - Rough-In › Insulation › Insulation - Batt: 909 Square Foot \[option: Framed walls\] — \$20\.1985\/Square Foot, \$18,360\.44 — for "Batt insulation in the false wall cavities": Same 909 SF of gross wall; the line is per square foot\. \(check\) — also in X-Division 07 Thermal & Moisture\n       history: DB bought R15 wall batts[^\n]*History says \$0\.91\/Square Foot cost \(\$1\.32 price\) against the template's \$13\.93\./m);
-  assert.match(steps, /^   - catalog item "Vapor Barrier 4 mil": 4 Each \[option: Framed walls\] — \$26\.8105\/Each, \$107\.24 — for "Plastic vapor barrier[^"]*": 909 SF of wall; a 10 × 25 roll covers 250 SF, so 4 rolls with laps\. \(check\)$/m);
-  assert.match(steps, /^   - catalog item "Crew Labor": 6 Hours \[option: Framed walls\] — \$100\.00\/Hours, \$600\.00/m);
+  assert.match(steps, /^Base scope: [^\n]* — leaves out 1 flagged item nowhere in the catalog, to create on the job and price \(step 7\); 3 flagged items found in the catalog, placed and priced \(step 3\)$/m);
+  assert.match(steps, /^Start from the job's empty Budget tab: the templates below were chosen for this job, and only the job's copy of them is ever changed\.$/m);
+  assert.match(steps, /^3\. Found in the catalog — on the job, add each into the section named \(open the section › Add from catalog › search the name\):\n   - Into X-Division 09 Finishes › FINISHES › Drywall\/Plaster: Insulation - Batt, 909 Square Foot \[option: Framed walls\] — \$20\.1985\/Square Foot, \$18,360\.44 — from Addition\/House Build › NEW HOME BUILD SCOPE › Phase 2 - Rough-In › Insulation › Insulation - Batt \(also in X-Division 07 Thermal & Moisture\) — for "Batt insulation in the false wall cavities": Same 909 SF of gross wall; the line is per square foot\. \(check\)\n       history: DB bought R15 wall batts[^\n]*History says \$0\.91\/Square Foot cost \(\$1\.32 price\) against the template's \$13\.93\./m);
+  assert.match(steps, /^   - Into X-Division 09 Finishes › FINISHES › Drywall\/Plaster: Vapor Barrier 4 mil, 4 Each \[option: Framed walls\] — \$26\.8105\/Each, \$107\.24 — from the ungrouped catalog — for "Plastic vapor barrier[^"]*": 909 SF of wall; a 10 × 25 roll covers 250 SF, so 4 rolls with laps\. \(check\)$/m);
+  assert.match(steps, /^   - Into the section the rep sees fit: Crew Labor, 6 Hours \[option: Framed walls\] — \$100\.00\/Hours, \$600\.00 — from the ungrouped catalog/m, 'no section named: the rep places it');
   assert.match(steps, /^4\. Contingency at 10%/m);
-  assert.match(steps, /^7\. Nowhere in the catalog — take to Carl before the estimate goes out:\n   - Extend or relocate outlets to the new false wall face \(Subcontractor, Each\) \[option: Framed walls\]: no line in these templates\n     history: Nothing in DB history\. Regional ballpark: \$90\.00\/Each cost \(\$128\.57 price\), quantity still to be confirmed/m);
+  assert.match(steps, /^7\. Nowhere in the catalog — on the job, create each line under the section named and price it; take these to Carl before the estimate goes out:\n   - Under the section the rep sees fit, create "Extend or relocate outlets to the new false wall face" \(Subcontractor, Each\) \[option: Framed walls\]: no line in these templates\n     price to type: \$90\.00\/Each cost \(\$128\.57 price\) — NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out\n     catalog: the section not-a-group the model named is not a group in the chosen templates; the rep picks the section\n     history: Nothing in DB history\. Regional ballpark: \$90\.00\/Each cost \(\$128\.57 price\), quantity still to be confirmed/m);
+  assert.deepEqual(batt!.placeIn, { templateId: FIN, templateName: 'X-Division 09 Finishes', groupId: '22PLCchBuFMT', groupPath: ['FINISHES', 'Drywall/Plaster'] });
+  assert.equal(crew!.placeIn, null);
+  assert.equal(d.gaps[3]!.placeIn, null);
   assert.doesNotMatch(steps, /Batt insulation in the false wall cavities \(Materials/, 'a covered gap is not listed as a gap');
 
   const html = renderDraft(fx.evidence, d);
-  assert.match(html, /<h2>Found in other templates and the catalog<\/h2>/);
-  assert.match(html, /<div class="path">Batt insulation in the false wall cavities<\/div><div class="name">Addition\/House Build › NEW HOME BUILD SCOPE › Phase 2 - Rough-In › Insulation › Insulation - Batt<\/div>/);
+  assert.match(html, /<h2>Found in the catalog<\/h2>/);
+  assert.match(html, /<div class="path">Batt insulation in the false wall cavities<\/div><div class="name">Insulation - Batt<\/div><div class="path">into X-Division 09 Finishes › FINISHES › Drywall\/Plaster<\/div>/);
+  assert.match(html, /<tr><td>create under<\/td><td>the section the rep sees fit<\/td><\/tr>\s*<tr><td>price to type<\/td><td>\$90\.00\/Each cost/);
   assert.match(html, /<h2>Nowhere in the catalog <span class="count">1<\/span><\/h2>/);
   assert.match(html, /1 item flagged for Carl &middot; the base price leaves it out &middot; 3 flagged items found elsewhere in the catalog and priced/);
+  const json0 = draftJson(d) as { found: { placeIn: { group: string } | null }[]; gaps: { placeIn: unknown }[] };
+  assert.equal(json0.found[0]!.placeIn!.group, 'FINISHES › Drywall/Plaster');
+  assert.equal(json0.gaps[3]!.placeIn, null);
   const json = draftJson(d) as { found: { name: string; source: { template: string | null; alsoIn: string[] } }[]; gaps: { resolved: { name: string; quantity: number } | null }[]; catalog: { found: number; candidates: number } };
   assert.equal(json.found[0]!.source.template, 'Addition/House Build');
   assert.deepEqual(json.found[0]!.source.alsoIn, ['X-Division 07 Thermal & Moisture']);

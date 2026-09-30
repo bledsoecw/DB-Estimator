@@ -300,6 +300,7 @@ For each target say:
 - typicallySubbed: for a Labor target, true when the past work shows DB using a subcontractor for this trade on two or more jobs, false when DB's own crew did it on two or more, null when the history does not say. usualVendor is the sub that appears most, or null.
 - summary: one or two plain sentences for the rep: what DB did before and what it cost.
 - catalog, for GAP targets only: some gaps come with catalog candidates — lines in other budget templates, and ungrouped catalog items, each with its unit, cost type and price. Pick the one that is the same thing as the gap (kind and id exactly as listed) and give quantity in THAT line's unit, with the arithmetic in basis ("909 SF of wall; a 10 × 25 roll covers 250 SF, so 4 rolls with laps"). Crew Labor is DB's standard crew rate: it covers any labor a gap needs when no labor line is specific to that trade, with the hours as its quantity. A homonym is not a match ("Insulation - Sub" is a subcontractor, not the crew's batts); pick kind "none" when nothing listed is the same thing. A gap you match to the catalog is priced from the catalog by the code, so give it no regionalUnitCost; still say what history shows.
+- catalog.sectionGroupId, for every GAP target, matched or not: the rep works on the job's copy of the chosen templates and never changes the templates in the catalog. A line pulled from the catalog goes into a section of that copy, and a line the catalog lacks is created in one. Name the section: the id of the group, from the list of the chosen templates' sections, whose lines are the same trade or phase as the gap (insulation with the framing or rough-in section; a vapor barrier with the same; an electrical line with electrical, or with rough-in when there is no electrical section). Pick the most specific group that fits; null only when no section is anywhere near.
 - regionalUnitCost, for GAP targets only: when history gives no suggestedUnitCost for a gap and the catalog has nothing for it, give a ballpark cost per the gap's unit for DB's own market — Van Wert, Ohio and the surrounding small towns of northwest Ohio and northeast Indiana, not a national average and not a metro rate — for the kind of work the gap describes and the cost type it carries (a Labor gap is DB's own crew at a small-contractor wage; a Subcontractor gap is what a local sub would charge DB; a Materials gap is the supply-house price). Write regionalBasis as the assumption in one or two sentences ("a two-man crew at about $45/hour loaded; moving a basement of contents is two to four hours"). It is a ballpark for the rep to sanity-check, not a price; the code labels it so. Leave it null when the gap has no unit that a cost can be put per, when its quantity is what is unknown, or when it is a line target: template lines already have a price and never get a regional figure. Do not give a regional figure where you gave a suggestedUnitCost.
 
 Do not price anything that is not a target. Do not mention margins or markup: the code prices from the cost you cite, at the margin DB applies to that cost type. Reference targets by their id exactly as given.`;
@@ -332,12 +333,14 @@ export const HistorySchema = z.object({
       /** A gap only, and only when history gave nothing: a ballpark per unit for DB's own market. */
       regionalUnitCost: z.number().nullable(),
       regionalBasis: z.string(),
-      /** A gap only: the catalog line that covers it, from the candidates listed, with the quantity in that line's unit. */
+      /** A gap only: the catalog line that covers it, from the candidates listed, with the quantity in that line's unit; and where it goes on the job. */
       catalog: z.object({
         kind: z.enum(['templateLine', 'catalogItem', 'none']),
         id: z.string().nullable(),
         quantity: z.number().nullable(),
         basis: z.string(),
+        /** The group, in a chosen template's copy on the job, to put the line under — matched from the catalog or created new. */
+        sectionGroupId: z.string().nullable(),
       }),
     }),
   ),
@@ -394,18 +397,41 @@ export function historyTargetsText(summary: string, targets: HistoryTarget[]): s
   return out.join('\n');
 }
 
+/**
+ * The sections of the chosen templates, as they will exist on the job: where
+ * a found or a new line goes. Structural groups and the contingency group
+ * are not places for scope.
+ */
+export function sectionsText(templates: Template[]): string {
+  const out: string[] = [];
+  out.push('# Sections of the chosen templates on the job');
+  out.push('A line from the catalog is put into one of these on the job\'s copy of the template, and a line the catalog lacks is created in one. id · template › section');
+  for (const t of templates) {
+    for (const g of t.groups) {
+      const path = groupPath(t, g.id);
+      if (path.some((n) => STRUCTURAL_GROUPS.has(n.toUpperCase()) || /contingency/i.test(n))) continue;
+      out.push(`- ${g.id} · ${t.name} › ${path.join(' › ')}`);
+    }
+  }
+  return out.join('\n');
+}
+
 export function buildHistoryContent(
   summary: string,
   targets: HistoryTarget[],
   report: HistoryReport,
+  templates: Template[] = [],
 ): Anthropic.ContentBlockParam[] {
   const files: Anthropic.ContentBlockParam[] = [];
   for (const a of report.attachments ?? []) {
     files.push({ type: 'text', text: `From past job ${a.jobName}, found on ${a.file.foundOn}:` });
     files.push(...attachmentBlocks({ file: a.file, bytes: a.bytes }));
   }
+  const sections: Anthropic.ContentBlockParam[] =
+    templates.length && targets.some((t) => t.kind === 'gap') ? [{ type: 'text', text: sectionsText(templates) }] : [];
   return [
     { type: 'text', text: historyTargetsText(summary, targets) },
+    ...sections,
     { type: 'text', text: historyText(report) },
     ...files,
     {
@@ -413,8 +439,8 @@ export function buildHistoryContent(
       text:
         'For each target, say whether DB has done this before, cite the past lines that apply, and give a ' +
         'unit cost only when the arithmetic from those lines is shown. For each gap, pick the catalog candidate that is ' +
-        'the same thing, with the quantity in its unit, or none; for a gap the catalog cannot cover and history leaves unpriced, ' +
-        'give the regional ballpark and its assumption. Return the findings in the required format.',
+        'the same thing, with the quantity in its unit, or none, and name the section on the job it goes in; for a gap the ' +
+        'catalog cannot cover and history leaves unpriced, give the regional ballpark and its assumption. Return the findings in the required format.',
     },
   ];
 }

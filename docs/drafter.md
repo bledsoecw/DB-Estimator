@@ -22,9 +22,17 @@ templates**. In the API a budget template is a top-level catalog cost group
 1. adds a template group to the job's Budget tab;
 2. deletes the lines the job does not need;
 3. sets quantities;
-4. adds a second template only for lines the first lacks, and deletes its
-   extras too;
-5. and when no template has the line, tells Carl, who decides.
+4. for a line the template lacks, pulls the line from the catalog into the
+   right section of the job's copy of the template — or, when the catalog
+   has nothing, creates a new line there and prices it;
+5. and takes what they had to create to Carl, who decides.
+
+Carl, 30 Sep 2026: *"The actual catalog budget template is never modified,
+only the one copied onto a job is modified. I am not requiring a rep to add
+a template before running through the estimator: you pick the best template
+or templates to start out with."* So the rep starts from an empty Budget
+tab, the drafter picks, and every instruction on the page is about the
+job's copy.
 
 Two facts about the templates decide the design, both VERIFIED by query:
 
@@ -345,14 +353,22 @@ So a gap is no longer flagged until the whole catalog has been looked at:
    id it names that was not a candidate is noted and not used, the same
    rule as an invented line id; a match with no quantity in the line's unit
    leaves the gap open with a note that the rep sets it.
-4. The code prices the match from the catalog like any kept line, puts it
-   in the gap's option, and lists it under **Found in other templates and
-   the catalog**: template › groups › line, or the catalog item, with the
-   quantity, the price, and where else the line lives. What history said
-   about the gap rides onto the line, per unit when the units agree, so a
-   $0.91/SF batt from a past invoice sits beside the catalog's $13.93.
-   Only what nothing covers stays under **Nowhere in the catalog**, with
-   its ballpark.
+4. For every gap, matched or not, the model also names the **section** of a
+   chosen template — from the list of the chosen templates' groups, by id —
+   where the line belongs on the job's copy: insulation with the rough-in
+   or framing section, electrical with electrical. The code checks the id
+   is a real, non-structural group of a chosen template; an id that is not
+   is noted and the rep picks the section.
+5. The code prices the match from the catalog like any kept line, puts it
+   in the gap's option, and lists it under **Found in the catalog**: "into
+   X-Division 09 Finishes › FINISHES › Drywall/Plaster: Insulation - Batt,
+   909 SF — from Addition/House Build › … › Insulation", with the quantity
+   and the price. What history said about the gap rides onto the line, per
+   unit when the units agree, so a $0.91/SF batt from a past invoice sits
+   beside the catalog's $13.93. What nothing covers goes under **Nowhere in
+   the catalog** as a line to *create* on the job, under its section, with
+   the price to type: history's figure, the regional ballpark with its
+   note, or "Carl sets it".
 
 `--no-catalog` turns the search off. A fixture captured with `--capture`
 carries the candidates, so a replay is offline.

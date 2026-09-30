@@ -350,10 +350,14 @@ reused for a year before that trade is searched again.
 the chosen templates lack a line, every other template's lines and the
 ungrouped catalog items are searched by the gap's terms; the model picks
 the one that is the same thing and gives the quantity in its unit; the code
-prices it from the catalog and lists it under **Found in other templates
-and the catalog** ("add just this line: Addition/House Build › … ›
-Insulation › Insulation - Batt"). Crew Labor stands in for any labor with
-no line of its own. Only what nothing covers goes to Carl.
+prices it from the catalog and lists it under **Found in the catalog** with
+the section of the job's template copy to put it in ("into X-Division 09
+Finishes › FINISHES › Drywall/Plaster: Insulation - Batt, 909 SF — from
+Addition/House Build › … › Insulation"). Crew Labor stands in for any labor
+with no line of its own. What nothing covers is a line to create on the job,
+under its section, with the price to type, and goes to Carl. The catalog
+templates themselves are never touched; the rep starts from an empty
+budget and the drafter picks the templates.
 
 **Where DB has nothing, it gives a regional ballpark and says so.** A gap
 that neither history nor the price book can price gets a cost per unit for

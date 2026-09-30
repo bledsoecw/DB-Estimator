@@ -35,7 +35,7 @@ import { chooseRate, contingencyAmount, contingencyLine, type ContingencyStep } 
 import { candidatesFor, gapTerms, type CatalogCandidate, type CatalogSource } from './catalog.ts';
 import { diffDrafts, revisionText, type Direction, type DraftChanges, type Revision } from './revise.ts';
 import {
-  groupPath, isContingencyLine, scopeLines, type Template, type TemplateLine, type TemplateSummary,
+  STRUCTURAL_GROUPS, groupPath, isContingencyLine, scopeLines, type Template, type TemplateLine, type TemplateSummary,
 } from './templates.ts';
 
 export type Confidence = 'high' | 'medium' | 'low';
@@ -101,14 +101,26 @@ export type DraftGap = DraftReplyGap & {
   resolved: { candidate: CatalogCandidate; quantity: number; basis: string } | null;
   /** Why a catalog match the model named was not used. */
   catalogNote: string | null;
+  /** The section of a chosen template's copy on the job where the line goes: pulled from the catalog, or created new. */
+  placeIn: PlaceIn | null;
 };
 export type DraftQuestion = DraftReplyQuestion;
+
+/** A group in a chosen template, as it will exist on the job's budget. */
+export interface PlaceIn {
+  templateId: string;
+  templateName: string;
+  groupId: string;
+  groupPath: string[];
+}
 
 /** A gap covered from another template or the ungrouped catalog: a kept line, priced from the catalog like any other. */
 export type FoundLine = DraftLine & {
   /** Index into `gaps`. */
   forGap: number;
   source: CatalogCandidate;
+  /** Where the rep puts it on the job. Null when the model named no section that exists. */
+  placeIn: PlaceIn | null;
 };
 
 /** The template id a found line carries when it is an ungrouped catalog item, not a template line. */
@@ -340,7 +352,7 @@ export async function draftEstimate(
   const { lines, rejected } = priceLines(d.data, templates);
   const gaps: DraftGap[] = d.data.gaps.map((g) => ({
     ...g, option: g.option?.trim() || null,
-    history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null, resolved: null, catalogNote: null,
+    history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null, resolved: null, catalogNote: null, placeIn: null,
   }));
 
   // ---- 3. the rest of the catalog, what DB did last time, and a ballpark where both have nothing ----
@@ -422,7 +434,7 @@ export async function draftEstimate(
         call,
         {
           model, system: HISTORY_SYSTEM,
-          content: buildHistoryContent(d.data.summary, forModel, report),
+          content: buildHistoryContent(d.data.summary, forModel, report, templates),
           schema: HistorySchema, maxTokens: HISTORY_MAX_TOKENS,
         },
         'read the history',
@@ -433,6 +445,7 @@ export async function draftEstimate(
       attachHistory(lines, gaps, searched, margins);
       findings = searched.length;
       remember(store, toSearch, searched, evidence.jobName);
+      placeGaps(gaps, searched, templates);
       found.push(...resolveGaps(gaps, searched, candidatesByGap, margins));
       if (catalog) catalog.found = found.length;
     } else if (terms.length === 0 && forModel.length === 0 && allTargets.length > 0 && learnedFindings.length === 0) {
@@ -488,6 +501,35 @@ export async function draftEstimate(
     usage,
     cost,
   });
+}
+
+/**
+ * Where each gap's line goes on the job: the section the model named, when
+ * it is a real group of a chosen template and not a structural or
+ * contingency group. The rep never edits the catalog templates; a found
+ * line is put into this section of the job's copy, a missing one is
+ * created there.
+ */
+export function placeGaps(gaps: DraftGap[], findings: AttachedFinding[], templates: Template[]): void {
+  const byGroup = new Map<string, PlaceIn>();
+  for (const t of templates) {
+    for (const g of t.groups) {
+      const path = groupPath(t, g.id);
+      if (path.some((n) => STRUCTURAL_GROUPS.has(n.toUpperCase()) || /contingency/i.test(n))) continue;
+      byGroup.set(g.id, { templateId: t.id, templateName: t.name, groupId: g.id, groupPath: path });
+    }
+  }
+  for (const f of findings) {
+    if (f.target.kind !== 'gap' || !f.catalog) continue;
+    const m = /^gap-(\d+)$/.exec(f.target.id);
+    const g = m ? gaps[Number(m[1])] : undefined;
+    if (!g) continue;
+    const id = f.catalog.sectionGroupId;
+    if (!id) continue;
+    const place = byGroup.get(id);
+    if (place) g.placeIn = place;
+    else g.catalogNote = [g.catalogNote, `the section ${id} the model named is not a group in the chosen templates; the rep picks the section`].filter(Boolean).join('; ');
+  }
 }
 
 /**
@@ -560,6 +602,7 @@ export function resolveGaps(
       historyUnitPrice,
       forGap: i,
       source: c,
+      placeIn: g.placeIn,
     });
     g.resolved = { candidate: c, quantity, basis: f.catalog.basis };
     g.proposed = null;
@@ -730,7 +773,7 @@ export function remember(
   }
 }
 
-const NO_CATALOG_MATCH: HistoryFinding['catalog'] = { kind: 'none', id: null, quantity: null, basis: '' };
+const NO_CATALOG_MATCH: HistoryFinding['catalog'] = { kind: 'none', id: null, quantity: null, basis: '', sectionGroupId: null };
 
 /** Nothing matched any term: remember that too, briefly, so the next job does not search again next week. */
 function rememberNone(store: LearnedStore | undefined, targets: HistoryTarget[], jobName: string): void {

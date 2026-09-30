@@ -191,7 +191,7 @@ function fake(replies: unknown[]): Fake {
 }
 
 const ev = (quote: string) => [{ source: 'Robert Switzer, 2026-07-23', quote }];
-const NO_CATALOG = { kind: 'none', id: null, quantity: null, basis: '' };
+const NO_CATALOG = { kind: 'none', id: null, quantity: null, basis: '', sectionGroupId: null };
 const DRAFT = {
   summary: 'Basement refresh with a flooring choice.',
   scopeOfWork: 'Paint and floor.',
