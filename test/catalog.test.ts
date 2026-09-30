@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { formatMoney } from '../src/money.ts';
 import type { Reader } from '../src/jobtread/queries.ts';
+import { JobTreadError } from '../src/jobtread/client.ts';
 import type { Template } from '../src/draft/templates.ts';
 import {
   CREW_LABOR, candidatesFor, candidatesText, chainOf, foldCandidates, gapTerms, searchCatalog, type CatalogCandidate,
@@ -96,20 +97,26 @@ test('candidates for a gap: a term in the name or description, the gap\'s own co
   assert.match(text, /· itemInsSub · catalogItem · Insulation - Sub .* an ungrouped catalog item/);
 });
 
-test('the search asks Pave for catalog items only, name or description like each term, plus Crew Labor by name, and pages', async () => {
+test('the search asks Pave for catalog items only, name or description like each term, plus Crew Labor by name, pages at forty, and retries smaller when JobTread refuses the shape', async () => {
   const queries: Record<string, unknown>[] = [];
+  const sizes: number[] = [];
   const reader: Reader = {
     organizationId: 'org',
     query: (async (q: Record<string, unknown>) => {
+      const $ = (q['organization'] as { costItems: { $: { size: number } } }).costItems.$;
+      sizes.push($.size);
+      // The first page at forty is refused the way JobTread refuses a shape it judges too big; twenty goes through.
+      if ($.size === 40) throw new JobTreadError('Pave returned HTTP 413 with a non-JSON body: Request Entity Too Large', 413);
       queries.push(q);
       const page = queries.length === 1 ? 'p2' : null;
       return { organization: { costItems: { nextPage: page, nodes: queries.length === 1 ? RAW.slice(0, 6) : RAW.slice(6) } } };
     }) as Reader['query'],
   };
   const found = await searchCatalog(reader, ['Insulation', 'vapor barrier', ''], { excludeTemplateIds: ['tplChosen'] });
+  assert.deepEqual(sizes, [40, 20, 20], 'forty refused once, then twenty for every page');
   assert.equal(queries.length, 2, 'followed nextPage once');
   const args = (queries[0]!['organization'] as { costItems: { $: { where: { and: unknown[] }; size: number } } }).costItems.$;
-  assert.equal(args.size, 100);
+  assert.equal(args.size, 20);
   assert.deepEqual(args.where.and.slice(0, 2), [[['job', 'id'], '=', null], [['document', 'id'], '=', null]]);
   assert.deepEqual((args.where.and[2] as { or: unknown[] }).or, [
     ['name', 'like', '%insulation%'], ['description', 'like', '%insulation%'],
@@ -277,6 +284,24 @@ test('a match the model names that was not a candidate, or with no quantity in t
   const plain = await draftEstimate(fx.evidence, fx.index, load, none, { templateIds: [FIN, GR], catalog: { search: async () => all } });
   assert.equal(none.calls.length, 1);
   assert.equal(plain.catalog, null);
+});
+
+test('a catalog search that fails after the draft call leaves the gaps unchecked and says so, instead of losing the draft', async () => {
+  const call = fake([DRAFT, { findings: [finding('gap-3', { regionalUnitCost: 90, regionalBasis: 'about $90 a box' })] }]);
+  const d = await draftEstimate(fx.evidence, fx.index, load, call, {
+    templateIds: [FIN, GR],
+    history: { search: async () => ({ terms: [] }), margins: MARGINS },
+    catalog: { search: async () => { throw new JobTreadError('Pave returned HTTP 413 with a non-JSON body: Request Entity Too Large', 413); } },
+  });
+  assert.equal(call.calls.length, 2, 'the third call still runs for history and the ballparks');
+  assert.equal(d.found.length, 0);
+  assert.equal(d.gaps.length, 4);
+  assert.match(d.catalog!.error!, /Request Entity Too Large/);
+  assert.deepEqual(d.catalog!.candidates, []);
+  assert.match(draftSteps(d), /The catalog could not be searched for the flagged items \(Pave returned HTTP 413[^)]*\), so they were not checked against other templates or the ungrouped catalog\. Run again to check them\./);
+  const json = draftJson(d) as { catalog: { error: string | null; found: number } };
+  assert.match(json.catalog.error!, /413/);
+  assert.equal(json.catalog.found, 0);
 });
 
 test('a fixture replays the catalog by term, and the CLI can turn the search off', async () => {

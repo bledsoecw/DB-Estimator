@@ -259,6 +259,10 @@ export function draftSteps(d: Draft): string {
     out.push('');
     out.push(`Past work was searched for ${d.history.terms.map((t) => `"${t}"`).join(', ')}: ${d.history.skipped}.`);
   }
+  if (d.catalog?.error) {
+    out.push('');
+    out.push(`The catalog could not be searched for the flagged items (${d.catalog.error}), so they were not checked against other templates or the ungrouped catalog. Run again to check them.`);
+  }
   if (d.rejected.length) {
     out.push('');
     out.push(`The model named ${d.rejected.length} line${d.rejected.length === 1 ? '' : 's'} that are not in these templates; they were NOT added:`);
@@ -467,7 +471,7 @@ export function draftJson(d: Draft): unknown {
     history: d.history
       ? { terms: d.history.terms, findings: d.history.findings, learned: d.history.learned, regional: d.history.regional, skipped: d.history.skipped, searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName), files: t.jobs.flatMap((j) => j.files.filter((f) => !f.skipped).map((f) => f.name)) })) }
       : null,
-    catalog: d.catalog ? { terms: d.catalog.terms, candidates: d.catalog.candidates.length, found: d.catalog.found } : null,
+    catalog: d.catalog ? { terms: d.catalog.terms, candidates: d.catalog.candidates.length, found: d.catalog.found, error: d.catalog.error } : null,
     /** Which pass this is and what the rep said; the next pass reads this back. */
     revision: d.revision
       ? { pass: d.revision.pass, directions: d.revision.directions, changes: d.revision.changes }

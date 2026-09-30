@@ -363,7 +363,9 @@ async function main(): Promise<number> {
             (draft.history.regional ? `; regional ballpark for ${draft.history.regional} gap${draft.history.regional === 1 ? '' : 's'} (not DB pricing)` : ''),
       );
     }
-    if (draft.catalog) {
+    if (draft.catalog?.error) {
+      log(`catalog: the search failed (${draft.catalog.error}); the ${draft.gaps.length} flagged item${draft.gaps.length === 1 ? ' was' : 's were'} not checked against it`);
+    } else if (draft.catalog) {
       log(
         `catalog: ${draft.catalog.candidates.length} candidate${draft.catalog.candidates.length === 1 ? '' : 's'} for ${draft.catalog.terms.map((t) => `"${t}"`).join(', ')}; ` +
           `${draft.found.length} of ${draft.gaps.length} flagged item${draft.gaps.length === 1 ? '' : 's'} covered from other templates or the catalog`,

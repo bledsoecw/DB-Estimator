@@ -20,6 +20,7 @@
  * Read-only.
  */
 
+import { JobTreadError } from '../jobtread/client.ts';
 import type { Reader } from '../jobtread/queries.ts';
 import { STRUCTURAL_GROUPS } from './templates.ts';
 
@@ -54,8 +55,15 @@ export interface CatalogSource {
 /** DB's standard crew rate: the labor line for anything with no labor line of its own. */
 export const CREW_LABOR = 'Crew Labor';
 
-const PAGE = 100;
-const MAX_PAGES = 4;
+/**
+ * JobTread refuses a query whose declared shape is too big before running it
+ * ("Request Entity Too Large", HTTP 413). A hundred items each carrying the
+ * seven-level group chain below is refused; forty with the same chain, or a
+ * hundred with a three-level chain, go through (probed 2026-09-30). So the
+ * search pages at forty and, on a refusal, tries twenty and ten.
+ */
+export const PAGES_ON_REFUSAL = [40, 20, 10];
+const MAX_ITEMS = 400;
 const PARENTS = 6;
 const SKIP_GROUP = /do not use|service repair/i;
 
@@ -114,21 +122,31 @@ export async function searchCatalog(
   likes.push(['name', '=', CREW_LABOR]);
   const raw: RawItem[] = [];
   let page: string | null = null;
-  for (let i = 0; i < MAX_PAGES; i++) {
-    const res: { organization: { costItems: { nextPage: string | null; nodes: RawItem[] } } } = await client.query({
-      organization: {
-        $: { id: client.organizationId },
-        costItems: {
-          $: {
-            size: PAGE,
-            ...(page ? { page } : {}),
-            where: { and: [[['job', 'id'], '=', null], [['document', 'id'], '=', null], { or: likes }] },
+  let sizeIndex = 0;
+  while (raw.length < MAX_ITEMS) {
+    let res: { organization: { costItems: { nextPage: string | null; nodes: RawItem[] } } };
+    try {
+      res = await client.query({
+        organization: {
+          $: { id: client.organizationId },
+          costItems: {
+            $: {
+              size: PAGES_ON_REFUSAL[sizeIndex]!,
+              ...(page ? { page } : {}),
+              where: { and: [[['job', 'id'], '=', null], [['document', 'id'], '=', null], { or: likes }] },
+            },
+            nextPage: {},
+            nodes: ITEM_FIELDS,
           },
-          nextPage: {},
-          nodes: ITEM_FIELDS,
         },
-      },
-    });
+      });
+    } catch (err) {
+      if (err instanceof JobTreadError && err.status === 413 && sizeIndex < PAGES_ON_REFUSAL.length - 1) {
+        sizeIndex++;
+        continue;
+      }
+      throw err;
+    }
     const c = res.organization.costItems;
     raw.push(...c.nodes);
     if (!c.nextPage || c.nodes.length === 0) break;

@@ -1144,3 +1144,10 @@ The same priced item sits behind lines in several templates
 catalog search is folded to one candidate per priced item, with the other
 templates named. `name like %term%` and `description like %term%` both
 filter on `organization.costItems`; a hundred a page with `nextPage`.
+
+The shape rule bit this search first: a hundred items each with the
+seven-level `costGroup.parentCostGroup…` chain is refused with 413 before
+running; forty items with the same chain go through, and so do a hundred with
+a three-level chain (probed 2026-09-30 after a live run died on it). So the
+catalog search pages at forty and retries a refused page at twenty, then ten,
+and a failed search is a note on the draft page rather than a lost run.

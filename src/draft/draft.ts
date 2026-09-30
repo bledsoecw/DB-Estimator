@@ -201,8 +201,13 @@ export interface Draft {
   contingency: ContingencyStep | null;
   /** A later pass: what the rep said, and what moved since the pass before. Null on the first pass. */
   revision: { pass: number; directions: Direction[]; changes: DraftChanges } | null;
-  /** The catalog step for the gaps: what was searched, what came back, how many gaps it covered. Null when it did not run. */
-  catalog: { terms: string[]; candidates: CatalogCandidate[]; found: number } | null;
+  /**
+   * The catalog step for the gaps: what was searched, what came back, how
+   * many gaps it covered. Null when it did not run; `error` set when the
+   * search failed, in which case the gaps went unchecked rather than the
+   * whole draft being lost after the paid calls.
+   */
+  catalog: { terms: string[]; candidates: CatalogCandidate[]; found: number; error: string | null } | null;
   /** The past-work step: what was searched and what came of it. Null when it did not run. */
   history: {
     terms: string[];
@@ -363,9 +368,14 @@ export async function draftEstimate(
   const candidatesByGap = new Map<number, CatalogCandidate[]>();
   if (opts.catalog && gaps.length > 0) {
     const terms = [...new Set(gaps.flatMap((g) => gapTerms(g)))];
-    const all = await opts.catalog.search(terms, templates.map((t) => t.id));
-    gaps.forEach((g, i) => candidatesByGap.set(i, candidatesFor(g, all)));
-    catalog = { terms, candidates: all, found: 0 };
+    try {
+      const all = await opts.catalog.search(terms, templates.map((t) => t.id));
+      gaps.forEach((g, i) => candidatesByGap.set(i, candidatesFor(g, all)));
+      catalog = { terms, candidates: all, found: 0, error: null };
+    } catch (err) {
+      // The draft call has been paid for by now; a failed catalog read leaves the gaps unchecked, and says so.
+      catalog = { terms, candidates: [], found: 0, error: err instanceof Error ? err.message : String(err) };
+    }
   }
 
   let history: Draft['history'] = null;
