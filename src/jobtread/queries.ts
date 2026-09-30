@@ -9,6 +9,9 @@
 import type { JobTreadClient } from './client.ts';
 import type {
   ApiCatalogItem,
+  ApiBudget,
+  ApiBudgetGroup,
+  ApiBudgetItem,
   ApiComparable,
   ApiDocumentSummary,
   ApiJob,
@@ -20,6 +23,9 @@ import type {
 } from './types.ts';
 
 const PAGE = 100;
+
+/** What these queries need of a client: an org and a way to read. Fakeable. */
+export type Reader = Pick<JobTreadClient, 'organizationId' | 'query'>;
 
 /**
  * The "Job Type" custom field on a job. Two options: Roofing | Construction.
@@ -42,7 +48,11 @@ const JOB_FIELDS = {
   id: {},
   name: {},
   customFieldValues: {
-    $: { size: 20 },
+    // Only the field the auditor reads. The rest carry the sales rep, the
+    // project manager and the customer's town, none of which belongs in a
+    // fixture — and the three fixtures captured before this filter existed
+    // happen to carry only Job Type anyway.
+    $: { size: 20, where: [['customField', 'id'], '=', JOB_TYPE_FIELD] },
     nodes: { value: {}, customField: { id: {} } },
   },
 } as const;
@@ -56,6 +66,14 @@ export function jobTypeOf(job: ApiJob | undefined): string | null {
   return null;
 }
 
+/**
+ * The budget line a document line was built from — money and quantity only.
+ * Descriptions come by their own query; see DESCRIPTION_FIELDS.
+ */
+const BUDGET_REF_FIELDS = {
+  id: {}, name: {}, quantity: {}, unitCost: {}, unitPrice: {}, cost: {}, price: {},
+} as const;
+
 const COST_ITEM_FIELDS = {
   id: {}, name: {}, quantity: {}, unitCost: {}, unitPrice: {}, cost: {}, price: {},
   isTaxable: {}, isSelected: {}, isSpecification: {}, position: {}, globalId: {},
@@ -65,6 +83,7 @@ const COST_ITEM_FIELDS = {
   costCode: { id: {}, name: {} },
   costGroup: { id: {} },
   organizationCostItem: { id: {} },
+  jobCostItem: BUDGET_REF_FIELDS,
 } as const;
 
 const COST_GROUP_FIELDS = {
@@ -73,12 +92,52 @@ const COST_GROUP_FIELDS = {
   parentCostGroup: { id: {} },
 } as const;
 
+/**
+ * Descriptions, fetched on their own.
+ *
+ * Selecting `description` inside COST_ITEM_FIELDS, on both the line and its
+ * budget line, pushed a 43-line document over JobTread's response limit
+ * ("Request Entity Too Large"). A description runs to 4,096 characters and a
+ * line carries two, so they get a query of their own, paged like the rest.
+ */
+const DESCRIPTION_FIELDS = {
+  id: {}, description: {}, jobCostItem: { id: {}, description: {} },
+} as const;
+
+interface ApiDescriptionRow {
+  id: string;
+  description: string | null;
+  jobCostItem: { id: string; description: string | null } | null;
+}
+
+/** Cost items and groups that sit on no document: the job budget. */
+const BUDGET_ONLY = [['document', 'id'], '=', null] as const;
+
+const BUDGET_ITEM_FIELDS = {
+  id: {}, name: {}, quantity: {}, unitCost: {}, unitPrice: {}, cost: {}, price: {},
+  isSpecification: {}, position: {},
+  costType: { id: {}, name: {} },
+  costCode: { id: {}, name: {} },
+  costGroup: { id: {}, name: {} },
+  organizationCostItem: { id: {} },
+  // Document lines built from this budget line, on any document of the job.
+  // Zero means no customer has seen it. The count alone: asking for the nodes
+  // as well put an 85-line budget over the response limit.
+  documentCostItems: { count: {} },
+} as const;
+
+const BUDGET_GROUP_FIELDS = {
+  id: {}, name: {}, position: {}, parentCostGroup: { id: {} },
+} as const;
+
+const BY_POSITION = { sortBy: [{ field: 'position' }] } as const;
+
 /** Fetch one document with every line and group, paginating both connections. */
 export async function fetchDocument(
-  client: JobTreadClient,
+  client: Reader,
   documentId: string,
 ): Promise<ApiDocument> {
-  const head = await client.query<{ document: ApiDocument }>({
+  const head = await client.query<{ document: ApiDocument | null }>({
     document: {
       $: { id: documentId },
       id: {}, name: {}, type: {}, status: {}, price: {}, cost: {}, priceWithTax: {},
@@ -88,7 +147,7 @@ export async function fetchDocument(
       job: JOB_FIELDS,
       costGroups: { $: { size: PAGE }, count: {}, nextPage: {}, nodes: COST_GROUP_FIELDS },
       costItems: {
-        $: { size: PAGE, sortBy: [{ field: 'position' }] },
+        $: { size: PAGE, ...BY_POSITION },
         count: {}, nextPage: {}, nodes: COST_ITEM_FIELDS,
       },
     },
@@ -97,46 +156,135 @@ export async function fetchDocument(
   const doc = head.document;
   if (!doc) throw new Error(`document ${documentId} not found`);
 
+  const root = { field: 'document', id: documentId } as const;
   doc.costGroups.nodes = await drain<ApiCostGroup>(
-    client, documentId, 'costGroups', COST_GROUP_FIELDS, doc.costGroups, undefined,
+    client, root, 'costGroups', COST_GROUP_FIELDS, doc.costGroups, {},
   );
   doc.costItems.nodes = await drain<ApiCostItem>(
-    client, documentId, 'costItems', COST_ITEM_FIELDS, doc.costItems, [{ field: 'position' }],
+    client, root, 'costItems', COST_ITEM_FIELDS, doc.costItems, BY_POSITION,
   );
+  mergeDescriptions(doc.costItems.nodes, await fetchDescriptions(client, documentId));
   return doc;
 }
 
-async function drain<T>(
-  client: JobTreadClient,
+/** Every line's description and its budget line's, paged the same way as the lines. */
+export async function fetchDescriptions(
+  client: Reader,
   documentId: string,
+): Promise<ApiDescriptionRow[]> {
+  const res = await client.query<{ document: { costItems: Connection<ApiDescriptionRow> } | null }>({
+    document: {
+      $: { id: documentId },
+      costItems: {
+        $: { size: PAGE, ...BY_POSITION },
+        count: {}, nextPage: {}, nodes: DESCRIPTION_FIELDS,
+      },
+    },
+  });
+  const first = res.document?.costItems;
+  if (!first) return [];
+  return drain<ApiDescriptionRow>(
+    client, { field: 'document', id: documentId }, 'costItems', DESCRIPTION_FIELDS, first, BY_POSITION,
+  );
+}
+
+/** Attach descriptions to the lines they belong to. Rows for unknown lines are dropped. */
+export function mergeDescriptions(lines: ApiCostItem[], rows: ApiDescriptionRow[]): void {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  for (const line of lines) {
+    const row = byId.get(line.id);
+    if (!row) continue;
+    line.description = row.description;
+    if (line.jobCostItem && row.jobCostItem && row.jobCostItem.id === line.jobCostItem.id) {
+      line.jobCostItem.description = row.jobCostItem.description;
+    }
+  }
+}
+
+/**
+ * The job budget: every cost item and group on the job with no document.
+ *
+ * Filtered server-side on `document.id = null`. The org's job template puts
+ * 40-odd zero-cost time-tracking lines in every budget, so a budget is
+ * routinely larger than the document built from it; both connections page.
+ */
+export async function fetchBudget(client: Reader, jobId: string): Promise<ApiBudget> {
+  const res = await client.query<{
+    job: { id: string; costItems: Connection<ApiBudgetItem>; costGroups: Connection<ApiBudgetGroup> } | null;
+  }>({
+    job: {
+      $: { id: jobId },
+      id: {},
+      costItems: {
+        $: { size: PAGE, where: BUDGET_ONLY, ...BY_POSITION },
+        count: {}, nextPage: {}, nodes: BUDGET_ITEM_FIELDS,
+      },
+      costGroups: {
+        $: { size: PAGE, where: BUDGET_ONLY },
+        count: {}, nextPage: {}, nodes: BUDGET_GROUP_FIELDS,
+      },
+    },
+  });
+  const job = res.job;
+  if (!job) throw new Error(`job ${jobId} not found`);
+
+  const root = { field: 'job', id: jobId } as const;
+  return {
+    jobId,
+    costItems: {
+      count: job.costItems.count,
+      nodes: await drain<ApiBudgetItem>(
+        client, root, 'costItems', BUDGET_ITEM_FIELDS, job.costItems, { where: BUDGET_ONLY, ...BY_POSITION },
+      ),
+    },
+    costGroups: {
+      count: job.costGroups.count,
+      nodes: await drain<ApiBudgetGroup>(
+        client, root, 'costGroups', BUDGET_GROUP_FIELDS, job.costGroups, { where: BUDGET_ONLY },
+      ),
+    },
+  };
+}
+
+interface Connection<T> {
+  count: number;
+  nodes: T[];
+  nextPage?: string | null;
+}
+
+/**
+ * Follow a connection's `nextPage` until every node is in hand.
+ *
+ * `args` are the page-independent arguments — the sort, and for a budget the
+ * `where` — repeated on every page so that page 2 is a page of the same query.
+ */
+async function drain<T>(
+  client: Reader,
+  root: { field: 'document' | 'job'; id: string },
   connection: 'costItems' | 'costGroups',
   fields: Record<string, unknown>,
-  first: { count: number; nodes: T[]; nextPage?: string | null },
-  sortBy: { field: string }[] | undefined,
+  first: Connection<T>,
+  args: Record<string, unknown>,
 ): Promise<T[]> {
   const all = [...first.nodes];
   let page = first.nextPage ?? null;
   while (page && all.length < first.count) {
-    const args: Record<string, unknown> = { size: PAGE, page };
-    if (sortBy) args['sortBy'] = sortBy;
-    const res = await client.query<{
-      document: Record<string, { nodes: T[]; nextPage: string | null }>;
-    }>({
-      document: {
-        $: { id: documentId },
-        [connection]: { $: args, nextPage: {}, nodes: fields },
+    const res = await client.query<Record<string, Record<string, Connection<T>> | null>>({
+      [root.field]: {
+        $: { id: root.id },
+        [connection]: { $: { ...args, size: PAGE, page }, nextPage: {}, nodes: fields },
       },
     });
-    const c = res.document?.[connection];
+    const c = res[root.field]?.[connection];
     if (!c || c.nodes.length === 0) break;
     all.push(...c.nodes);
-    page = c.nextPage;
+    page = c.nextPage ?? null;
   }
   return all;
 }
 
 /** Cost types carry the markup policy. Read live so a policy change needs no deploy. */
-export async function fetchCostTypes(client: JobTreadClient): Promise<ApiCostType[]> {
+export async function fetchCostTypes(client: Reader): Promise<ApiCostType[]> {
   const res = await client.query<{
     organization: { costTypes: { nodes: ApiCostType[] } };
   }>({
@@ -157,7 +305,7 @@ export async function fetchCostTypes(client: JobTreadClient): Promise<ApiCostTyp
  * of anything a customer accepted.
  */
 export async function fetchComparables(
-  client: JobTreadClient,
+  client: Reader,
   price: number,
   spread = 0.55,
 ): Promise<ApiComparable[]> {
@@ -220,7 +368,7 @@ export function isTestJob(jobName: string): boolean {
  * are left out before the limit is applied, so twenty means twenty real ones.
  */
 export async function fetchRecentDocuments(
-  client: JobTreadClient,
+  client: Reader,
   opts: { limit: number; status?: string; type?: string; jobType?: string },
 ): Promise<ApiDocumentSummary[]> {
   const where: unknown[] = [[['type'], '=', opts.type ?? 'customerOrder']];
@@ -268,7 +416,7 @@ export async function fetchRecentDocuments(
  * x1.25, HOVER at cost, sub-supplied fasteners at a higher markup.
  */
 export async function fetchCatalogItems(
-  client: JobTreadClient,
+  client: Reader,
   ids: string[],
 ): Promise<ApiCatalogItem[]> {
   const unique = [...new Set(ids)];
@@ -305,7 +453,7 @@ export async function fetchCatalogItems(
  *
  * Paged with the cursor the API returns; there is no other way past 100.
  */
-export async function fetchCatalog(client: JobTreadClient): Promise<ApiCatalogItem[]> {
+export async function fetchCatalog(client: Reader): Promise<ApiCatalogItem[]> {
   const out: ApiCatalogItem[] = [];
   let page: string | null = null;
   for (;;) {
@@ -348,11 +496,12 @@ export async function fetchCatalog(client: JobTreadClient): Promise<ApiCatalogIt
 
 /** Everything one audit needs, in a form that can be frozen to disk. */
 export async function captureFixture(
-  client: JobTreadClient,
+  client: Reader,
   documentId: string,
   sharedCostTypes?: ApiCostType[],
 ): Promise<AuditFixture> {
   const document = await fetchDocument(client, documentId);
+  const budget = await fetchBudget(client, document.job.id);
   // Cost types are org-wide and identical for every document in a run, so a
   // batch fetches them once. Comparables depend on the document's price and
   // cannot be shared.
@@ -368,6 +517,7 @@ export async function captureFixture(
     capturedAt: new Date().toISOString(),
     organizationId: client.organizationId,
     document,
+    budget,
     costTypes,
     comparables,
     catalog,

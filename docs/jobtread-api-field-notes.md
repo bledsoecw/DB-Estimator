@@ -194,6 +194,30 @@ Selected fields (full type has ~45):
 | `files` | connection | |
 | `timeEntries` | connection | Actual labor against the line. |
 
+### Budget provenance — `jobCostItem` and `documentCostItems`
+
+**VERIFIED 2026-09-29** against 261457 Hunnaman_Window (job `22PdLFmTqsEX`, document
+`22PdgSLdpHRL`):
+
+- Every one of the document's 43 lines carries `jobCostItem { id }`, the job-budget line it
+  was built from. Budget lines are `job.costItems` with `document = null`, and the filter
+  composes server-side: `where: [["document", "id"], "=", null]`, on `costGroups` too.
+- A budget line carries the reverse connection **`documentCostItems`**: the document lines
+  built from it, across every document of the job. `count` of 0 means no customer document
+  carries it. That is the fact that separates "added to the budget after the estimate went
+  out" from "belongs to the change order".
+- **Editing a budget line does not propagate to a document built from it.** The budget's
+  Window line read $617.17 while the document's still read $653.90, four weeks after issue.
+  The auditor's `budget.drift` rule exists because of this.
+- The org's job template puts three zero-cost groups in every budget — `CLOCK IN ITEMS`,
+  `BURDEN`, `GENERAL AND ADMINISTRATIVE` — 42 lines on this job, none on any document.
+- **Response limit.** A query is refused with `Request Entity Too Large` when the response
+  outgrows a limit JobTread does not publish; the request body is tiny, so the name is
+  misleading. Selecting `description` on both the line and its `jobCostItem` for 43 lines
+  hit it, and so did `documentCostItems { nodes { id } }` on 85 budget lines.
+  `documentCostItems { count }` on 85 lines fits, and the 43 lines' descriptions fit on
+  their own — so the auditor fetches descriptions in a second, separately paged query.
+
 ### `position` is a fractional index, not an integer
 
 Observed values on a real document: `"j"`, `"k"`, `"l"`, `"m"`, `"n"`. Ordering and

@@ -13,8 +13,22 @@ import {
   qtyFromApi, rateFromApi, roundToCents, sub,
 } from './money.ts';
 import type {
-  ApiCatalogItem, ApiComparable, ApiCostType, ApiDocument, AuditFixture } from './jobtread/types.ts';
+  ApiBudget, ApiBudgetRef, ApiCatalogItem, ApiComparable, ApiCostType, ApiDocument, AuditFixture,
+} from './jobtread/types.ts';
 import { jobTypeOf } from './jobtread/queries.ts';
+
+/** The job-budget line a document line was built from. */
+export interface BudgetLine {
+  id: string;
+  name: string;
+  quantity: bigint | null;
+  unitCost: Money;
+  unitPrice: Money;
+  cost: Money;
+  price: Money;
+  /** null when not captured. A blank description on the wire reads as "". */
+  description: string | null;
+}
 
 export interface Line {
   id: string;
@@ -41,6 +55,10 @@ export interface Line {
   catalogItemId: string | null;
   /** Observed unitPrice / unitCost, or null when cost is zero. */
   multiplier: Rate | null;
+  /** null when not captured. A blank description on the wire reads as "". */
+  description: string | null;
+  /** The budget line this one was built from; null when not linked, or not captured. */
+  budget: BudgetLine | null;
 }
 
 export interface Group {
@@ -110,6 +128,35 @@ export interface CatalogItem {
   multiplier: Rate | null;
 }
 
+/** One line of the job budget. */
+export interface BudgetItem {
+  id: string;
+  name: string;
+  quantity: bigint | null;
+  unitCost: Money;
+  unitPrice: Money;
+  cost: Money;
+  price: Money;
+  isSpecification: boolean;
+  costTypeName: string;
+  catalogItemId: string | null;
+  /** Group names from the line's own group up to the root of the budget. */
+  groupPath: string[];
+  /** Document lines built from this budget line, on any document of the job. */
+  documentLines: number;
+}
+
+/**
+ * The job budget: every cost item on the job that sits on no document.
+ *
+ * Documents are built from it, and edits to it do not flow to a document
+ * already built — which is what the budget-drift rule checks.
+ */
+export interface Budget {
+  jobId: string;
+  lines: BudgetItem[];
+}
+
 export interface AuditInput {
   estimate: Estimate;
   policy: Policy;
@@ -122,6 +169,8 @@ export interface AuditInput {
    * check", never as "everything matches".
    */
   catalog: Map<string, CatalogItem>;
+  /** null when the fixture predates the budget check. Never a reason to raise drift. */
+  budget: Budget | null;
   capturedAt: string;
 }
 
@@ -183,6 +232,8 @@ export function toEstimate(doc: ApiDocument): Estimate {
       groupId: i.costGroup?.id ?? null,
       catalogItemId: i.organizationCostItem?.id ?? null,
       multiplier: observedMultiplier(unitCost, unitPrice),
+      description: descriptionFromApi(i.description),
+      budget: i.jobCostItem ? toBudgetLine(i.jobCostItem) : null,
     };
   });
 
@@ -231,6 +282,66 @@ export function toCatalog(rows: ApiCatalogItem[]): Map<string, CatalogItem> {
     });
   }
   return out;
+}
+
+/** undefined (never fetched) stays unknown; the wire's null (blank) reads as "". */
+function descriptionFromApi(v: string | null | undefined): string | null {
+  return v === undefined ? null : (v ?? '');
+}
+
+function toBudgetLine(b: ApiBudgetRef): BudgetLine {
+  return {
+    id: b.id,
+    name: b.name,
+    quantity: b.quantity === null || b.quantity === undefined ? null : qtyFromApi(b.quantity),
+    unitCost: moneyFromApi(b.unitCost),
+    unitPrice: moneyFromApi(b.unitPrice),
+    cost: moneyFromApi(b.cost),
+    price: moneyFromApi(b.price),
+    description: descriptionFromApi(b.description),
+  };
+}
+
+export function toBudget(b: ApiBudget): Budget {
+  const groups = new Map(b.costGroups.nodes.map((g) => [g.id, g]));
+
+  // Nearest group first, then its parents. A group missing from the captured
+  // list — it should not happen, the connection is paginated — falls back to
+  // the name the line itself carries, so a template line is still recognised.
+  const pathOf = (groupId: string | null, ownName: string | null): string[] => {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    let id = groupId;
+    while (id && !seen.has(id)) {
+      seen.add(id);
+      const g = groups.get(id);
+      if (!g) {
+        if (out.length === 0 && ownName !== null) out.push(ownName);
+        break;
+      }
+      out.push(g.name);
+      id = g.parentCostGroup?.id ?? null;
+    }
+    return out;
+  };
+
+  return {
+    jobId: b.jobId,
+    lines: b.costItems.nodes.map((i) => ({
+      id: i.id,
+      name: i.name,
+      quantity: i.quantity === null || i.quantity === undefined ? null : qtyFromApi(i.quantity),
+      unitCost: moneyFromApi(i.unitCost),
+      unitPrice: moneyFromApi(i.unitPrice),
+      cost: moneyFromApi(i.cost),
+      price: moneyFromApi(i.price),
+      isSpecification: i.isSpecification,
+      costTypeName: i.costType.name,
+      catalogItemId: i.organizationCostItem?.id ?? null,
+      groupPath: pathOf(i.costGroup?.id ?? null, i.costGroup?.name ?? null),
+      documentLines: i.documentCostItems.count,
+    })),
+  };
 }
 
 export function toComparables(rows: ApiComparable[]): Comparable[] {
@@ -282,6 +393,7 @@ export function fromFixture(f: AuditFixture): AuditInput {
     policy: toPolicy(f.costTypes),
     comparables: toComparables(f.comparables),
     catalog: toCatalog(f.catalog ?? []),
+    budget: f.budget ? toBudget(f.budget) : null,
     capturedAt: f.capturedAt,
   };
 }

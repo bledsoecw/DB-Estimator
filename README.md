@@ -16,7 +16,7 @@ to build the larger thing. [Jump to running it](#running-the-v05-auditor).
 |---|---|
 | **[`docs/ROADMAP.md`](docs/ROADMAP.md)** | The build roadmap. Phases, gates, costs, the build-vs-buy reckoning, the JobTread subsystem design, the reliability model, and the questions only Carl can answer. |
 | **[`docs/jobtread-api-field-notes.md`](docs/jobtread-api-field-notes.md)** | The JobTread Pave API, verified by direct query against the live organization. The factual baseline the integration is designed against. |
-| **[`src/`](src/)** | The v0.5 auditor. `src/money.ts` is the arithmetic everything else depends on; `src/rules/` holds the eight policy checks; `src/report.ts` renders the approver screen. |
+| **[`src/`](src/)** | The v0.5 auditor. `src/money.ts` is the arithmetic everything else depends on; `src/rules/` holds the nine policy checks; `src/report.ts` renders the approver screen. |
 
 ## The short version
 
@@ -93,7 +93,7 @@ npm run audit -- <documentId> --html review.html                    # the approv
 npm run audit -- <documentId> --capture test/fixtures/name.json     # live + save a fixture
 npm run audit -- --recent 20 --status approved --out review          # a batch
 npm run audit -- --catalog --out review                              # the whole catalog
-npm test                                                            # 98 tests
+npm test                                                            # 138 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -148,7 +148,28 @@ subcontracted one at 30%, two different items. What the lines actually showed wa
 *from* the catalog ($7.20 against a catalog $7.27), which is a check this auditor cannot
 yet make because it never reads the catalog.
 
-Exempted lines are reported under **Not raised**, never dropped silently.
+**The document is checked against the job budget it was built from.** A customer
+order is built from the job budget, and from then on they are separate records:
+editing a budget line changes nothing on a document already built from it. On
+261457 Hunnaman_Window the rep repriced the Window line in the budget ($653.90 →
+$617.17 cost, new Wellcraft spec) after the customer had viewed the estimate twice,
+then asked for the estimate to be reviewed. The document's own arithmetic was
+clean, so every other check passed. `budget.drift` joins each line to the budget
+line it came from (`jobCostItem`) and raises one card per document listing every
+line whose name, quantity, unit cost, unit price or description no longer matches,
+with the document total against the budget total as the headline. A budget line
+that sits on **no** document of the job — added after the document was built, so
+the customer has never seen it — is the more serious case and is priced into the
+same card. A line carried by a change order on the same job is not missing from the
+estimate, and is not reported as such.
+
+**Not raised** is where the checks account for what they chose not to interrupt
+anyone with, and it is never empty by accident: deliberately priced exceptions,
+lines that are off policy by less than the materiality floor, lines with no budget
+link, the 40-odd zero-cost time-tracking lines the job template puts in every
+budget (`CLOCK IN ITEMS`, `BURDEN`, `GENERAL AND ADMINISTRATIVE`), budget lines
+that belong to another document, and comparables dropped from the margin band.
+Nothing is dropped silently.
 
 **It audits Construction only.** Roofing is entirely subcontracted and prices from its
 own templates, which are correct and are not the cost-type margins; Construction is what
@@ -232,7 +253,7 @@ the response body is JSON, because JobTread always returns JSON and a proxy does
 it on your own machine, or anywhere with normal outbound access.
 
 Offline work needs none of this: the fixture path exercises every rule with no network and
-no credential. Three real estimates are captured in `test/fixtures/`:
+no credential. Four real estimates are captured in `test/fixtures/`:
 
 | Fixture | Why it is there |
 |---|---|
@@ -240,6 +261,10 @@ no credential. Three real estimates are captured in `test/fixtures/`:
 | `daeger-roof.json` | Roofing, 67 lines, 7.25% rate, **approved and sold** — the baseline for what a clean estimate must not be flagged as. |
 | `wright-roof.json` | Roofing, 101 lines, 6.85% rate. Crosses JobTread's 100-item page cap and reconciles through three unselected option branches. |
 | `catalog-sample.json` | The first 20 priced catalog items by name, after the 2026-09-29 sweep. One item at ×2.40, four duplicate names. |
+| `hunnaman-window.json` | A GC egress window, 43 lines, pending, captured **with its job budget**. The budget was edited after the customer had viewed the estimate — the drift case. |
+
+The three older fixtures predate the budget check and carry no budget; on them it
+reports *Budget not captured*, never drift. A fresh `--capture` includes the budget.
 
 ### Reviewing scope
 

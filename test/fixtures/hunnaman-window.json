@@ -1,0 +1,5275 @@
+{
+  "capturedAt": "2026-09-29T12:57:20.598Z",
+  "organizationId": "22PBAjem8SSC",
+  "document": {
+    "id": "22PdgSLdpHRL",
+    "name": "Estimate",
+    "type": "customerOrder",
+    "status": "pending",
+    "price": 10193.08,
+    "cost": 6198.36,
+    "priceWithTax": 10193.08,
+    "taxRate": 0,
+    "taxName": null,
+    "externalId": null,
+    "showChildCosts": true,
+    "showQuantity": false,
+    "showProfit": false,
+    "showLinesAtDepth": null,
+    "requireSignature": true,
+    "includeInBudget": true,
+    "issueDate": "2026-08-31",
+    "createdAt": "2026-08-31T16:23:46.044Z",
+    "job": {
+      "id": "22PdLFmTqsEX",
+      "name": "261457 Hunnaman_Window",
+      "customFieldValues": {
+        "nodes": [
+          {
+            "value": "Construction",
+            "customField": {
+              "id": "22PBzhnUydgC"
+            }
+          }
+        ]
+      }
+    },
+    "costGroups": {
+      "count": 21,
+      "nextPage": null,
+      "nodes": [
+        {
+          "id": "22PdgSLegB4n",
+          "name": "EGRESS WINDOW",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": null
+        },
+        {
+          "id": "22PdgSLegB4p",
+          "name": "Phase 1 - General Requirements",
+          "position": "l",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": false,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4n"
+          }
+        },
+        {
+          "id": "22PdgSLegB4q",
+          "name": "Permits",
+          "position": "j",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4p"
+          }
+        },
+        {
+          "id": "22PdgSLegB4s",
+          "name": "Project/Site Management",
+          "position": "k",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4p"
+          }
+        },
+        {
+          "id": "22PdgSLegB4v",
+          "name": "Rentals",
+          "position": "l",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4p"
+          }
+        },
+        {
+          "id": "22PdgSLegB4z",
+          "name": "Site Preparation",
+          "position": "m",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4p"
+          }
+        },
+        {
+          "id": "22PdgSLegB54",
+          "name": "Demolition",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4p"
+          }
+        },
+        {
+          "id": "22PdgSLegB57",
+          "name": "Site Clean Up",
+          "position": "o",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4p"
+          }
+        },
+        {
+          "id": "22PdgSLegXxS",
+          "name": "Excavation",
+          "position": "p",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4p"
+          }
+        },
+        {
+          "id": "22PdgSLegXxV",
+          "name": "Gravel",
+          "position": "q",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4p"
+          }
+        },
+        {
+          "id": "22PdgSLegXxY",
+          "name": "Drainage",
+          "position": "r",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4p"
+          }
+        },
+        {
+          "id": "22PdgSLegXxd",
+          "name": "Phase 2 - Rough-In",
+          "position": "m",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": false,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4n"
+          }
+        },
+        {
+          "id": "22PdgSLegXxe",
+          "name": "Framing Materials",
+          "position": "m",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegXxd"
+          }
+        },
+        {
+          "id": "22PdgSLegXxk",
+          "name": "Insulation",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegXxd"
+          }
+        },
+        {
+          "id": "22PdgSLegXxp",
+          "name": "Windows",
+          "position": "o",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegXxd"
+          }
+        },
+        {
+          "id": "22PdgSLegXxq",
+          "name": "Window",
+          "position": "m",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegXxp"
+          }
+        },
+        {
+          "id": "22PdgSLegXxw",
+          "name": "Phase 3 - Interiors",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": false,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4n"
+          }
+        },
+        {
+          "id": "22PdgSLegXxx",
+          "name": "Drywall/Plaster",
+          "position": "m",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegXxw"
+          }
+        },
+        {
+          "id": "22PdgSLegXy4",
+          "name": "Paint",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegXxw"
+          }
+        },
+        {
+          "id": "22PdgSLegXy9",
+          "name": "Phase 4 - Finishes",
+          "position": "o",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": false,
+          "parentCostGroup": {
+            "id": "22PdgSLegB4n"
+          }
+        },
+        {
+          "id": "22PdgSLegXyA",
+          "name": "Interior Trims & Finishes",
+          "position": "n",
+          "isSelected": false,
+          "isSimpleSelection": false,
+          "minSelectionsRequired": null,
+          "maxSelectionsAllowed": null,
+          "showChildCosts": true,
+          "parentCostGroup": {
+            "id": "22PdgSLegXy9"
+          }
+        }
+      ]
+    },
+    "costItems": {
+      "count": 43,
+      "nextPage": null,
+      "nodes": [
+        {
+          "id": "22PdgSLegXxZ",
+          "name": "Solid Corrugated Drainage Pipe - 4\"X10'",
+          "quantity": 1,
+          "unitCost": 6.89,
+          "unitPrice": 9.990499999999999,
+          "cost": 6.89,
+          "price": 9.99,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "l",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxY"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDbKXMKe"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhud",
+            "name": "Solid Corrugated Drainage Pipe - 4\"X10'",
+            "quantity": 1,
+            "unitCost": 6.89,
+            "unitPrice": 9.990499999999999,
+            "cost": 6.89,
+            "price": 9.99,
+            "description": "4\" x 10' Corrugated Single-Wall Solid Drain Pipe Corrugated with Coupler"
+          },
+          "description": "4\" x 10' Corrugated Single-Wall Solid Drain Pipe Corrugated with Coupler"
+        },
+        {
+          "id": "22PdgSLegXxf",
+          "name": "Framing - Wall",
+          "quantity": 1,
+          "unitCost": 27.98,
+          "unitPrice": 40.571,
+          "cost": 27.98,
+          "price": 40.57,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "l",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxe"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDk3Y3MD"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfi",
+            "name": "Framing - Wall",
+            "quantity": 1,
+            "unitCost": 27.98,
+            "unitPrice": 40.571,
+            "cost": 27.98,
+            "price": 40.57,
+            "description": "2 x 10 x 10' #2 Prime Ground Contact Green Pressure Treated Lumber"
+          },
+          "description": "2 x 10 x 10' #2 Prime Ground Contact Green Pressure Treated Lumber"
+        },
+        {
+          "id": "22PdgSLegXxr",
+          "name": "Window",
+          "quantity": 1,
+          "unitCost": 653.9,
+          "unitPrice": 948.1549999999999,
+          "cost": 653.9,
+          "price": 948.16,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "l",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxq"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2YsEvY"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuk",
+            "name": "Window",
+            "quantity": 1,
+            "unitCost": 617.17,
+            "unitPrice": 894.8964999999998,
+            "cost": 617.17,
+            "price": 894.9,
+            "description": "Wellcraft 27\"W x 45\"H  in-swing egress Low-E"
+          },
+          "description": "27\"W x 45\"H White Vinyl Basement Block Inswing Egress Window"
+        },
+        {
+          "id": "22PdgSLegXxy",
+          "name": "Drywall Board - Mat",
+          "quantity": 1,
+          "unitCost": 10,
+          "unitPrice": 14.499999999999998,
+          "cost": 10,
+          "price": 14.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "l",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqR",
+            "name": "Lump Sum"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxx"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2cGYqw"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfs",
+            "name": "Drywall Board - Mat",
+            "quantity": 1,
+            "unitCost": 10,
+            "unitPrice": 14.499999999999998,
+            "cost": 10,
+            "price": 14.5,
+            "description": "Materials necessary to HANG drywall, installed generally as follows:\n- 5/8\" drywall board for all ceiling areas, except bathroom(s)\n- 1/2\" drywall board for all wall areas including garage, except bathroom(s)\n- 1/2\" green board for all ceiling and wall areas of bathroom(s)"
+          },
+          "description": "Materials necessary to HANG drywall, installed generally as follows:\n- 5/8\" drywall board for all ceiling areas, except bathroom(s)\n- 1/2\" drywall board for all wall areas including garage, except bathroom(s)\n- 1/2\" green board for all ceiling and wall areas of bathroom(s)"
+        },
+        {
+          "id": "22PdgSLegXy5",
+          "name": "Primer",
+          "quantity": 1,
+          "unitCost": 30,
+          "unitPrice": 43.5,
+          "cost": 30,
+          "price": 43.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "l",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqN",
+            "name": "Gallons"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXy4"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2t6Uci"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfx",
+            "name": "Primer",
+            "quantity": 1,
+            "unitCost": 30,
+            "unitPrice": 43.5,
+            "cost": 30,
+            "price": 43.5,
+            "description": "Primer material for newly installed drywall"
+          },
+          "description": "Primer material for newly installed drywall"
+        },
+        {
+          "id": "22PdgSLegB4t",
+          "name": "Project Management (C)",
+          "quantity": 1,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 55,
+          "price": 100,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwCzxYZ5J",
+            "name": "Project Management"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB4s"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDadVavs"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdLzy",
+            "name": "Project Management (C)",
+            "quantity": 1,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 55,
+            "price": 100,
+            "description": "General allowance for project management including securing materials, scheduling production team, inspection, and consulting with owners and other necessary parties"
+          },
+          "description": "General allowance for project management including securing materials, scheduling production team, inspection, and consulting with owners and other necessary parties"
+        },
+        {
+          "id": "22PdgSLegB4w",
+          "name": "Rental - Buggy/Dumpster",
+          "quantity": 8,
+          "unitCost": 6,
+          "unitPrice": 8.7,
+          "cost": 48,
+          "price": 69.6,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22Pa8aS9mDRU",
+            "name": "Hauling & Disposal (Rental)"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB4v"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDasAkQZ"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdM23",
+            "name": "Rental - Buggy/Dumpster",
+            "quantity": 8,
+            "unitCost": 6,
+            "unitPrice": 8.7,
+            "cost": 48,
+            "price": 69.6,
+            "description": "Buggy Rental"
+          },
+          "description": "Buggy Rental"
+        },
+        {
+          "id": "22PdgSLegB52",
+          "name": "Site Prep Material",
+          "quantity": 1,
+          "unitCost": 150,
+          "unitPrice": 217.49999999999997,
+          "cost": 150,
+          "price": 217.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gW5iKgj",
+            "name": "Site Construction"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB4z"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhe93Nh"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdM27",
+            "name": "Site Prep Material",
+            "quantity": 1,
+            "unitCost": 150,
+            "unitPrice": 217.49999999999997,
+            "cost": 150,
+            "price": 217.5,
+            "description": "Materials necessary to prep site where work is to occur"
+          },
+          "description": "Materials necessary to prep site where work is to occur"
+        },
+        {
+          "id": "22PdgSLegB55",
+          "name": "Demolition",
+          "quantity": 8,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 440,
+          "price": 800,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLcyPZBN",
+            "name": "Demolition"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB54"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDherj6a"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuS",
+            "name": "Demolition",
+            "quantity": 8,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 440,
+            "price": 800,
+            "description": "Removal and disposal of existing materials relative to project remodel/renovation. \n\nIncludes removal of: \n- existing basement window on north side of the house\n- shrubs/soil from area where egress window well will be installed"
+          },
+          "description": "Removal and disposal of existing materials relative to project remodel/renovation. \n\nIncludes removal of: \n- existing basement window on north side of the house\n- shrubs/soil from area where egress window well will be installed"
+        },
+        {
+          "id": "22PdgSLegB58",
+          "name": "Hauling & Disposal",
+          "quantity": 1,
+          "unitCost": 250,
+          "unitPrice": 450,
+          "cost": 250,
+          "price": 450,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PSH8zVRb5j",
+            "name": "Hauling & Disposal (Direct)"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB57"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhhEvps"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuU",
+            "name": "Hauling & Disposal",
+            "quantity": 1,
+            "unitCost": 250,
+            "unitPrice": 450,
+            "cost": 250,
+            "price": 450,
+            "description": "Cost for the hauling and disposal of materials removed from project site"
+          },
+          "description": "Cost for the hauling and disposal of materials removed from project site"
+        },
+        {
+          "id": "22PdgSLegXxT",
+          "name": "Hand Excavation",
+          "quantity": 4,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 220,
+          "price": 400,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLiE6wz2",
+            "name": "Excavation"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxS"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhgSrep"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuX",
+            "name": "Hand Excavation",
+            "quantity": 4,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 220,
+            "price": 400,
+            "description": "Labor required to hand excavate at project site\n- connect 4\" corrugated drain to an assumed 4\" corrugated perimeter footer tile with a 4\" corrugated tee\n- install a 4\" corrugated screen flush with the bottom of the window well"
+          },
+          "description": "Labor required to hand excavate at project site\n- connect 4\" corrugated drain to an assumed 4\" corrugated perimeter footer tile with a 4\" corrugated tee\n- install a 4\" corrugated screen flush with the bottom of the window well"
+        },
+        {
+          "id": "22PdgSLegXxW",
+          "name": "Gravel",
+          "quantity": 1,
+          "unitCost": 39,
+          "unitPrice": 56.55,
+          "cost": 39,
+          "price": 56.55,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8tdwwkG",
+            "name": "Cubic Yard"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ga6JqAz",
+            "name": "Concrete"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxV"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhvGhXQ"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhua",
+            "name": "Gravel",
+            "quantity": 1,
+            "unitCost": 39,
+            "unitPrice": 56.55,
+            "cost": 39,
+            "price": 56.55,
+            "description": "No. 8 clean washed stone for the bottom of the window well"
+          },
+          "description": "No. 8 clean washed stone for the bottom of the window well"
+        },
+        {
+          "id": "22PdgSLegXxa",
+          "name": "Corrugated Drainage Pipe - Tee",
+          "quantity": 1,
+          "unitCost": 7.48,
+          "unitPrice": 10.846,
+          "cost": 7.48,
+          "price": 10.85,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxY"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDbKXMKe"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhue",
+            "name": "Corrugated Drainage Pipe - Tee",
+            "quantity": 1,
+            "unitCost": 7.48,
+            "unitPrice": 10.846,
+            "cost": 7.48,
+            "price": 10.85,
+            "description": "4\" x 3\" Corrugated Pipe Combo Tee"
+          },
+          "description": "4\" x 3\" Corrugated Pipe Combo Tee"
+        },
+        {
+          "id": "22PdgSLegXxg",
+          "name": "Fasteners",
+          "quantity": 1,
+          "unitCost": 18.98,
+          "unitPrice": 27.520999999999997,
+          "cost": 18.98,
+          "price": 27.52,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxe"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDk3Y3MD"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfj",
+            "name": "Fasteners",
+            "quantity": 1,
+            "unitCost": 18.98,
+            "unitPrice": 27.520999999999997,
+            "cost": 18.98,
+            "price": 27.52,
+            "description": "Tapcon 1/4\" X 3-3/4\" Hex Drive Hex Washer Head Concrete / Masonry Screw"
+          },
+          "description": "Tapcon 1/4\" X 3-3/4\" Hex Drive Hex Washer Head Concrete / Masonry Screw"
+        },
+        {
+          "id": "22PdgSLegXxm",
+          "name": "Insulation - Batt",
+          "quantity": 1,
+          "unitCost": 20,
+          "unitPrice": 28.999999999999996,
+          "cost": 20,
+          "price": 29,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqR",
+            "name": "Lump Sum"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqf",
+            "name": "Siding"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxk"
+          },
+          "organizationCostItem": {
+            "id": "22PL8kUmtfhn"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfq",
+            "name": "Insulation - Batt",
+            "quantity": 1,
+            "unitCost": 20,
+            "unitPrice": 28.999999999999996,
+            "cost": 20,
+            "price": 29,
+            "description": "Batt insulation for installation in wall"
+          },
+          "description": "Batt insulation for installation in wall"
+        },
+        {
+          "id": "22PdgSLegXxs",
+          "name": "Window Well",
+          "quantity": 1,
+          "unitCost": 368.59,
+          "unitPrice": 534.4554999999999,
+          "cost": 368.59,
+          "price": 534.46,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxq"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2YsEvY"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhum",
+            "name": "Window Well",
+            "quantity": 1,
+            "unitCost": 368.59,
+            "unitPrice": 534.4554999999999,
+            "cost": 368.59,
+            "price": 534.46,
+            "description": "50\" W x 48\" H x 36\" Projection White Steel Square Egress Window Well"
+          },
+          "description": "50\" W x 48\" H x 36\" Projection White Steel Square Egress Window Well"
+        },
+        {
+          "id": "22PdgSLegXxz",
+          "name": "Drywall Board Labor",
+          "quantity": 1,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 55,
+          "price": 100,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwiZTcHsS",
+            "name": "Drywall"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxx"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2cyGTZ"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgft",
+            "name": "Drywall Board Labor",
+            "quantity": 1,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 55,
+            "price": 100,
+            "description": "Labor to hang drywall board"
+          },
+          "description": "Labor to hang drywall board"
+        },
+        {
+          "id": "22PdgSLegXy6",
+          "name": "Paint",
+          "quantity": 1,
+          "unitCost": 85,
+          "unitPrice": 123.24999999999999,
+          "cost": 85,
+          "price": 123.25,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqN",
+            "name": "Gallons"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXy4"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2xvbRA"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfy",
+            "name": "Paint",
+            "quantity": 1,
+            "unitCost": 85,
+            "unitPrice": 123.24999999999999,
+            "cost": 85,
+            "price": 123.25,
+            "description": "Includes good quality paint: two coats to walls, 1 coat to ceiling.  Does not include primer.\n\nPaint estimate affords client allowance for up to 2 color choices. Additional colors can be applied at an additional charge of $100/color change."
+          },
+          "description": "Includes good quality paint: two coats to walls, 1 coat to ceiling.  Does not include primer.\n\nPaint estimate affords client allowance for up to 2 color choices. Additional colors can be applied at an additional charge of $100/color change."
+        },
+        {
+          "id": "22PdgSLegXyB",
+          "name": "Trim - Casing",
+          "quantity": 2,
+          "unitCost": 6.72,
+          "unitPrice": 9.744,
+          "cost": 13.44,
+          "price": 19.49,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "m",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXyA"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDkQUYjD"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuu",
+            "name": "Trim - Casing",
+            "quantity": 2,
+            "unitCost": 6.72,
+            "unitPrice": 9.744,
+            "cost": 13.44,
+            "price": 19.49,
+            "description": "11/16 x 2-1/4 x 7' Primed FJ Pine Colonial Casing 356"
+          },
+          "description": "11/16 x 2-1/4 x 7' Primed FJ Pine Colonial Casing 356"
+        },
+        {
+          "id": "22PdgSLegB4r",
+          "name": "Permit",
+          "quantity": 1,
+          "unitCost": 22,
+          "unitPrice": 31.9,
+          "cost": 22,
+          "price": 31.9,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqR",
+            "name": "Lump Sum"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22Pa8aUwtfG3",
+            "name": "Permits"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB4q"
+          },
+          "organizationCostItem": {
+            "id": "22PEjZMRaX6W"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdLzw",
+            "name": "Permit",
+            "quantity": 1,
+            "unitCost": 22,
+            "unitPrice": 31.9,
+            "cost": 22,
+            "price": 31.9,
+            "description": "Permitting necessary to complete the project. We will secure the necessary permit(s) before project commences."
+          },
+          "description": "Permitting necessary to complete the project. We will secure the necessary permit(s) before project commences."
+        },
+        {
+          "id": "22PdgSLegB4u",
+          "name": "Sales On-Site Support",
+          "quantity": null,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PNJn5ZYvzq",
+            "name": "Sales On-Site Support"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB4s"
+          },
+          "organizationCostItem": {
+            "id": "22PNJmzSy4PK"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdLzz",
+            "name": "Sales On-Site Support",
+            "quantity": null,
+            "unitCost": 0,
+            "unitPrice": 0,
+            "cost": 0,
+            "price": 0,
+            "description": "Non-monetized line item to track Sales Team time assisting production team with the execution of the project. Includes tasks such as material runs, material pick ups, site visits, project oversight, crew interface... any task a Sales Team member conducts that is directly tied to the success of the specific job."
+          },
+          "description": "Non-monetized line item to track Sales Team time assisting production team with the execution of the project. Includes tasks such as material runs, material pick ups, site visits, project oversight, crew interface... any task a Sales Team member conducts that is directly tied to the success of the specific job."
+        },
+        {
+          "id": "22PdgSLegB4x",
+          "name": "Rental - Skid Loader",
+          "quantity": 1,
+          "unitCost": 150,
+          "unitPrice": 217.49999999999997,
+          "cost": 150,
+          "price": 217.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8uHnTn5",
+            "name": "Day"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB4v"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDatWiw6"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdM24",
+            "name": "Rental - Skid Loader",
+            "quantity": 1,
+            "unitCost": 150,
+            "unitPrice": 217.49999999999997,
+            "cost": 150,
+            "price": 217.5,
+            "description": "1 day rental of a Skid Loader with backhoe attachment and bucket"
+          },
+          "description": "1 day rental of a Skid Loader with backhoe attachment and bucket"
+        },
+        {
+          "id": "22PdgSLegB53",
+          "name": "Site Prep Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLZv99Uc",
+            "name": "Site Prep/Clean Up"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB4z"
+          },
+          "organizationCostItem": {
+            "id": "22PDa6i3zEiP"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuQ",
+            "name": "Site Prep Labor",
+            "quantity": 2,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 110,
+            "price": 200,
+            "description": "Prep/protect project site where work is to occur"
+          },
+          "description": "Prep/protect project site where work is to occur"
+        },
+        {
+          "id": "22PdgSLegB56",
+          "name": "Demolition -  Concrete",
+          "quantity": 1,
+          "unitCost": 750,
+          "unitPrice": 1071.4285714285716,
+          "cost": 750,
+          "price": 1071.43,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqR",
+            "name": "Lump Sum"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLcyPZBN",
+            "name": "Demolition"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB54"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDherj6a"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfg",
+            "name": "Demolition -  Concrete",
+            "quantity": 1,
+            "unitCost": 750,
+            "unitPrice": 1071.4285714285716,
+            "cost": 750,
+            "price": 1071.43,
+            "description": "Precision Concrete - Cut a hole in the 8\" thick concrete for the future install of a 27\" x 45\" egress window.\n*NOTE: the bottom of the window sill to be less  than 44\" above the finished floor - per code.*"
+          },
+          "description": "Precision Concrete - Cut a hole in the 8\" thick concrete for the future install of a 27\" x 45\" egress window.\n*NOTE: the bottom of the window sill to be less  than 44\" above the finished floor - per code.*"
+        },
+        {
+          "id": "22PdgSLegB59",
+          "name": "Final Clean",
+          "quantity": 4,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 220,
+          "price": 400,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLZv99Uc",
+            "name": "Site Prep/Clean Up"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB57"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhjLQ9Y"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuV",
+            "name": "Final Clean",
+            "quantity": 4,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 220,
+            "price": 400,
+            "description": "Final clean up of job site once project is completed"
+          },
+          "description": "Final clean up of job site once project is completed"
+        },
+        {
+          "id": "22PdgSLegXxU",
+          "name": "Bulk Excavation",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLiE6wz2",
+            "name": "Excavation"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxS"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhfeApu"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuY",
+            "name": "Bulk Excavation",
+            "quantity": 2,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 110,
+            "price": 200,
+            "description": "Labor required to remove large amounts of soil materials and haul off-site. Assumed backhoe attachment/buggy combination to dig window well."
+          },
+          "description": "Labor required to remove large amounts of soil materials and haul off-site. Assumed backhoe attachment/buggy combination to dig window well."
+        },
+        {
+          "id": "22PdgSLegXxX",
+          "name": "Gravel Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7ga6JqAz",
+            "name": "Concrete"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxV"
+          },
+          "organizationCostItem": {
+            "id": "22PFGwqRNGWD"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhub",
+            "name": "Gravel Labor",
+            "quantity": 2,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 110,
+            "price": 200,
+            "description": "Labor to install #8 clean washed stone in the bottom of the window well"
+          },
+          "description": "Labor to install #8 clean washed stone in the bottom of the window well"
+        },
+        {
+          "id": "22PdgSLegXxb",
+          "name": "Corrugated Drainage Pipe - Screen",
+          "quantity": 1,
+          "unitCost": 4.19,
+          "unitPrice": 6.0755,
+          "cost": 4.19,
+          "price": 6.08,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxY"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDbKXMKe"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuf",
+            "name": "Corrugated Drainage Pipe - Screen",
+            "quantity": 1,
+            "unitCost": 4.19,
+            "unitPrice": 6.0755,
+            "cost": 4.19,
+            "price": 6.08,
+            "description": "3\" & 4\" Round Green Plastic Grate"
+          },
+          "description": "3\" & 4\" Round Green Plastic Grate"
+        },
+        {
+          "id": "22PdgSLegXxh",
+          "name": "Fasteners",
+          "quantity": 1,
+          "unitCost": 24.97,
+          "unitPrice": 36.2065,
+          "cost": 24.97,
+          "price": 36.21,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxe"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDk3Y3MD"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfk",
+            "name": "Fasteners",
+            "quantity": 1,
+            "unitCost": 24.97,
+            "unitPrice": 36.2065,
+            "cost": 24.97,
+            "price": 36.21,
+            "description": "No. 10 x 2\" Grain White Hidden Fastening System for PVC Trim"
+          },
+          "description": "No. 10 x 2\" Grain White Hidden Fastening System for PVC Trim"
+        },
+        {
+          "id": "22PdgSLegXxn",
+          "name": "Crew Labor",
+          "quantity": 1,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 55,
+          "price": 100,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqf",
+            "name": "Siding"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxk"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhb8Dff"
+          },
+          "jobCostItem": {
+            "id": "22PdgSKDZVks",
+            "name": "Crew Labor",
+            "quantity": 1,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 55,
+            "price": 100,
+            "description": "Labor to install insulation"
+          },
+          "description": "Labor to install insulation"
+        },
+        {
+          "id": "22PdgSLegXxt",
+          "name": "Window Well Ladder",
+          "quantity": 1,
+          "unitCost": 117.99,
+          "unitPrice": 171.08549999999997,
+          "cost": 117.99,
+          "price": 171.09,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxq"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2YsEvY"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhun",
+            "name": "Window Well Ladder",
+            "quantity": 1,
+            "unitCost": 117.99,
+            "unitPrice": 171.08549999999997,
+            "cost": 117.99,
+            "price": 171.09,
+            "description": "15 1/4\" W x 42\" H 3-Step White Powder-Coated Steel Basement Egress Window Well Escape Ladder"
+          },
+          "description": "15 1/4\" W x 42\" H 3-Step White Powder-Coated Steel Basement Egress Window Well Escape Ladder"
+        },
+        {
+          "id": "22PdgSLegXxv",
+          "name": "Window Labor",
+          "quantity": 12,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 660,
+          "price": 1200,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxp"
+          },
+          "organizationCostItem": {
+            "id": "22PLenutTpDT"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuq",
+            "name": "Window Labor",
+            "quantity": 12,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 660,
+            "price": 1200,
+            "description": "Labor to install egress window, window well, window well ladder, and window well cover"
+          },
+          "description": "Labor to install egress window, window well, window well ladder, and window well cover"
+        },
+        {
+          "id": "22PdgSLegXy2",
+          "name": "Drywall Mud - Mat",
+          "quantity": 1,
+          "unitCost": 20,
+          "unitPrice": 28.999999999999996,
+          "cost": 20,
+          "price": 29,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqR",
+            "name": "Lump Sum"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxx"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2kbSB2"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfu",
+            "name": "Drywall Mud - Mat",
+            "quantity": 1,
+            "unitCost": 20,
+            "unitPrice": 28.999999999999996,
+            "cost": 20,
+            "price": 29,
+            "description": "Materials necessary to mud, tape and sand drywall"
+          },
+          "description": "Materials necessary to mud, tape and sand drywall"
+        },
+        {
+          "id": "22PdgSLegXy7",
+          "name": "Paint - Misc. Material",
+          "quantity": 1,
+          "unitCost": 50,
+          "unitPrice": 72.5,
+          "cost": 50,
+          "price": 72.5,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXy4"
+          },
+          "organizationCostItem": {
+            "id": "22PLm85vHBTL"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfz",
+            "name": "Paint - Misc. Material",
+            "quantity": 1,
+            "unitCost": 50,
+            "unitPrice": 72.5,
+            "cost": 50,
+            "price": 72.5,
+            "description": "Includes items to complete paint job specific to this project such as tape, rollers, brushes, etc."
+          },
+          "description": "Includes items to complete paint job specific to this project such as tape, rollers, brushes, etc."
+        },
+        {
+          "id": "22PdgSLegXyC",
+          "name": "Trim - Interior Jamb Extension",
+          "quantity": 1,
+          "unitCost": 29.98,
+          "unitPrice": 43.471,
+          "cost": 29.98,
+          "price": 43.47,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "n",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXyA"
+          },
+          "organizationCostItem": {
+            "id": "22PL8X9QRzL9"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuv",
+            "name": "Trim - Interior Jamb Extension",
+            "quantity": 1,
+            "unitCost": 29.98,
+            "unitPrice": 43.471,
+            "cost": 29.98,
+            "price": 43.47,
+            "description": "1 x 6 x 16' Primed Pine Board"
+          },
+          "description": "1 x 6 x 16' Primed Pine Board"
+        },
+        {
+          "id": "22PdgSLegB4y",
+          "name": "Equipment Operation",
+          "quantity": 8,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 440,
+          "price": 800,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdgSLegB4v"
+          },
+          "organizationCostItem": {
+            "id": "22PLiTbpuyiY"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdM25",
+            "name": "Equipment Operation",
+            "quantity": 8,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 440,
+            "price": 800,
+            "description": "Labor necessary to run/operate rental equipment/tools"
+          },
+          "description": "Labor necessary to run/operate rental equipment/tools"
+        },
+        {
+          "id": "22PdgSLegXxc",
+          "name": "Drain Pipe Installation",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxY"
+          },
+          "organizationCostItem": {
+            "id": "22PFHQWizyrn"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhug",
+            "name": "Drain Pipe Installation",
+            "quantity": 2,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 110,
+            "price": 200,
+            "description": "Labor for installation of solid 4\" corrugated drain tile with a screen in the bottom of the new window well connected to the basement footer tile with a 4\" corrugated tee"
+          },
+          "description": "Labor for installation of solid 4\" corrugated drain tile with a screen in the bottom of the new window well connected to the basement footer tile with a 4\" corrugated tee"
+        },
+        {
+          "id": "22PdgSLegXxi",
+          "name": "Azek",
+          "quantity": 1,
+          "unitCost": 59.98,
+          "unitPrice": 86.97099999999999,
+          "cost": 59.98,
+          "price": 86.97,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxe"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDk3Y3MD"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfm",
+            "name": "Azek",
+            "quantity": 1,
+            "unitCost": 59.98,
+            "unitPrice": 86.97099999999999,
+            "cost": 59.98,
+            "price": 86.97,
+            "description": "1 x 12 x 8' White Reversible PVC Trim Board"
+          },
+          "description": "1 x 12 x 8' White Reversible PVC Trim Board"
+        },
+        {
+          "id": "22PdgSLegXxu",
+          "name": "Window Well Cover",
+          "quantity": 1,
+          "unitCost": 159.99,
+          "unitPrice": 231.9855,
+          "cost": 159.99,
+          "price": 231.99,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PCC8v89B9v",
+            "name": "Each"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxq"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2YsEvY"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhup",
+            "name": "Window Well Cover",
+            "quantity": 1,
+            "unitCost": 159.99,
+            "unitPrice": 231.9855,
+            "cost": 159.99,
+            "price": 231.99,
+            "description": "53\" W x 38\" D x 2-1/2\" H Premium Square Flat Window Well Cover"
+          },
+          "description": "53\" W x 38\" D x 2-1/2\" H Premium Square Flat Window Well Cover"
+        },
+        {
+          "id": "22PdgSLegXy3",
+          "name": "Drywall Mud Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwiZTcHsS",
+            "name": "Drywall"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxx"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2mJ4yV"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfv",
+            "name": "Drywall Mud Labor",
+            "quantity": 2,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 110,
+            "price": 200,
+            "description": "Labor which includes mudding, taping and sanding walls, including flat finish on wall and knockdown finish on ceilings\n- drywall on the inside of the box flush with the rest of the drywall"
+          },
+          "description": "Labor which includes mudding, taping and sanding walls, including flat finish on wall and knockdown finish on ceilings\n- drywall on the inside of the box flush with the rest of the drywall"
+        },
+        {
+          "id": "22PdgSLegXy8",
+          "name": "Paint Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwibbYXh9",
+            "name": "Painting"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXy4"
+          },
+          "organizationCostItem": {
+            "id": "22PLN6iLdCtV"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgg2",
+            "name": "Paint Labor",
+            "quantity": 2,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 110,
+            "price": 200,
+            "description": "Labor for painting and priming"
+          },
+          "description": "Labor for painting and priming"
+        },
+        {
+          "id": "22PdgSLegXyD",
+          "name": "Trim Labor",
+          "quantity": 3,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 165,
+          "price": 300,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "o",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwhs8XK5S",
+            "name": "Interior Trim/Casing/Paneling"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXyA"
+          },
+          "organizationCostItem": {
+            "id": "22PLefx3GeQF"
+          },
+          "jobCostItem": {
+            "id": "22PdQMFrdhuw",
+            "name": "Trim Labor",
+            "quantity": 3,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 165,
+            "price": 300,
+            "description": "Labor to install interior finish trim"
+          },
+          "description": "Labor to install interior finish trim"
+        },
+        {
+          "id": "22PdgSLegXxj",
+          "name": "Framing/Sheathing Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isTaxable": false,
+          "isSelected": false,
+          "isSpecification": false,
+          "position": "p",
+          "globalId": null,
+          "quantityFormula": null,
+          "unit": {
+            "id": "22PBAjfWNQqP",
+            "name": "Hours"
+          },
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwgcccXiC",
+            "name": "Framing/Sheeting"
+          },
+          "costGroup": {
+            "id": "22PdgSLegXxe"
+          },
+          "organizationCostItem": {
+            "id": "22PEz6xKaEMb"
+          },
+          "jobCostItem": {
+            "id": "22PdfxB4Zgfn",
+            "name": "Framing/Sheathing Labor",
+            "quantity": 2,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 110,
+            "price": 200,
+            "description": "Labor to frame and sheath as project requires:\n- rip down 2x10 treated board to create a box frame around existing window opening (8\" thick concrete wall)\n- install Azek on outside of box"
+          },
+          "description": "Labor to frame and sheath as project requires:\n- rip down 2x10 treated board to create a box frame around existing window opening (8\" thick concrete wall)\n- install Azek on outside of box"
+        }
+      ]
+    }
+  },
+  "budget": {
+    "jobId": "22PdLFmTqsEX",
+    "costItems": {
+      "count": 85,
+      "nodes": [
+        {
+          "id": "22PdQMFrdhud",
+          "name": "Solid Corrugated Drainage Pipe - 4\"X10'",
+          "quantity": 1,
+          "unitCost": 6.89,
+          "unitPrice": 9.990499999999999,
+          "cost": 6.89,
+          "price": 9.99,
+          "isSpecification": false,
+          "position": "l",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuc",
+            "name": "Drainage"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDbKXMKe"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuk",
+          "name": "Window",
+          "quantity": 1,
+          "unitCost": 617.17,
+          "unitPrice": 894.8964999999998,
+          "cost": 617.17,
+          "price": 894.9,
+          "isSpecification": false,
+          "position": "l",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuj",
+            "name": "Window"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2YsEvY"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfi",
+          "name": "Framing - Wall",
+          "quantity": 1,
+          "unitCost": 27.98,
+          "unitPrice": 40.571,
+          "cost": 27.98,
+          "price": 40.57,
+          "isSpecification": false,
+          "position": "l",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfh",
+            "name": "Framing Materials"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDk3Y3MD"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfs",
+          "name": "Drywall Board - Mat",
+          "quantity": 1,
+          "unitCost": 10,
+          "unitPrice": 14.499999999999998,
+          "cost": 10,
+          "price": 14.5,
+          "isSpecification": false,
+          "position": "l",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfr",
+            "name": "Drywall/Plaster"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2cGYqw"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfx",
+          "name": "Primer",
+          "quantity": 1,
+          "unitCost": 30,
+          "unitPrice": 43.5,
+          "cost": 30,
+          "price": 43.5,
+          "isSpecification": false,
+          "position": "l",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfw",
+            "name": "Paint"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2t6Uci"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdLzy",
+          "name": "Project Management (C)",
+          "quantity": 1,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 55,
+          "price": 100,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwCzxYZ5J",
+            "name": "Project Management"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdLzx",
+            "name": "Project/Site Management"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDadVavs"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdM23",
+          "name": "Rental - Buggy/Dumpster",
+          "quantity": 8,
+          "unitCost": 6,
+          "unitPrice": 8.7,
+          "cost": 48,
+          "price": 69.6,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22Pa8aS9mDRU",
+            "name": "Hauling & Disposal (Rental)"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdM22",
+            "name": "Rentals"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDasAkQZ"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdM27",
+          "name": "Site Prep Material",
+          "quantity": 1,
+          "unitCost": 150,
+          "unitPrice": 217.49999999999997,
+          "cost": 150,
+          "price": 217.5,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gW5iKgj",
+            "name": "Site Construction"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdM26",
+            "name": "Site Preparation"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhe93Nh"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuS",
+          "name": "Demolition",
+          "quantity": 8,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 440,
+          "price": 800,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLcyPZBN",
+            "name": "Demolition"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuR",
+            "name": "Demolition"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDherj6a"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuU",
+          "name": "Hauling & Disposal",
+          "quantity": 1,
+          "unitCost": 250,
+          "unitPrice": 450,
+          "cost": 250,
+          "price": 450,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PSH8zVRb5j",
+            "name": "Hauling & Disposal (Direct)"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuT",
+            "name": "Site Clean Up"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhhEvps"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuX",
+          "name": "Hand Excavation",
+          "quantity": 4,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 220,
+          "price": 400,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLiE6wz2",
+            "name": "Excavation"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuW",
+            "name": "Excavation"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhgSrep"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhua",
+          "name": "Gravel",
+          "quantity": 1,
+          "unitCost": 39,
+          "unitPrice": 56.55,
+          "cost": 39,
+          "price": 56.55,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ga6JqAz",
+            "name": "Concrete"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuZ",
+            "name": "Gravel"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhvGhXQ"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhue",
+          "name": "Corrugated Drainage Pipe - Tee",
+          "quantity": 1,
+          "unitCost": 7.48,
+          "unitPrice": 10.846,
+          "cost": 7.48,
+          "price": 10.85,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuc",
+            "name": "Drainage"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDbKXMKe"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhum",
+          "name": "Window Well",
+          "quantity": 1,
+          "unitCost": 368.59,
+          "unitPrice": 534.4554999999999,
+          "cost": 368.59,
+          "price": 534.46,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuj",
+            "name": "Window"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2YsEvY"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuu",
+          "name": "Trim - Casing",
+          "quantity": 2,
+          "unitCost": 6.72,
+          "unitPrice": 9.744,
+          "cost": 13.44,
+          "price": 19.49,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhut",
+            "name": "Interior Trims & Finishes"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDkQUYjD"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfj",
+          "name": "Fasteners",
+          "quantity": 1,
+          "unitCost": 18.98,
+          "unitPrice": 27.520999999999997,
+          "cost": 18.98,
+          "price": 27.52,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfh",
+            "name": "Framing Materials"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDk3Y3MD"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfq",
+          "name": "Insulation - Batt",
+          "quantity": 1,
+          "unitCost": 20,
+          "unitPrice": 28.999999999999996,
+          "cost": 20,
+          "price": 29,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqf",
+            "name": "Siding"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfp",
+            "name": "Insulation"
+          },
+          "organizationCostItem": {
+            "id": "22PL8kUmtfhn"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgft",
+          "name": "Drywall Board Labor",
+          "quantity": 1,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 55,
+          "price": 100,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwiZTcHsS",
+            "name": "Drywall"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfr",
+            "name": "Drywall/Plaster"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2cyGTZ"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfy",
+          "name": "Paint",
+          "quantity": 1,
+          "unitCost": 85,
+          "unitPrice": 123.24999999999999,
+          "cost": 85,
+          "price": 123.25,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfw",
+            "name": "Paint"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2xvbRA"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgg7",
+          "name": "Promotional",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "m",
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22Pap6LcRWJN",
+            "name": "Promotional"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg6",
+            "name": "GENERAL AND ADMINISTRATIVE"
+          },
+          "organizationCostItem": {
+            "id": "22PbMeDZj5KJ"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggA",
+          "name": "General Requirements",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mh",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMbu7ExsP"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggB",
+          "name": "Site Prep/Clean Up",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mi",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwLZv99Uc",
+            "name": "Site Prep/Clean Up"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcBxEknf"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggC",
+          "name": "Design",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mj",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwD7vNXmf",
+            "name": "Design"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMc2Mu4M8"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggD",
+          "name": "Demolition",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mk",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwLcyPZBN",
+            "name": "Demolition"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcBxEkng"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggE",
+          "name": "Hauling and Disposal",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "ml",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PSH8zVRb5j",
+            "name": "Hauling & Disposal (Direct)"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbdV2jdfRR"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggF",
+          "name": "Site Construction",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mm",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7gW5iKgj",
+            "name": "Site Construction"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMc2Mu4M9"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggG",
+          "name": "Excavation",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mn",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwLiE6wz2",
+            "name": "Excavation"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcBxEknh"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggH",
+          "name": "Utility Connection",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mo",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwLu3xjSL",
+            "name": "Utility Connection"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcBxEkni"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggJ",
+          "name": "Concrete",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mp",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7ga6JqAz",
+            "name": "Concrete"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcBxEknk"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggK",
+          "name": "Masonry",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mq",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7gdyD5MZ",
+            "name": "Masonry"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcBxEknm"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggL",
+          "name": "Metals",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mr",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7gfAcA28",
+            "name": "Metals"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcBxEknn"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggM",
+          "name": "Woods & Plastics",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "ms",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcBxEknp"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggN",
+          "name": "Framing/Sheathing",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mt",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwgcccXiC",
+            "name": "Framing/Sheeting"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcDkJsFp"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggP",
+          "name": "Interior Trim/Casing/Paneling",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mu",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwhs8XK5S",
+            "name": "Interior Trim/Casing/Paneling"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcDkJsFq"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggQ",
+          "name": "Deck",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mv",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwiF7z5xm",
+            "name": "Deck"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcDkJsFr"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggR",
+          "name": "Thermal & Moisture",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mw",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMtgZjcVKr",
+            "name": "Thermal & Moisture"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcDkJsFs"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggS",
+          "name": "Roofing",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mx",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7gkAeZk2",
+            "name": "Roofing"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcDkJsFt"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggT",
+          "name": "Siding",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "my",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqf",
+            "name": "Siding"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcDkJsFu"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggU",
+          "name": "Doors & Windows",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "mz",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwgVp34Bt",
+            "name": "Doors & Windows"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcDkJsFv"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdQMFrdLzw",
+          "name": "Permit",
+          "quantity": 1,
+          "unitCost": 22,
+          "unitPrice": 31.9,
+          "cost": 22,
+          "price": 31.9,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22Pa8aUwtfG3",
+            "name": "Permits"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdLzv",
+            "name": "Permits"
+          },
+          "organizationCostItem": {
+            "id": "22PEjZMRaX6W"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdLzz",
+          "name": "Sales On-Site Support",
+          "quantity": null,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PNJn5ZYvzq",
+            "name": "Sales On-Site Support"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdLzx",
+            "name": "Project/Site Management"
+          },
+          "organizationCostItem": {
+            "id": "22PNJmzSy4PK"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdM24",
+          "name": "Rental - Skid Loader",
+          "quantity": 1,
+          "unitCost": 150,
+          "unitPrice": 217.49999999999997,
+          "cost": 150,
+          "price": 217.5,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdM22",
+            "name": "Rentals"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDatWiw6"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuQ",
+          "name": "Site Prep Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLZv99Uc",
+            "name": "Site Prep/Clean Up"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdM26",
+            "name": "Site Preparation"
+          },
+          "organizationCostItem": {
+            "id": "22PDa6i3zEiP"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuV",
+          "name": "Final Clean",
+          "quantity": 4,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 220,
+          "price": 400,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLZv99Uc",
+            "name": "Site Prep/Clean Up"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuT",
+            "name": "Site Clean Up"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhjLQ9Y"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuY",
+          "name": "Bulk Excavation",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLiE6wz2",
+            "name": "Excavation"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuW",
+            "name": "Excavation"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhfeApu"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhub",
+          "name": "Gravel Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7ga6JqAz",
+            "name": "Concrete"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuZ",
+            "name": "Gravel"
+          },
+          "organizationCostItem": {
+            "id": "22PFGwqRNGWD"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuf",
+          "name": "Corrugated Drainage Pipe - Screen",
+          "quantity": 1,
+          "unitCost": 4.19,
+          "unitPrice": 6.0755,
+          "cost": 4.19,
+          "price": 6.08,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuc",
+            "name": "Drainage"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDbKXMKe"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhun",
+          "name": "Window Well Ladder",
+          "quantity": 1,
+          "unitCost": 117.99,
+          "unitPrice": 171.08549999999997,
+          "cost": 117.99,
+          "price": 171.09,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuj",
+            "name": "Window"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2YsEvY"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuq",
+          "name": "Window Labor",
+          "quantity": 12,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 660,
+          "price": 1200,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhui",
+            "name": "Windows"
+          },
+          "organizationCostItem": {
+            "id": "22PLenutTpDT"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuv",
+          "name": "Trim - Interior Jamb Extension",
+          "quantity": 1,
+          "unitCost": 29.98,
+          "unitPrice": 43.471,
+          "cost": 29.98,
+          "price": 43.47,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhut",
+            "name": "Interior Trims & Finishes"
+          },
+          "organizationCostItem": {
+            "id": "22PL8X9QRzL9"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfg",
+          "name": "Demolition -  Concrete",
+          "quantity": 1,
+          "unitCost": 750,
+          "unitPrice": 1071.4285714285716,
+          "cost": 750,
+          "price": 1071.43,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwLcyPZBN",
+            "name": "Demolition"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuR",
+            "name": "Demolition"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDherj6a"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfk",
+          "name": "Fasteners",
+          "quantity": 1,
+          "unitCost": 24.97,
+          "unitPrice": 36.2065,
+          "cost": 24.97,
+          "price": 36.21,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfh",
+            "name": "Framing Materials"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDk3Y3MD"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfu",
+          "name": "Drywall Mud - Mat",
+          "quantity": 1,
+          "unitCost": 20,
+          "unitPrice": 28.999999999999996,
+          "cost": 20,
+          "price": 29,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfr",
+            "name": "Drywall/Plaster"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2kbSB2"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfz",
+          "name": "Paint - Misc. Material",
+          "quantity": 1,
+          "unitCost": 50,
+          "unitPrice": 72.5,
+          "cost": 50,
+          "price": 72.5,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfw",
+            "name": "Paint"
+          },
+          "organizationCostItem": {
+            "id": "22PLm85vHBTL"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgg5",
+          "name": "Payment Processing Fee",
+          "quantity": 1,
+          "unitCost": 0,
+          "unitPrice": 0,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22Pap6LcRWJP",
+            "name": "Credit Card/ACH Processing Fee"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg4",
+            "name": "BURDEN"
+          },
+          "organizationCostItem": {
+            "id": "22PUmpirXPrE"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4Zgg8",
+          "name": "Lender Processing/Distribution Fee",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr9",
+            "name": "Other"
+          },
+          "costCode": {
+            "id": "22Pap6LcRWJQ",
+            "name": "Lender Processing/Distribution Fee"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg6",
+            "name": "GENERAL AND ADMINISTRATIVE"
+          },
+          "organizationCostItem": {
+            "id": "22PbMeDZj5KL"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggV",
+          "name": "Doors",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PCC7yHifAA",
+            "name": "Doors"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcDkJsFw"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdgSKDZVks",
+          "name": "Crew Labor",
+          "quantity": 1,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 55,
+          "price": 100,
+          "isSpecification": false,
+          "position": "n",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqf",
+            "name": "Siding"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfp",
+            "name": "Insulation"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDhb8Dff"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4ZggW",
+          "name": "Windows",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nb",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcDkJsFx"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggX",
+          "name": "Finishes",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nc",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7gqjU8Am",
+            "name": "Finishes"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcFFdryi"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggY",
+          "name": "Drywall",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nd",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwiZTcHsS",
+            "name": "Drywall"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcFFdryj"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4ZggZ",
+          "name": "Painting",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "ne",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwibbYXh9",
+            "name": "Painting"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcFFdryk"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4Zgga",
+          "name": "Flooring",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nf",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwidpE9Jb",
+            "name": "Flooring"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcFFdrym"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5at",
+          "name": "Tiling",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "ng",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwihWrupn",
+            "name": "Tiling"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcFFdryn"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5au",
+          "name": "Specialites",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nh",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7gsw5E3i",
+            "name": "Specialites"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcFFdryp"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5av",
+          "name": "Shower/Tub",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "ni",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwj8DYsVE",
+            "name": "Shower/Tub"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcFFdryq"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5aw",
+          "name": "Fireplace",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nj",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwjFKrUCh",
+            "name": "Fireplace"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcFFdryr"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5ax",
+          "name": "Closet Organization",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nk",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwjKDctbb",
+            "name": "Closet Organization"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcFFdrys"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5ay",
+          "name": "Appliances",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nl",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7guT9FQN",
+            "name": "Appliances"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcGgjp5f"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5az",
+          "name": "Cabinetry",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nm",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7gx844Zp",
+            "name": "Cabinetry"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcGgjp5g"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5b2",
+          "name": "Special Construction",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nn",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7gz39At3",
+            "name": "Special Construction"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcGgjp5h"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5b3",
+          "name": "Conveying/Lifts",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "no",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7h2FLKAL",
+            "name": "Conveying/Lifts"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcGgjp5i"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5b4",
+          "name": "Mechanical (Plumbing & HVAC)",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "np",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7h578Epe",
+            "name": "Mechanical (Plumbing & HVAC)"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcGgjp5j"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5b5",
+          "name": "Electrical",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nq",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PC7h9DyNTW",
+            "name": "Electrical"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcGgjp5k"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5b6",
+          "name": "Project Management",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nr",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PMwCzxYZ5J",
+            "name": "Project Management"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcGgjp5m"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5b7",
+          "name": "Site Supervisor",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "ns",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PapBixk4jt",
+            "name": "Site Supervisor"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcGgjp5n"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdfxB4a5b8",
+          "name": "Administrative",
+          "quantity": null,
+          "unitCost": null,
+          "unitPrice": null,
+          "cost": 0,
+          "price": 0,
+          "isSpecification": false,
+          "position": "nt",
+          "costType": {
+            "id": "22PaTg5HNX8w",
+            "name": "Clock In"
+          },
+          "costCode": {
+            "id": "22PR4bzLUSbZ",
+            "name": "Administrative"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgg9",
+            "name": "CLOCK IN ITEMS"
+          },
+          "organizationCostItem": {
+            "id": "22PbMcGgjp5p"
+          },
+          "documentCostItems": {
+            "count": 0
+          }
+        },
+        {
+          "id": "22PdQMFrdM25",
+          "name": "Equipment Operation",
+          "quantity": 8,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 440,
+          "price": 800,
+          "isSpecification": false,
+          "position": "o",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdM22",
+            "name": "Rentals"
+          },
+          "organizationCostItem": {
+            "id": "22PLiTbpuyiY"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhug",
+          "name": "Drain Pipe Installation",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isSpecification": false,
+          "position": "o",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PC7gTFGFbd",
+            "name": "General Requirements"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuc",
+            "name": "Drainage"
+          },
+          "organizationCostItem": {
+            "id": "22PFHQWizyrn"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhup",
+          "name": "Window Well Cover",
+          "quantity": 1,
+          "unitCost": 159.99,
+          "unitPrice": 231.9855,
+          "cost": 159.99,
+          "price": 231.99,
+          "isSpecification": false,
+          "position": "o",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PBAjfWNQqh",
+            "name": "Windows"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhuj",
+            "name": "Window"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2YsEvY"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdQMFrdhuw",
+          "name": "Trim Labor",
+          "quantity": 3,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 165,
+          "price": 300,
+          "isSpecification": false,
+          "position": "o",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwhs8XK5S",
+            "name": "Interior Trim/Casing/Paneling"
+          },
+          "costGroup": {
+            "id": "22PdQMFrdhut",
+            "name": "Interior Trims & Finishes"
+          },
+          "organizationCostItem": {
+            "id": "22PLefx3GeQF"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfm",
+          "name": "Azek",
+          "quantity": 1,
+          "unitCost": 59.98,
+          "unitPrice": 86.97099999999999,
+          "cost": 59.98,
+          "price": 86.97,
+          "isSpecification": false,
+          "position": "o",
+          "costType": {
+            "id": "22PBAjfWNQr7",
+            "name": "Materials"
+          },
+          "costCode": {
+            "id": "22PC7ghRmdTA",
+            "name": "Woods & Plastics"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfh",
+            "name": "Framing Materials"
+          },
+          "organizationCostItem": {
+            "id": "22PCCDk3Y3MD"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfv",
+          "name": "Drywall Mud Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isSpecification": false,
+          "position": "o",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwiZTcHsS",
+            "name": "Drywall"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfr",
+            "name": "Drywall/Plaster"
+          },
+          "organizationCostItem": {
+            "id": "22PCCE2mJ4yV"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgg2",
+          "name": "Paint Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isSpecification": false,
+          "position": "o",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwibbYXh9",
+            "name": "Painting"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfw",
+            "name": "Paint"
+          },
+          "organizationCostItem": {
+            "id": "22PLN6iLdCtV"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfn",
+          "name": "Framing/Sheathing Labor",
+          "quantity": 2,
+          "unitCost": 55,
+          "unitPrice": 100,
+          "cost": 110,
+          "price": 200,
+          "isSpecification": false,
+          "position": "p",
+          "costType": {
+            "id": "22PBAjfWNQr6",
+            "name": "Labor"
+          },
+          "costCode": {
+            "id": "22PMwgcccXiC",
+            "name": "Framing/Sheeting"
+          },
+          "costGroup": {
+            "id": "22PdfxB4Zgfh",
+            "name": "Framing Materials"
+          },
+          "organizationCostItem": {
+            "id": "22PEz6xKaEMb"
+          },
+          "documentCostItems": {
+            "count": 1
+          }
+        }
+      ]
+    },
+    "costGroups": {
+      "count": 25,
+      "nodes": [
+        {
+          "id": "22PdQMFrdLzs",
+          "name": "EGRESS WINDOW",
+          "position": "l",
+          "parentCostGroup": null
+        },
+        {
+          "id": "22PdQMFrdLzu",
+          "name": "Phase 1 - General Requirements",
+          "position": "l",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzs"
+          }
+        },
+        {
+          "id": "22PdQMFrdLzv",
+          "name": "Permits",
+          "position": "j",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzu"
+          }
+        },
+        {
+          "id": "22PdQMFrdLzx",
+          "name": "Project/Site Management",
+          "position": "k",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzu"
+          }
+        },
+        {
+          "id": "22PdQMFrdM22",
+          "name": "Rentals",
+          "position": "l",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzu"
+          }
+        },
+        {
+          "id": "22PdQMFrdM26",
+          "name": "Site Preparation",
+          "position": "m",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzu"
+          }
+        },
+        {
+          "id": "22PdQMFrdhuR",
+          "name": "Demolition",
+          "position": "n",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzu"
+          }
+        },
+        {
+          "id": "22PdQMFrdhuT",
+          "name": "Site Clean Up",
+          "position": "o",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzu"
+          }
+        },
+        {
+          "id": "22PdQMFrdhuW",
+          "name": "Excavation",
+          "position": "p",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzu"
+          }
+        },
+        {
+          "id": "22PdQMFrdhuZ",
+          "name": "Gravel",
+          "position": "q",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzu"
+          }
+        },
+        {
+          "id": "22PdQMFrdhuc",
+          "name": "Drainage",
+          "position": "r",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzu"
+          }
+        },
+        {
+          "id": "22PdQMFrdhuh",
+          "name": "Phase 2 - Rough-In",
+          "position": "m",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzs"
+          }
+        },
+        {
+          "id": "22PdQMFrdhui",
+          "name": "Windows",
+          "position": "o",
+          "parentCostGroup": {
+            "id": "22PdQMFrdhuh"
+          }
+        },
+        {
+          "id": "22PdQMFrdhuj",
+          "name": "Window",
+          "position": "m",
+          "parentCostGroup": {
+            "id": "22PdQMFrdhui"
+          }
+        },
+        {
+          "id": "22PdQMFrdhur",
+          "name": "Phase 3 - Interiors",
+          "position": "n",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzs"
+          }
+        },
+        {
+          "id": "22PdQMFrdhus",
+          "name": "Phase 4 - Finishes",
+          "position": "o",
+          "parentCostGroup": {
+            "id": "22PdQMFrdLzs"
+          }
+        },
+        {
+          "id": "22PdQMFrdhut",
+          "name": "Interior Trims & Finishes",
+          "position": "n",
+          "parentCostGroup": {
+            "id": "22PdQMFrdhus"
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfh",
+          "name": "Framing Materials",
+          "position": "m",
+          "parentCostGroup": {
+            "id": "22PdQMFrdhuh"
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfp",
+          "name": "Insulation",
+          "position": "n",
+          "parentCostGroup": {
+            "id": "22PdQMFrdhuh"
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfr",
+          "name": "Drywall/Plaster",
+          "position": "m",
+          "parentCostGroup": {
+            "id": "22PdQMFrdhur"
+          }
+        },
+        {
+          "id": "22PdfxB4Zgfw",
+          "name": "Paint",
+          "position": "n",
+          "parentCostGroup": {
+            "id": "22PdQMFrdhur"
+          }
+        },
+        {
+          "id": "22PdfxB4Zgg3",
+          "name": "CHANGE ORDER",
+          "position": "m",
+          "parentCostGroup": null
+        },
+        {
+          "id": "22PdfxB4Zgg4",
+          "name": "BURDEN",
+          "position": "n",
+          "parentCostGroup": null
+        },
+        {
+          "id": "22PdfxB4Zgg6",
+          "name": "GENERAL AND ADMINISTRATIVE",
+          "position": "o",
+          "parentCostGroup": null
+        },
+        {
+          "id": "22PdfxB4Zgg9",
+          "name": "CLOCK IN ITEMS",
+          "position": "p",
+          "parentCostGroup": null
+        }
+      ]
+    }
+  },
+  "costTypes": [
+    {
+      "id": "22PBAjfWNQr6",
+      "name": "Labor",
+      "margin": 0.45000549994500055,
+      "isTaxable": false,
+      "isTimeTrackable": true,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr7",
+      "name": "Materials",
+      "margin": 0.3103448275862069,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr8",
+      "name": "Subcontractor",
+      "margin": 0.3,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PBAjfWNQr9",
+      "name": "Other",
+      "margin": 0.3103448275862069,
+      "isTaxable": false,
+      "isTimeTrackable": false,
+      "isActive": true
+    },
+    {
+      "id": "22PaTg5HNX8w",
+      "name": "Clock In",
+      "margin": 0,
+      "isTaxable": false,
+      "isTimeTrackable": true,
+      "isActive": true
+    }
+  ],
+  "comparables": [
+    {
+      "price": 15684.2,
+      "cost": 10686.52,
+      "job": {
+        "name": "260249 Agler_Roof"
+      }
+    },
+    {
+      "price": 15627.5,
+      "cost": 10643.78,
+      "job": {
+        "name": "260389 Gorman_Roof"
+      }
+    },
+    {
+      "price": 15554.09,
+      "cost": 10517.46,
+      "job": {
+        "name": "260415 McMonigal_Storm Damage"
+      }
+    },
+    {
+      "price": 15515.52,
+      "cost": 10481.58,
+      "job": {
+        "name": "260669 Bloom_Storm Damage"
+      }
+    },
+    {
+      "price": 15441.43,
+      "cost": 10454.76,
+      "job": {
+        "name": "260355 Block_Repair"
+      }
+    },
+    {
+      "price": 15420.47,
+      "cost": 10699.53,
+      "job": {
+        "name": "261186 Lautzenheiser_Roof"
+      }
+    },
+    {
+      "price": 15410.12,
+      "cost": 8901.62,
+      "job": {
+        "name": "261087 Wurst_Ceiling"
+      }
+    },
+    {
+      "price": 15384.6,
+      "cost": 13940.44,
+      "job": {
+        "name": "260271 Cox_Roof"
+      }
+    },
+    {
+      "price": 15106.45,
+      "cost": 10245.7,
+      "job": {
+        "name": "260650 Henderson_Roof"
+      }
+    },
+    {
+      "price": 14956.44,
+      "cost": 10092.33,
+      "job": {
+        "name": "260256 Hart_Roof"
+      }
+    },
+    {
+      "price": 14918.15,
+      "cost": 10120.78,
+      "job": {
+        "name": "261262 Murphy_Roof"
+      }
+    },
+    {
+      "price": 14826.52,
+      "cost": 9240,
+      "job": {
+        "name": "#25-8238 The Forge Christian M"
+      }
+    },
+    {
+      "price": 14818.04,
+      "cost": 9986.59,
+      "job": {
+        "name": "261349 Gerdeman_Roof"
+      }
+    },
+    {
+      "price": 14715.51,
+      "cost": 10031.46,
+      "job": {
+        "name": "260785 Medford_Roof"
+      }
+    },
+    {
+      "price": 14654.98,
+      "cost": 9591.45,
+      "job": {
+        "name": "257580 Rammel_Roof Rep"
+      }
+    },
+    {
+      "price": 14638.05,
+      "cost": 9643.55,
+      "job": {
+        "name": "260404 Bruce_Roof"
+      }
+    },
+    {
+      "price": 14450.17,
+      "cost": 9653.78,
+      "job": {
+        "name": "260266 Black_Roof"
+      }
+    },
+    {
+      "price": 14412.9,
+      "cost": 9912,
+      "job": {
+        "name": "261366 Allmandinger_Roof"
+      }
+    },
+    {
+      "price": 14398.38,
+      "cost": 9012.98,
+      "job": {
+        "name": "260775 Ashbaugh_Siding"
+      }
+    },
+    {
+      "price": 14146.19,
+      "cost": 9483.09,
+      "job": {
+        "name": "260990 Amrose_Roof"
+      }
+    },
+    {
+      "price": 13940.55,
+      "cost": 9480.43,
+      "job": {
+        "name": "261370 Ryder_Roof"
+      }
+    },
+    {
+      "price": 13802.31,
+      "cost": 9285.42,
+      "job": {
+        "name": "260221 McDonough_Roof"
+      }
+    },
+    {
+      "price": 13675.08,
+      "cost": 9301.57,
+      "job": {
+        "name": "260852 Schroeder_Rental"
+      }
+    },
+    {
+      "price": 13368.42,
+      "cost": 8598.25,
+      "job": {
+        "name": "260477 Hitchcock_Storm Damage"
+      }
+    },
+    {
+      "price": 13202.95,
+      "cost": 8758.59,
+      "job": {
+        "name": "260278 Thatcher_Repair"
+      }
+    },
+    {
+      "price": 13163.75,
+      "cost": 8932.19,
+      "job": {
+        "name": "260520 Stewart_Roof"
+      }
+    },
+    {
+      "price": 13135.75,
+      "cost": 8905.64,
+      "job": {
+        "name": "260735 Barnes_Storm Damage"
+      }
+    },
+    {
+      "price": 12862.83,
+      "cost": 7489.62,
+      "job": {
+        "name": "258282 Able_Ceilings"
+      }
+    },
+    {
+      "price": 12767.65,
+      "cost": 8243.23,
+      "job": {
+        "name": "260287 Enyeart_Rental Wind Dmg"
+      }
+    },
+    {
+      "price": 12722.24,
+      "cost": 8520.81,
+      "job": {
+        "name": "260165 Sentinel Career Center"
+      }
+    },
+    {
+      "price": 12655.78,
+      "cost": 8588.2,
+      "job": {
+        "name": "261572 Stuckey_Roof"
+      }
+    },
+    {
+      "price": 12546.77,
+      "cost": 8484.74,
+      "job": {
+        "name": "260259 Thurston_Roof"
+      }
+    },
+    {
+      "price": 12375.33,
+      "cost": 7458.43,
+      "job": {
+        "name": "260891 Vasquez_Sump+Misc"
+      }
+    },
+    {
+      "price": 12309.67,
+      "cost": 8362.65,
+      "job": {
+        "name": "260700 Ahl_Barn Repair"
+      }
+    },
+    {
+      "price": 12065.36,
+      "cost": 12065.36,
+      "job": {
+        "name": "260351 Ducheney_Roof Damage"
+      }
+    },
+    {
+      "price": 11892.9,
+      "cost": 8097.86,
+      "job": {
+        "name": "260247 Bell_Roof"
+      }
+    },
+    {
+      "price": 11881.72,
+      "cost": 8018.07,
+      "job": {
+        "name": "260508 Turner_Storm Damage"
+      }
+    },
+    {
+      "price": 11718.92,
+      "cost": 6629.05,
+      "job": {
+        "name": "260890 Webster_Foundation"
+      }
+    },
+    {
+      "price": 11688.59,
+      "cost": 7804.61,
+      "job": {
+        "name": "261502 Cox_Roof"
+      }
+    },
+    {
+      "price": 11621.45,
+      "cost": 7875.13,
+      "job": {
+        "name": "261402 Wagner_Roof"
+      }
+    },
+    {
+      "price": 11567.64,
+      "cost": 7613.01,
+      "job": {
+        "name": "260208 Schlemmer_Windows"
+      }
+    },
+    {
+      "price": 11500,
+      "cost": 8475.29,
+      "job": {
+        "name": "250010 Kay Oss Asphalt"
+      }
+    },
+    {
+      "price": 11420.59,
+      "cost": 6775.3,
+      "job": {
+        "name": "258668 Hall_Bedroom Remodel"
+      }
+    },
+    {
+      "price": 11385.43,
+      "cost": 7706.5,
+      "job": {
+        "name": "260677 Hager_Hail Damage"
+      }
+    },
+    {
+      "price": 11038.14,
+      "cost": 7482.37,
+      "job": {
+        "name": "260516 Sherer_Roof"
+      }
+    },
+    {
+      "price": 10964.83,
+      "cost": 7338.39,
+      "job": {
+        "name": "261425 Free_Roof"
+      }
+    },
+    {
+      "price": 10964.75,
+      "cost": 6919.47,
+      "job": {
+        "name": "258684 Strausbaugh_Addition"
+      }
+    },
+    {
+      "price": 10725.77,
+      "cost": 7144.66,
+      "job": {
+        "name": "246466 Dennis Myers_Sunroom"
+      }
+    },
+    {
+      "price": 10626.46,
+      "cost": 7056.89,
+      "job": {
+        "name": "261321 Henrich_Roof"
+      }
+    },
+    {
+      "price": 10614.84,
+      "cost": 7089.13,
+      "job": {
+        "name": "261096 Zimmerly_Roof"
+      }
+    }
+  ]
+}
