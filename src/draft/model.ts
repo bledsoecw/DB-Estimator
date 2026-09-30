@@ -26,16 +26,45 @@ export interface StructuredArgs<T> {
 /** Fakeable: the tests hand back canned replies without a key. */
 export type StructuredCall = <T>(args: StructuredArgs<T>) => Promise<ModelReply>;
 
-/** The real call. Structured output, so the reply is the schema or nothing. */
-export function anthropicStructuredCall(client: Anthropic): StructuredCall {
+/**
+ * What the real call needs of the SDK client: `messages.stream`. Narrow so a
+ * test can hand in a fake; a real `Anthropic` satisfies it.
+ */
+export interface StreamingClient {
+  messages: {
+    stream(params: Anthropic.MessageStreamParams): {
+      finalMessage(): Promise<{
+        parsed_output: unknown;
+        stop_reason: string | null;
+        usage: {
+          input_tokens: number;
+          output_tokens: number;
+          cache_read_input_tokens?: number | null;
+          cache_creation_input_tokens?: number | null;
+        };
+      }>;
+    };
+  };
+}
+
+/**
+ * The real call. Structured output, so the reply is the schema or nothing.
+ *
+ * Streamed, because the SDK refuses a non-streaming request whose max_tokens
+ * could take over ten minutes (3600 × max_tokens / 128000 seconds; 32,000
+ * tokens is fifteen), and the draft's reply can be long. The stream is only
+ * accumulated here: `finalMessage()` carries the same `parsed_output`.
+ */
+export function anthropicStructuredCall(client: StreamingClient): StructuredCall {
   return async ({ model, system, content, schema, maxTokens }) => {
-    const message = await client.messages.parse({
+    const stream = client.messages.stream({
       model,
       max_tokens: maxTokens,
       system,
       output_config: { format: zodOutputFormat(schema), effort: 'high' },
       messages: [{ role: 'user', content }],
     });
+    const message = await stream.finalMessage();
     return {
       parsed: message.parsed_output,
       stopReason: message.stop_reason,

@@ -20,7 +20,8 @@ import {
 } from '../src/draft/templates.ts';
 import { fetchJobEvidence, resolveJobId } from '../src/draft/evidence.ts';
 import { evidenceText, templateIndexText, templateLinesText } from '../src/draft/prompt.ts';
-import type { StructuredArgs, StructuredCall } from '../src/draft/model.ts';
+import { anthropicStructuredCall, type StructuredArgs, type StructuredCall } from '../src/draft/model.ts';
+import { z } from 'zod';
 import { draftEstimate, type DraftFixture } from '../src/draft/draft.ts';
 import { draftJson, draftSteps, renderDraft } from '../src/draft/render.ts';
 import { estimateDraftTokens, parseDraftArgs } from '../src/draft-cli.ts';
@@ -443,4 +444,35 @@ test('a template JobTread refuses at 30 lines a page is read again at 15, then 8
 
   const other = reader(() => { throw new JobTreadError('HTTP 500 from Pave', 500); });
   await assert.rejects(fetchTemplate(other, 't1'), /HTTP 500/, 'only a 413 is retried smaller');
+});
+
+test('the real call streams, asks for the schema, and reads the parsed reply off the final message', async () => {
+  const seen: unknown[] = [];
+  const client = {
+    messages: {
+      stream(params: unknown) {
+        seen.push(params);
+        return {
+          async finalMessage() {
+            return {
+              parsed_output: { ok: true },
+              stop_reason: 'end_turn',
+              usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: null, cache_creation_input_tokens: 2 },
+            };
+          },
+        };
+      },
+    },
+  };
+  const call = anthropicStructuredCall(client);
+  const reply = await call({
+    model: 'claude-opus-5-5', system: 'sys', content: [{ type: 'text', text: 'hi' }],
+    schema: z.object({ ok: z.boolean() }), maxTokens: 32_000,
+  });
+  assert.deepEqual(reply, { parsed: { ok: true }, stopReason: 'end_turn', usage: { input: 10, output: 5, cacheRead: 0, cacheWrite: 2 } });
+  const p = seen[0] as { max_tokens: number; output_config: { format: { type: string }; effort: string }; system: string };
+  assert.equal(p.max_tokens, 32_000, 'long replies need the room, which is why it streams');
+  assert.equal(p.output_config.format.type, 'json_schema');
+  assert.equal(p.output_config.effort, 'high');
+  assert.equal(p.system, 'sys');
 });
