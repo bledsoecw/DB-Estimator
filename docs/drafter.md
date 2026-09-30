@@ -134,6 +134,12 @@ npm run draft -- --fixture test/fixtures/haag-basement.json     # replay offline
 The job is the six-digit number that starts its name, the hyphenated number
 JobTread stores, or the job id. The dry run needs only the JobTread key.
 
+Before the first paid call the CLI asks Anthropic for the model's record,
+which is free and fails exactly where a paid call would: a key scoped to the
+organization rather than a workspace (add `ANTHROPIC_WORKSPACE_ID` to `.env`,
+or create the key inside a workspace), a bad key, or a console with no credit.
+It stops there with a plain sentence, and nothing is spent.
+
 ## Cost
 
 Two calls on Claude Opus 5.5 at $4 per million input tokens and $20 per

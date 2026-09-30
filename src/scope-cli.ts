@@ -17,7 +17,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import Anthropic from '@anthropic-ai/sdk';
+import { anthropicFromEnv, preflight } from './anthropic.ts';
 import { JobTreadClient } from './jobtread/client.ts';
 import { captureFixture } from './jobtread/queries.ts';
 import { fromFixture } from './domain.ts';
@@ -94,16 +94,22 @@ async function main(): Promise<number> {
     return 0;
   }
 
-  if (!process.env['ANTHROPIC_API_KEY']) {
-    process.stderr.write(
-      'ANTHROPIC_API_KEY is not set. Add it to .env to run the review, or use --dry-run to see what would be sent.\n',
-    );
+  let anthropic;
+  try {
+    anthropic = anthropicFromEnv();
+  } catch (err) {
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    return 2;
+  }
+  const check = await preflight(anthropic, args.model);
+  if (!check.ok) {
+    process.stderr.write(`${check.reason}\nNothing was sent and nothing was spent.\n`);
     return 2;
   }
   if (!PRICING[args.model]) process.stderr.write(`no price table for ${args.model}; cost will not be shown\n`);
 
   process.stderr.write(`reviewing with ${args.model}\n`);
-  const scope = await reviewScope(packet, anthropicCall(new Anthropic()), args.model);
+  const scope = await reviewScope(packet, anthropicCall(anthropic), args.model);
   result.findings.push(...scope.findings);
 
   mkdirSync(args.out, { recursive: true });

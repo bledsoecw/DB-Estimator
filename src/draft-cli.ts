@@ -22,7 +22,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import Anthropic from '@anthropic-ai/sdk';
+import { anthropicFromEnv, preflight } from './anthropic.ts';
 import { clientFromEnv } from './jobtread/client.ts';
 import { fetchJobEvidence, resolveJobId, type JobEvidence } from './draft/evidence.ts';
 import { fetchTemplate, fetchTemplateIndex, type Template, type TemplateSummary } from './draft/templates.ts';
@@ -160,14 +160,25 @@ async function main(): Promise<number> {
     return 0;
   }
 
-  if (!process.env['ANTHROPIC_API_KEY']) {
-    log('ANTHROPIC_API_KEY is not set. Add it to .env to draft, or use --dry-run to see what would be sent.');
+  let anthropic;
+  try {
+    anthropic = anthropicFromEnv();
+  } catch (err) {
+    log(err instanceof Error ? err.message : String(err));
+    return 2;
+  }
+  // Free, and it fails exactly where a paid call would: wrong workspace, bad
+  // key, no credit. Nothing is sent to the model until this passes.
+  const check = await preflight(anthropic, args.model);
+  if (!check.ok) {
+    log(check.reason);
+    log('Nothing was sent and nothing was spent.');
     return 2;
   }
   if (!PRICING[args.model]) log(`no price table for ${args.model}; cost will not be shown`);
 
   log(`drafting with ${args.model}`);
-  const draft = await draftEstimate(evidence, index, loadTemplate, anthropicStructuredCall(new Anthropic()), {
+  const draft = await draftEstimate(evidence, index, loadTemplate, anthropicStructuredCall(anthropic), {
     model: args.model,
     ...(args.templateIds.length ? { templateIds: args.templateIds } : {}),
   });
