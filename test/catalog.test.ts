@@ -256,9 +256,9 @@ test('a match the model names that was not a candidate, or with no quantity in t
   const all = foldCandidates(RAW as never, []);
   const reply = {
     findings: [
-      finding('gap-0', { catalog: { kind: 'templateLine', id: 'made-up', quantity: 1, basis: '' } }),
-      finding('gap-1', { catalog: { kind: 'catalogItem', id: 'itemVapor', quantity: null, basis: 'rolls, count unknown' } }),
-      finding('gap-2', { catalog: { kind: 'catalogItem', id: 'itemCrew', quantity: null, basis: '' } }),
+      finding('gap-0', { catalog: { kind: 'templateLine', id: 'made-up', quantity: 1, basis: '', sectionGroupId: null } }),
+      finding('gap-1', { catalog: { kind: 'catalogItem', id: 'itemVapor', quantity: null, basis: 'rolls, count unknown', sectionGroupId: null } }),
+      finding('gap-2', { catalog: { kind: 'catalogItem', id: 'itemCrew', quantity: null, basis: '', sectionGroupId: null } }),
     ],
   };
   const d = await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, reply]), {
@@ -270,7 +270,7 @@ test('a match the model names that was not a candidate, or with no quantity in t
   assert.match(d.gaps[0]!.catalogNote!, /named catalog id made-up, which was not among the candidates/);
   assert.match(d.gaps[1]!.catalogNote!, /"Vapor Barrier 4 mil" covers this, but no quantity in Each was given; the rep sets it/);
   assert.match(d.gaps[2]!.catalogNote!, /"Crew Labor" covers this, but no quantity in Hours was given/);
-  assert.match(draftSteps(d), /Plastic vapor barrier[^\n]*\n     catalog: "Vapor Barrier 4 mil" covers this, but no quantity in Each was given; the rep sets it/);
+  assert.match(draftSteps(d), /Plastic vapor barrier[^\n]*\n     price to type: [^\n]*\n     catalog: "Vapor Barrier 4 mil" covers this, but no quantity in Each was given; the rep sets it/);
 
   // With no gaps there is nothing to search and no third call.
   const none = fake([{ ...DRAFT, gaps: [] }]);

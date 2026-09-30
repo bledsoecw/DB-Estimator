@@ -295,7 +295,7 @@ test('targets are subcontracted lines, lines the model wanted looked up, and eve
   const steps = draftSteps(d);
   assert.match(steps, /^History proposes \$1,963\.68 price \(\$1,080\.00 cost\) for 1 of the flagged items — a proposal for Carl, not in the totals above$/m);
   assert.match(steps, /Flooring - Sub: 706 Square Foot \[option: Flooring — Epoxy\][^\n]*\n       history: DB subbed one epoxy floor.*History says \$13\.60\/Square Foot cost \(\$19\.43 price\) against the template's \$7\.50\./);
-  assert.match(steps, /Skim-coat the concrete walls \(Labor, 24 Hours\)[^\n]*\n     history: No skim coat in DB history.*Proposed from history: \$45\.00\/Hours × 24 = \$1,080\.00 cost, \$1,963\.68 price — Carl confirms/);
+  assert.match(steps, /Skim-coat the concrete walls" \(Labor, 24 Hours\)[^\n]*\n     price to type: [^\n]*\n     history: No skim coat in DB history.*Proposed from history: \$45\.00\/Hours × 24 = \$1,080\.00 cost, \$1,963\.68 price — Carl confirms/);
   assert.match(steps, /History says DB usually subcontracts this work, drafted here as crew labor:\n   - Paint Labor: DB has subbed interior painting.*Usual sub: Jeff Southworth's Drywall & Painting\./);
 
   const html = renderDraft(fx.evidence, d);
@@ -341,11 +341,11 @@ test('when nothing in history matches, the third call runs for the gaps alone an
 
   const steps = draftSteps(d);
   assert.match(steps, /^Regional ballpark \$1,963\.68 price \(\$1,080\.00 cost\) for 1 of the flagged items DB has no history for — NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out; not in the totals above$/m);
-  assert.match(steps, /Skim-coat the concrete walls \(Labor, 24 Hours\)[^\n]*\n     history: No skim coat anywhere in DB history\. Regional ballpark: \$45\.00\/Hours cost \(\$81\.82 price\) × 24 = \$1,080\.00 cost, \$1,963\.68 price — NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out\. A finisher at about \$45\/hour loaded/);
+  assert.match(steps, /Skim-coat the concrete walls" \(Labor, 24 Hours\)[^\n]*\n     price to type: [^\n]*\n     history: No skim coat anywhere in DB history\. Regional ballpark: \$45\.00\/Hours cost \(\$81\.82 price\) × 24 = \$1,080\.00 cost, \$1,963\.68 price — NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out\. A finisher at about \$45\/hour loaded/);
   assert.match(steps, /Past work was searched for "paint sub", "painting", "epoxy", "floor coating", "skim coat", "skim": no past DB work matched any search term\./);
   const html = renderDraft(fx.evidence, d);
   assert.match(html, /a regional ballpark of \$1,963\.68 for 1 of them, not DB pricing/);
-  assert.match(html, /Flagged · regional ballpark, not DB pricing<\/div>\s*<h3>Skim-coat the concrete walls/);
+  assert.match(html, /Create · regional ballpark, not DB pricing<\/div>\s*<h3>Skim-coat the concrete walls/);
   const json = draftJson(d) as { gaps: { proposed: { source: string; price: string } | null; regionalUnitCost: string | null }[]; totals: { regionalForGaps: { gaps: number } } };
   assert.equal(json.gaps[0]!.proposed!.source, 'regional');
   assert.equal(json.gaps[0]!.regionalUnitCost, '$45.00');
@@ -378,7 +378,7 @@ test('a gap whose quantity is unknown gets the regional unit figure and no total
   assert.equal(formatMoney(move.regionalUnitCost!), '$55.00');
   assert.equal(formatMoney(move.regionalUnitPrice!), '$100.00');
   assert.equal(d.history?.regional, 1);
-  assert.match(draftSteps(d), /Move contents \(Labor, Hours\)[^\n]*\n     history: Nothing in DB history for moving contents\. Regional ballpark: \$55\.00\/Hours cost \(\$100\.00 price\), quantity still to be confirmed — NOTE TO REP/);
+  assert.match(draftSteps(d), /Move contents" \(Labor, Hours\)[^\n]*\n     price to type: [^\n]*\n     history: Nothing in DB history for moving contents\. Regional ballpark: \$55\.00\/Hours cost \(\$100\.00 price\), quantity still to be confirmed — NOTE TO REP/);
   // gap-0 has a history cost; the ballpark for it, had one been given, would be ignored.
   const both = { findings: [{ ...HISTORY.findings[2]!, regionalUnitCost: 99, regionalBasis: 'ignored' }] };
   const d2 = await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, both]), {
@@ -407,7 +407,7 @@ test('without a margin, history gives a cost and no price; without history, noth
 
 test('attachHistory drops findings for ids nobody asked about and ignores non-positive costs', () => {
   const lines: Parameters<typeof attachHistory>[0] = [];
-  const gaps: Parameters<typeof attachHistory>[1] = [{ ...DRAFT.gaps[0]!, costType: 'Labor', history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null, resolved: null, catalogNote: null }];
+  const gaps: Parameters<typeof attachHistory>[1] = [{ ...DRAFT.gaps[0]!, costType: 'Labor', history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null, resolved: null, catalogNote: null, placeIn: null }];
   attachHistory(lines, gaps, [
     { ...HISTORY.findings[2]!, suggestedUnitCost: 0 } as (typeof HISTORY.findings)[number],
     HISTORY.findings[4]!,
