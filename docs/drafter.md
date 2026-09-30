@@ -100,9 +100,11 @@ So the draft has a third, short call:
    the matched lines' documents**: the sub's quote is attached to the work
    order or change order it priced, and that is where the square footage a
    lump-sum line does not carry is written. Failing that, the job's files
-   whose name or description carries the search term. PDFs first, one copy
-   of a file uploaded twice, three files a job, eight a read; a job with a
-   thousand migrated files is never scanned.
+   whose name or description carries the search term. Quotes before other
+   PDFs before photos, one copy of a file uploaded twice, three files a job,
+   twelve a read, dealt out one per search term per round so the first term
+   searched cannot take them all; a job with a thousand migrated files is
+   never scanned.
 3. The model reads the matches and the attached files and, per target, says
    whether DB has done this before, cites the lines and files it relies on,
    and gives a unit cost only when the arithmetic is shown. A size written
@@ -110,10 +112,12 @@ So the draft has a third, short call:
    stays a lump sum and the model says what would settle it. For a labor
    line it says whether DB usually subs that trade, and to whom.
 
-The code then prices what history proposes at the Subcontractor cost type's
-margin, the same one JobTread applies, and shows it as a **proposal**: on a
-subcontracted line, beside the template rate ("history says $13.60/SF against
-the template's $7.50"); on a gap, as the cost and price the gap would carry.
+The code then prices what history proposes at the margin JobTread applies to
+that line's cost type (a sub's rate at the Subcontractor margin, a crew rate
+at the Labor margin) and shows it as a **proposal**: on a subcontracted line,
+beside the template rate ("history says $13.60/SF against the template's
+$7.50", or "history agrees with the template's $55.00/hour"); on a gap, as
+the cost and price the gap would carry.
 Proposals never enter the totals. The header says how much history proposes
 for the flagged items and that Carl confirms.
 
@@ -214,7 +218,15 @@ moving optional. It flagged two gaps rather than bend a line: skim-coating
 concrete walls has no template line, and it would not use the drywall mud
 lines for it. That is a real catalog question for Carl.
 
-Four things were wrong, all fixed the same day:
+The second run, with history: the painting terms were searched first and
+their jobs' files took the whole file budget, so the two Rhino epoxy quotes
+were listed as found but not attached and the lump sum stayed a lump sum;
+a crew-labor rate from history was priced at the subcontractor margin; and
+"history says $55 against the template's $55" was agreement written as a
+difference. All three fixed the same day; the file budget is now dealt out
+across the terms in turns.
+
+Four things were wrong on the first run, all fixed the same day:
 
 1. The base price left the skim coat out, because the skim coat was in the
    gaps, and said nothing about it. The total now says how many flagged items

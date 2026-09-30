@@ -108,10 +108,14 @@ export interface HistoryOptions {
 
 export const FILE_LIMITS = {
   perJob: 3,
-  total: 8,
+  /** Shared across the search terms in turns, so the first term searched cannot take them all. */
+  total: 12,
   maxFileBytes: 8 * 1024 * 1024,
   maxTotalBytes: 24 * 1024 * 1024,
 };
+
+/** A quote is what turns a lump sum into a rate; it goes first. */
+const QUOTE_LIKE = /quote|bid|proposal|estimate|invoice|statement|contract/i;
 
 const PAGE = 50;
 const MAX_JOBS = 5;
@@ -145,9 +149,8 @@ export async function searchHistory(
   const maxJobs = opts.maxJobsPerTerm ?? MAX_JOBS;
   const out: HistoryHits[] = [];
   const seen = new Set<string>();
-  const attachments: HistoryAttachment[] = [];
-  const download = opts.download === undefined ? httpDownload : opts.download;
-  let totalBytes = 0;
+
+  // 1. Search every term and read the top jobs' context and file lists.
   for (const raw of terms) {
     const term = raw.trim().toLowerCase();
     if (!term || seen.has(term)) continue;
@@ -155,26 +158,92 @@ export async function searchHistory(
     const hits = await searchTerm(client, term);
     const jobs = groupByJob(hits, opts.excludeJobId).slice(0, maxJobs);
     if (opts.context !== false) {
-      for (const job of jobs.slice(0, CONTEXT_JOBS)) {
-        await addContext(client, job, term);
-        for (const f of job.files) {
-          if (f.skipped) continue;
-          if (attachments.length >= FILE_LIMITS.total) { f.skipped = `more than ${FILE_LIMITS.total} files already sent`; continue; }
-          if (totalBytes + f.size > FILE_LIMITS.maxTotalBytes) { f.skipped = 'over the size budget for one read'; continue; }
-          if (!download) continue;
-          try {
-            const bytes = await download(f.url);
-            attachments.push({ jobName: job.jobName, file: f, bytes });
-            totalBytes += bytes.length;
-          } catch (err) {
-            f.skipped = `could not be downloaded: ${err instanceof Error ? err.message : String(err)}`;
-          }
-        }
-      }
+      for (const job of jobs.slice(0, CONTEXT_JOBS)) await addContext(client, job, term);
     }
     out.push({ term, raw: hits.length, jobs });
   }
+
+  // 2. Decide which files go, fairly across the terms; 3. fetch them.
+  const chosen = chooseAttachments(out);
+  const attachments: HistoryAttachment[] = [];
+  const download = opts.download === undefined ? httpDownload : opts.download;
+  if (download) {
+    let totalBytes = 0;
+    for (const { job, file } of chosen) {
+      if (totalBytes + file.size > FILE_LIMITS.maxTotalBytes) { file.skipped = 'over the size budget for one read'; continue; }
+      try {
+        const bytes = await download(file.url);
+        attachments.push({ jobName: job.jobName, file, bytes });
+        totalBytes += bytes.length;
+      } catch (err) {
+        file.skipped = `could not be downloaded: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+  }
   return { terms: out, attachments };
+}
+
+/**
+ * Which listed files are read, in download order.
+ *
+ * The first live run searched the painting terms before "epoxy", and the
+ * painting jobs' files took the whole budget: the two Rhino quotes were
+ * listed as "found but not attached", and the epoxy lump sum stayed a lump
+ * sum. So the budget is dealt out in turns, one file per term per round,
+ * quotes before other PDFs before photos, the best job's first. A file that
+ * appears under two terms is attached once. Everything not chosen is marked
+ * with why. Pure.
+ */
+export function chooseAttachments(
+  hits: HistoryHits[],
+  limits: { total: number } = FILE_LIMITS,
+): { job: HistoryJob; file: HistoryFile }[] {
+  const rank = (f: HistoryFile): number => {
+    const quote = QUOTE_LIKE.test(f.name) || QUOTE_LIKE.test(f.description ?? '');
+    if (f.type === 'application/pdf') return quote ? 0 : 1;
+    return quote ? 2 : 3;
+  };
+  // Per term, its candidates in the order it would like them read: a quote
+  // from any of its top jobs before a plain PDF, before a photo; the best
+  // job first among equals.
+  const queues = hits.map((h) =>
+    h.jobs
+      .flatMap((job, jobIndex) =>
+        job.files
+          .filter((f) => f.skipped === null)
+          .map((file) => ({ term: h.term, job, jobIndex, file })),
+      )
+      .sort((a, b) => rank(a.file) - rank(b.file) || a.jobIndex - b.jobIndex),
+  );
+  const chosen: { job: HistoryJob; file: HistoryFile }[] = [];
+  const attachedAs = new Map<string, string>(); // name|size -> the term it went in under
+  const keyOf = (f: HistoryFile): string => `${f.name.toLowerCase()}|${f.size}`;
+  let progressed = true;
+  while (chosen.length < limits.total && progressed) {
+    progressed = false;
+    for (const q of queues) {
+      if (chosen.length >= limits.total) break;
+      // A file already attached under another term does not cost this term its turn.
+      let next = q.shift();
+      while (next && attachedAs.has(keyOf(next.file))) {
+        next.file.skipped = `the same file is attached under "${attachedAs.get(keyOf(next.file))}"`;
+        next = q.shift();
+      }
+      if (!next) continue;
+      progressed = true;
+      attachedAs.set(keyOf(next.file), next.term);
+      chosen.push({ job: next.job, file: next.file });
+    }
+  }
+  for (const q of queues) {
+    for (const left of q) {
+      const under = attachedAs.get(keyOf(left.file));
+      left.file.skipped = under
+        ? `the same file is attached under "${under}"`
+        : `the read's ${limits.total}-file budget went to closer matches`;
+    }
+  }
+  return chosen;
 }
 
 async function searchTerm(client: Reader, term: string): Promise<RawHit[]> {

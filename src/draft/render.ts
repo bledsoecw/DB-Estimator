@@ -171,10 +171,14 @@ function historyLineText(l: DraftLine): string {
   const h = l.history!;
   let out = h.summary;
   if (l.historyUnitCost !== null) {
-    out += ` History says ${formatMoney(l.historyUnitCost)}/${l.unit ?? 'unit'} cost` +
-      (l.historyUnitPrice !== null ? ` (${formatMoney(l.historyUnitPrice)} price)` : '') +
-      (l.priced ? ` against the template's ${formatMoney(l.unitCost)}` : '') +
-      `. ${h.suggestionBasis}`;
+    if (l.priced && l.historyUnitCost === l.unitCost) {
+      out += ` History agrees with the template's ${formatMoney(l.unitCost)}/${l.unit ?? 'unit'}. ${h.suggestionBasis}`;
+    } else {
+      out += ` History says ${formatMoney(l.historyUnitCost)}/${l.unit ?? 'unit'} cost` +
+        (l.historyUnitPrice !== null ? ` (${formatMoney(l.historyUnitPrice)} price)` : '') +
+        (l.priced ? ` against the template's ${formatMoney(l.unitCost)}` : '') +
+        `. ${h.suggestionBasis}`;
+    }
   } else if (h.match !== 'none') {
     out += ` ${h.suggestionBasis}`;
   }

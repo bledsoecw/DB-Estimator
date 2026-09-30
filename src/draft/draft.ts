@@ -149,8 +149,12 @@ export interface Draft {
 
 export interface HistorySource {
   search: (terms: string[]) => Promise<HistoryReport>;
-  /** The Subcontractor cost type's margin as a fraction (0.3), for pricing what history proposes. */
-  subMargin: number | null;
+  /**
+   * Each cost type's margin as a fraction, by name ("Subcontractor" 0.3,
+   * "Labor" 0.45), for pricing what history proposes at the margin JobTread
+   * would apply to that line. Empty means cost only.
+   */
+  margins: Record<string, number>;
   /** What earlier runs learned. Absent means search everything every time. */
   learned?: LearnedStore;
 }
@@ -282,7 +286,7 @@ export async function draftEstimate(
         },
       });
     }
-    attachHistory(lines, gaps, learnedFindings, opts.history.subMargin);
+    attachHistory(lines, gaps, learnedFindings, opts.history.margins);
 
     const terms = uniqueTerms(toSearch);
     let report: HistoryReport = { terms: [] };
@@ -307,7 +311,7 @@ export async function draftEstimate(
         usage = addUsage(usage, h.usage);
         addCost(h.cost);
         const searched: AttachedFinding[] = h.data.findings.map((f) => ({ ...f, origin: { kind: 'searched' } }));
-        attachHistory(lines, gaps, searched, opts.history.subMargin);
+        attachHistory(lines, gaps, searched, opts.history.margins);
         findings = searched.length;
         remember(store, toSearch, searched, evidence.jobName);
       }
@@ -393,19 +397,23 @@ export function uniqueTerms(targets: HistoryTarget[]): string[] {
  * Put each finding on its line or gap and price what history proposes.
  *
  * The model cites a unit cost from past lines; the code turns it into
- * Money and into a price at the subcontractor margin, the same one JobTread
- * applies to a Subcontractor line. A finding for an id nobody asked about
- * is dropped: it cannot be shown on anything.
+ * Money and into a price at the margin JobTread applies to that line's cost
+ * type: a crew-labor rate at the Labor margin, a sub's rate at the
+ * Subcontractor margin. A finding for an id nobody asked about is dropped:
+ * it cannot be shown on anything.
  */
 export function attachHistory(
   lines: DraftLine[],
   gaps: DraftGap[],
   findings: AttachedFinding[],
-  subMargin: number | null,
+  margins: Record<string, number>,
 ): void {
-  const margin = subMargin === null ? null : rateFromApi(subMargin);
   // A proposed unit price is rounded to the cent: it is read by a person, not stored by JobTread.
-  const price = (cost: Money): Money | null => (margin === null ? null : roundToCents(priceFromCostAtMargin(cost, margin)));
+  const price = (cost: Money, costTypeName: string): Money | null => {
+    const m = margins[costTypeName];
+    if (m === undefined || m >= 1) return null;
+    return roundToCents(priceFromCostAtMargin(cost, rateFromApi(m)));
+  };
   const byLine = new Map(lines.map((l) => [l.lineId, l]));
   for (const f of findings) {
     if (f.target.kind === 'line') {
@@ -414,7 +422,7 @@ export function attachHistory(
       l.history = f;
       if (f.suggestedUnitCost !== null && f.suggestedUnitCost > 0) {
         l.historyUnitCost = moneyFromApi(f.suggestedUnitCost);
-        l.historyUnitPrice = price(l.historyUnitCost);
+        l.historyUnitPrice = price(l.historyUnitCost, l.costTypeName);
       }
     } else {
       const m = /^gap-(\d+)$/.exec(f.target.id);
@@ -423,7 +431,7 @@ export function attachHistory(
       g.history = f;
       if (f.suggestedUnitCost !== null && f.suggestedUnitCost > 0 && g.quantity !== null && g.quantity > 0) {
         const unitCost = moneyFromApi(f.suggestedUnitCost);
-        const unitPrice = price(unitCost);
+        const unitPrice = price(unitCost, g.costType);
         const q = qtyFromApi(g.quantity);
         g.proposed = {
           unitCost,

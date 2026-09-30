@@ -128,10 +128,11 @@ export function toFixture(
   };
 }
 
-/** The Subcontractor cost type's margin, for pricing what history proposes. */
-export function subMarginOf(costTypes: ApiCostType[]): number | null {
-  const sub = costTypes.find((c) => c.name === 'Subcontractor');
-  return sub?.margin ?? null;
+/** Each cost type's margin by name, for pricing what history proposes at the margin JobTread would apply. */
+export function marginsOf(costTypes: ApiCostType[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const c of costTypes) if (c.margin !== null && c.margin !== undefined) out[c.name] = c.margin;
+  return out;
 }
 
 async function main(): Promise<number> {
@@ -163,7 +164,7 @@ async function main(): Promise<number> {
       const saved = f.history;
       historySource = {
         search: async (terms) => ({ terms: saved.terms.filter((t) => terms.includes(t.term)) }),
-        subMargin: subMarginOf(f.costTypes ?? []),
+        margins: marginsOf(f.costTypes ?? []),
         ...(learned ? { learned } : {}),
       };
     }
@@ -199,7 +200,7 @@ async function main(): Promise<number> {
             ...(args.photos ? {} : { download: null }),
           });
         },
-        subMargin: subMarginOf(costTypes),
+        margins: marginsOf(costTypes),
         ...(learned ? { learned } : {}),
       };
     }

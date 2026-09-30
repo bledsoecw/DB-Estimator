@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 
 import { formatMoney, moneyFromApi } from '../src/money.ts';
 import type { Reader } from '../src/jobtread/queries.ts';
-import { historyText, searchHistory, selectHistoryFiles, strengthOf, whereOf, type HistoryReport } from '../src/draft/history.ts';
+import { chooseAttachments, historyText, searchHistory, selectHistoryFiles, strengthOf, whereOf, type HistoryHits, type HistoryReport } from '../src/draft/history.ts';
 import { LearnedStore } from '../src/draft/learned.ts';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -24,9 +24,11 @@ import type { StructuredArgs, StructuredCall } from '../src/draft/model.ts';
 import { attachHistory, draftEstimate, historyTargets, uniqueTerms, type DraftFixture } from '../src/draft/draft.ts';
 import { historyTargetsText } from '../src/draft/prompt.ts';
 import { draftJson, draftSteps, renderDraft } from '../src/draft/render.ts';
-import { parseDraftArgs, subMarginOf } from '../src/draft-cli.ts';
+import { marginsOf, parseDraftArgs } from '../src/draft-cli.ts';
 
 const fx = JSON.parse(readFileSync('test/fixtures/haag-basement.json', 'utf8')) as DraftFixture;
+/** DB's cost types: a sub line prices at 30% margin, crew labor at 45%. */
+const MARGINS = { Subcontractor: 0.3, Labor: 0.45, Materials: 0.3103448275862069, Other: 0.3103448275862069 };
 const FIN = '22PLCZU3cbqS';
 const GR = '22PF3gnGCuiB';
 const byId = new Map(fx.templates.map((t) => [t.id, t]));
@@ -229,7 +231,7 @@ test('targets are subcontracted lines, lines the model wanted looked up, and eve
   const call = fake([DRAFT, HISTORY]);
   const d = await draftEstimate(fx.evidence, fx.index, load, call, {
     templateIds: [FIN, GR],
-    history: { search: async (terms) => { searched.push(terms); return report(true); }, subMargin: 0.3 },
+    history: { search: async (terms) => { searched.push(terms); return report(true); }, margins: MARGINS },
   });
   assert.deepEqual(searched, [['paint sub', 'painting', 'epoxy', 'floor coating', 'skim coat', 'skim']]);
   assert.equal(call.calls.length, 2, 'draft, then history');
@@ -252,10 +254,18 @@ test('targets are subcontracted lines, lines the model wanted looked up, and eve
   assert.equal(paint.history?.typicallySubbed, true);
   assert.equal(paint.historyUnitCost, null);
 
+  // A crew-labor rate from history prices at the Labor margin, and one equal to the template's reads as agreement.
+  const agree = await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, { findings: [
+    { ...HISTORY.findings[1]!, suggestedUnitCost: 55, suggestionBasis: '$550 / 10 hrs on Miller.' },
+  ] }]), { templateIds: [FIN, GR], history: { search: async () => report(true), margins: MARGINS } });
+  const laborLine = agree.lines.find((l) => l.name === 'Paint Labor')!;
+  assert.equal(formatMoney(laborLine.historyUnitPrice!), '$100.00', '55 at the Labor margin, not the sub margin');
+  assert.match(draftSteps(agree), /History agrees with the template's \$55\.00\/Hours\. \$550 \/ 10 hrs on Miller\./);
+
   // A gap with a quantity and a cited cost gets a proposal; without a quantity it does not.
   assert.equal(formatMoney(d.gaps[0]!.proposed!.unitCost), '$45.00');
   assert.equal(formatMoney(d.gaps[0]!.proposed!.cost), '$1,080.00');
-  assert.equal(formatMoney(d.gaps[0]!.proposed!.price!), '$1,542.96', '45/0.7 = $64.29 a unit, × 24');
+  assert.equal(formatMoney(d.gaps[0]!.proposed!.price!), '$1,963.68', 'a Labor gap prices at the Labor margin: 45/0.55 = $81.82 a unit, × 24');
   assert.equal(d.gaps[1]!.proposed, null);
   assert.equal(d.gaps[1]!.history?.match, 'none');
   assert.equal(formatMoney(d.totals.proposedForGaps.cost), '$1,080.00');
@@ -266,28 +276,28 @@ test('targets are subcontracted lines, lines the model wanted looked up, and eve
   assert.equal(d.usage.input, 2_000);
 
   const steps = draftSteps(d);
-  assert.match(steps, /^History proposes \$1,542\.96 price \(\$1,080\.00 cost\) for 1 of the flagged items — a proposal for Carl, not in the totals above$/m);
+  assert.match(steps, /^History proposes \$1,963\.68 price \(\$1,080\.00 cost\) for 1 of the flagged items — a proposal for Carl, not in the totals above$/m);
   assert.match(steps, /Flooring - Sub: 706 Square Foot \[option: Flooring — Epoxy\][^\n]*\n       history: DB subbed one epoxy floor.*History says \$13\.60\/Square Foot cost \(\$19\.43 price\) against the template's \$7\.50\./);
-  assert.match(steps, /Skim-coat the concrete walls \(Labor, 24 Hours\)[^\n]*\n     history: No skim coat in DB history.*Proposed from history: \$45\.00\/Hours × 24 = \$1,080\.00 cost, \$1,542\.96 price — Carl confirms/);
+  assert.match(steps, /Skim-coat the concrete walls \(Labor, 24 Hours\)[^\n]*\n     history: No skim coat in DB history.*Proposed from history: \$45\.00\/Hours × 24 = \$1,080\.00 cost, \$1,963\.68 price — Carl confirms/);
   assert.match(steps, /History says DB usually subcontracts this work, drafted here as crew labor:\n   - Paint Labor: DB has subbed interior painting.*Usual sub: Jeff Southworth's Drywall & Painting\./);
 
   const html = renderDraft(fx.evidence, d);
-  assert.match(html, /history proposes \$1,542\.96 for 1 of them/);
+  assert.match(html, /history proposes \$1,963\.68 for 1 of them/);
   assert.match(html, /<span class="k">History<\/span> DB subbed one epoxy floor/);
   assert.match(html, /Usually subcontracted<\/div><h3>Paint Labor<\/h3>/);
   assert.match(html, /246466 Dennis Myers_Sunroom<\/td><td>Epoxy Sub Pckg · 1 Lump Sum · \$5712\.00\/Lump Sum · \$5712\.00 · change order from Rhino Concrete Coatings · 2026-08-31/);
 
   const json = draftJson(d) as { gaps: { proposed: { price: string } | null }[]; history: { terms: string[]; findings: number }; totals: { proposedForGaps: { price: string } } };
-  assert.equal(json.gaps[0]!.proposed!.price, '$1,542.96');
+  assert.equal(json.gaps[0]!.proposed!.price, '$1,963.68');
   assert.equal(json.history.findings, 5);
-  assert.equal(json.totals.proposedForGaps.price, '$1,542.96');
+  assert.equal(json.totals.proposedForGaps.price, '$1,963.68');
 });
 
 test('when nothing in history matches, the third call is not made and the page says what was searched', async () => {
   const call = fake([DRAFT]);
   const d = await draftEstimate(fx.evidence, fx.index, load, call, {
     templateIds: [FIN, GR],
-    history: { search: async () => report(false), subMargin: 0.3 },
+    history: { search: async () => report(false), margins: MARGINS },
   });
   assert.equal(call.calls.length, 1);
   assert.equal(d.history?.skipped, 'no past DB work matched any search term');
@@ -299,7 +309,7 @@ test('when nothing in history matches, the third call is not made and the page s
 test('without a margin, history gives a cost and no price; without history, nothing changes', async () => {
   const d = await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, HISTORY]), {
     templateIds: [FIN, GR],
-    history: { search: async () => report(true), subMargin: null },
+    history: { search: async () => report(true), margins: {} },
   });
   assert.equal(formatMoney(d.gaps[0]!.proposed!.cost), '$1,080.00');
   assert.equal(d.gaps[0]!.proposed!.price, null);
@@ -318,14 +328,21 @@ test('attachHistory drops findings for ids nobody asked about and ignores non-po
   attachHistory(lines, gaps, [
     { ...HISTORY.findings[2]!, suggestedUnitCost: 0 } as (typeof HISTORY.findings)[number],
     HISTORY.findings[4]!,
-  ] as Parameters<typeof attachHistory>[2], 0.3);
+  ] as Parameters<typeof attachHistory>[2], MARGINS);
   assert.equal(gaps[0]!.history?.match, 'partial');
   assert.equal(gaps[0]!.proposed, null, 'a $0 cost proposes nothing');
 });
 
-test('the CLI reads the subcontractor margin and can turn history off', () => {
-  assert.equal(subMarginOf([{ id: 'a', name: 'Subcontractor', margin: 0.3, isTaxable: false, isTimeTrackable: false, isActive: true }]), 0.3);
-  assert.equal(subMarginOf([]), null);
+test('the CLI reads every cost type margin and can turn history off', () => {
+  assert.deepEqual(
+    marginsOf([
+      { id: 'a', name: 'Subcontractor', margin: 0.3, isTaxable: false, isTimeTrackable: false, isActive: true },
+      { id: 'b', name: 'Labor', margin: 0.45, isTaxable: false, isTimeTrackable: true, isActive: true },
+      { id: 'c', name: 'Clock In', margin: null, isTaxable: false, isTimeTrackable: true, isActive: true },
+    ]),
+    { Subcontractor: 0.3, Labor: 0.45 },
+  );
+  assert.deepEqual(marginsOf([]), {});
   assert.equal(parseDraftArgs(['261323', '--no-history']).history, false);
   assert.equal(parseDraftArgs(['261323']).history, true);
 });
@@ -374,7 +391,7 @@ test('attached files go to the model after the text, each introduced by the job 
   };
   await draftEstimate(fx.evidence, fx.index, load, call, {
     templateIds: [FIN, GR],
-    history: { search: async () => withFile, subMargin: 0.3 },
+    history: { search: async () => withFile, margins: MARGINS },
   });
   const content = call.calls[1]!.content as { type: string; text?: string }[];
   const intro = content.findIndex((b) => b.type === 'text' && /^From past job 246466 Dennis Myers_Sunroom, found on the work order:/.test(b.text ?? ''));
@@ -418,7 +435,7 @@ test('a finding is remembered under every term that led to it, stays fresh for a
 test('the second job with the same trades is answered from the price book: no search, no third call', async () => {
   const store = new LearnedStore([], { now: () => T0 });
   const searches: string[][] = [];
-  const src = (search: (t: string[]) => Promise<HistoryReport>) => ({ search, subMargin: 0.3, learned: store });
+  const src = (search: (t: string[]) => Promise<HistoryReport>) => ({ search, margins: MARGINS, learned: store });
 
   // First job: everything is searched and read.
   const first = fake([DRAFT, HISTORY]);
@@ -446,7 +463,7 @@ test('the second job with the same trades is answered from the price book: no se
   const epoxy = d2.lines.find((l) => l.name === 'Flooring - Sub')!;
   assert.equal(epoxy.history?.origin.kind, 'learned');
   assert.equal(formatMoney(epoxy.historyUnitCost!), '$13.60', 'the learned unit cost is priced again');
-  assert.equal(formatMoney(d2.gaps[0]!.proposed!.price!), '$1,542.96');
+  assert.equal(formatMoney(d2.gaps[0]!.proposed!.price!), '$1,963.68');
   const steps = draftSteps(d2);
   assert.match(steps, /3 items answered from the learned price book without a search\./);
   assert.match(steps, /Learned 2026-09-30 on 261323 Haag_Remodel; not searched again until 2027-09-30\./);
@@ -465,7 +482,7 @@ test('the second job with the same trades is answered from the price book: no se
 test('"nothing found" is remembered briefly, so the same empty search is not repeated next week', async () => {
   const store = new LearnedStore([], { now: () => T0 });
   const searches: string[][] = [];
-  const src = { search: async (t: string[]) => { searches.push(t); return report(false); }, subMargin: 0.3, learned: store };
+  const src = { search: async (t: string[]) => { searches.push(t); return report(false); }, margins: MARGINS, learned: store };
   await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT]), { templateIds: [FIN, GR], history: src });
   assert.equal(searches.length, 1);
   assert.equal(store.entries.get('epoxy')!.finding.match, 'none');
@@ -483,4 +500,33 @@ test('the CLI knows the price book flags', () => {
   assert.equal(parseDraftArgs(['261323']).learned, '.db-estimator/learned-prices.json');
   assert.equal(parseDraftArgs(['261323']).relearnAfterDays, 365);
   assert.throws(() => parseDraftArgs(['261323', '--relearn-after', 'soon']), /needs a number of days/);
+});
+
+test('the file budget is dealt out across the terms, quotes first, each file once, and the rest say why', () => {
+  const pdf = (id: string, name: string, description: string | null = null) =>
+    ({ ...file(id, name, 100 + id.length, description), foundOn: 'the work order', skipped: null as string | null });
+  const jobA = { jobId: 'A', jobName: 'A', description: null, projectType: null, lines: [], context: [], files: [
+    pdf('a1', 'A misc.pdf'), pdf('a2', 'A Quote.pdf', 'quote'), { ...pdf('a3', 'photo.jpg'), type: 'image/jpeg' },
+  ] };
+  const jobB = { jobId: 'B', jobName: 'B', description: null, projectType: null, lines: [], context: [], files: [
+    pdf('b1', 'B bill.pdf', 'statement'), pdf('b2', 'B drawing.pdf'),
+  ] };
+  const jobC = { jobId: 'C', jobName: 'C', description: null, projectType: null, lines: [], context: [], files: [
+    pdf('a2', 'A Quote.pdf', 'quote'), // the very same upload, found again under the other term
+    pdf('c2', 'C proposal.pdf'),
+  ] };
+  const hits: HistoryHits[] = [
+    { term: 'paint', raw: 9, jobs: [jobA, jobB] },
+    { term: 'epoxy', raw: 2, jobs: [jobC] },
+  ];
+  const chosen = chooseAttachments(hits, { total: 4 });
+  assert.deepEqual(
+    chosen.map((c) => [c.job.jobName, c.file.name]),
+    [['A', 'A Quote.pdf'], ['C', 'C proposal.pdf'], ['B', 'B bill.pdf'], ['A', 'A misc.pdf']],
+    'one per term per round, and within a term a quote from the second job before a plain PDF from the first',
+  );
+  assert.equal(jobC.files[0]!.skipped, 'the same file is attached under "paint"');
+  assert.equal(jobB.files[1]!.skipped, "the read's 4-file budget went to closer matches");
+  assert.equal(jobA.files[2]!.skipped, "the read's 4-file budget went to closer matches");
+  assert.equal(jobA.files[1]!.skipped, null);
 });
