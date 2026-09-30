@@ -90,6 +90,36 @@ Rules the model is held to, from the roadmap's "failures must be visible":
 the write path (roadmap §7) will one day push as a job budget; today a
 person follows the steps.
 
+## Why not JobTread's own AI
+
+Tried 2026-09-30, on 261323, with the prompt below pasted into the "Build with
+AI" panel on the Budget tab. It never produced a budget. It found the discovery
+note and summarised it correctly, then spent the rest of the session re-reading
+JobTread's API help pages, reported that "the catalog search isn't filtering
+properly — it's returning all items regardless of the search term", and looped.
+
+The panel is a general assistant that has to rediscover the Pave API on every
+question. It did not know that a budget template is a top-level cost group with
+no parent, that a template line carries no price and points at a priced catalog
+item, or how to filter the catalog. Those are the verified facts this repository
+exists to hold (`jobtread-api-field-notes.md`), and the drafter has them written
+down. The panel is also not reachable from the API, so nothing it does can be
+tested against a fixture, priced by code, or gated on ten of Robert's jobs.
+
+The prompt, for the record:
+
+> Build this job's budget only from our budget templates in the Catalog, the way
+> our reps do. Read the discovery notes in Messages and the photos in Files first.
+> Pick the template that fits this job, add it, delete the lines the job does not
+> need, and set quantities from the measurements in the notes (18'4" x 38'6", 8'
+> walls). Add a second template only for lines the first does not have. Do not
+> create any line that is not in a template. If the job needs something no
+> template has, list it separately for Carl instead of adding it.
+
+Decision: the drafter runs on the Anthropic API with a capped key. The write
+path, when it comes, is roadmap §7 against the Pave API directly, not a chat
+panel asked to type.
+
 ## Running it
 
 ```

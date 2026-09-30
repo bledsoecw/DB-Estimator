@@ -2210,6 +2210,12 @@ rep takes in JobTread, because the write path (§7) is still off. Its gate is in
 `docs/drafter.md`: ten of Robert's jobs, three counts per draft, until eight of ten need
 under ten minutes of his work.
 
+**JobTread's own AI panel was tried the same day and ruled out** for this step: given the
+job and the template rule it summarised the discovery note correctly, then looped re-reading
+the API help, could not filter the catalog, and produced nothing. It is not reachable from
+the API either, so it cannot be tested, priced by code or gated. Recorded in
+`docs/drafter.md`.
+
 What this changes in the rollout (§18.4): Stage 3 starts now, in shadow, on the drafter's
 own gate, and does not wait for Stage 2's review-minutes number. Stage 2 still runs; it is
 Kristen's half of the problem and the drafter is the reps'. Kristen's paperwork after the
