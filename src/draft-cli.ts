@@ -43,6 +43,7 @@ import { DEFAULT_MODEL, PRICING, anthropicStructuredCall, costOf } from './draft
 import { draftEstimate, type DraftFixture, type HistorySource } from './draft/draft.ts';
 import { draftJson, renderDraft } from './draft/render.ts';
 import { addDirection, changesText, previousFromJson, revisionText, type Revision } from './draft/revise.ts';
+import { CREW_LABOR, searchCatalog, type CatalogCandidate, type CatalogSource } from './draft/catalog.ts';
 
 /** Holds DB's pricing; git-ignored, on the machine that runs the drafter. */
 export const DEFAULT_LEARNED_PATH = '.db-estimator/learned-prices.json';
@@ -57,6 +58,8 @@ export interface DraftArgs {
   capture: string | null;
   photos: boolean;
   history: boolean;
+  /** Search the rest of the catalog for each gap. */
+  catalog: boolean;
   /** The learned price book. Findings are read from and written to it. */
   learned: string;
   relearn: boolean;
@@ -69,13 +72,14 @@ export interface DraftArgs {
 export function parseDraftArgs(argv: string[]): DraftArgs {
   const args: DraftArgs = {
     job: '', dryRun: false, out: 'review', model: DEFAULT_MODEL, templateIds: [],
-    fixture: null, capture: null, photos: true, history: true,
+    fixture: null, capture: null, photos: true, history: true, catalog: true,
     learned: DEFAULT_LEARNED_PATH, relearn: false, relearnAfterDays: DEFAULT_RELEARN_DAYS,
     revise: null, reviseFile: null,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--dry-run') args.dryRun = true;
+    else if (a === '--no-catalog') args.catalog = false;
     else if (a === '--revise') {
       args.revise = argv[++i] ?? null;
       if (args.revise === null || args.revise.startsWith('--')) throw new Error('--revise needs the direction in quotes: --revise "forget the skim coat; ..."');
@@ -120,10 +124,24 @@ export function estimateDraftTokens(e: JobEvidence, text: string): number {
   return n;
 }
 
-/** A fixture may also carry the history that was searched and the cost types, so a replay is offline. */
+/** A fixture may also carry the history that was searched, the cost types and the catalog candidates, so a replay is offline. */
 export interface DraftFixtureFile extends DraftFixture {
   history?: HistoryReport;
   costTypes?: ApiCostType[];
+  catalog?: CatalogCandidate[];
+}
+
+/** A fixture's catalog candidates, filtered the way the live search would filter: by the terms, plus Crew Labor. */
+export function fixtureCatalog(candidates: CatalogCandidate[]): CatalogSource {
+  return {
+    search: async (terms, excludeTemplateIds) => {
+      const ts = terms.map((t) => t.toLowerCase());
+      const exclude = new Set(excludeTemplateIds);
+      return candidates.filter((c) =>
+        !(c.templateId && exclude.has(c.templateId)) &&
+        (c.name === CREW_LABOR || ts.some((t) => c.name.toLowerCase().includes(t) || (c.description ?? '').toLowerCase().includes(t))));
+    },
+  };
 }
 
 /** Everything a fixture needs, minus the photo bytes. */
@@ -132,7 +150,7 @@ export function toFixture(
   evidence: JobEvidence,
   index: TemplateSummary[],
   templates: Template[],
-  extra: { history?: HistoryReport; costTypes?: ApiCostType[] } = {},
+  extra: { history?: HistoryReport; costTypes?: ApiCostType[]; catalog?: CatalogCandidate[] } = {},
 ): DraftFixtureFile {
   return {
     capturedAt: new Date().toISOString(),
@@ -142,6 +160,7 @@ export function toFixture(
     templates,
     ...(extra.history ? { history: extra.history } : {}),
     ...(extra.costTypes ? { costTypes: extra.costTypes } : {}),
+    ...(extra.catalog ? { catalog: extra.catalog } : {}),
   };
 }
 
@@ -163,6 +182,7 @@ async function main(): Promise<number> {
   const loaded: Template[] = [];
 
   let historySource: HistorySource | undefined;
+  let catalogSource: CatalogSource | undefined;
   let costTypes: ApiCostType[] | undefined;
   const learned = args.history
     ? LearnedStore.load(args.learned, { relearnAfterDays: args.relearnAfterDays, ignore: args.relearn })
@@ -185,6 +205,7 @@ async function main(): Promise<number> {
         ...(learned ? { learned } : {}),
       };
     }
+    if (args.catalog && f.catalog) catalogSource = fixtureCatalog(f.catalog);
     const byId = new Map(f.templates.map((t) => [t.id, t]));
     loadTemplate = async (id) => {
       const t = byId.get(id);
@@ -219,6 +240,14 @@ async function main(): Promise<number> {
         },
         margins: marginsOf(costTypes),
         ...(learned ? { learned } : {}),
+      };
+    }
+    if (args.catalog) {
+      catalogSource = {
+        search: async (terms, excludeTemplateIds) => {
+          log(`searching the rest of the catalog for ${terms.map((t) => `"${t}"`).join(', ')}`);
+          return searchCatalog(client, terms, { excludeTemplateIds });
+        },
       };
     }
   }
@@ -282,6 +311,7 @@ async function main(): Promise<number> {
     model: args.model,
     ...(args.templateIds.length ? { templateIds: args.templateIds } : {}),
     ...(historySource ? { history: historySource } : {}),
+    ...(catalogSource ? { catalog: catalogSource } : {}),
     ...(revision ? { revision } : {}),
   });
 
@@ -304,6 +334,7 @@ async function main(): Promise<number> {
     const extra = {
       ...(draft.history ? { history: { terms: draft.history.report.terms } } : {}),
       ...(costTypes ? { costTypes } : {}),
+      ...(draft.catalog ? { catalog: draft.catalog.candidates } : {}),
     };
     writeFileSync(args.capture, JSON.stringify(toFixture(organizationId, evidence, index, loaded, extra), null, 2));
     log(`fixture written to ${args.capture}`);
@@ -330,6 +361,12 @@ async function main(): Promise<number> {
             (draft.history.learned ? `, ${draft.history.learned} from the learned price book` : '') +
             (draft.totals.proposedForGaps.gaps ? `; proposes a price for ${draft.totals.proposedForGaps.gaps} gap${draft.totals.proposedForGaps.gaps === 1 ? '' : 's'}` : '') +
             (draft.history.regional ? `; regional ballpark for ${draft.history.regional} gap${draft.history.regional === 1 ? '' : 's'} (not DB pricing)` : ''),
+      );
+    }
+    if (draft.catalog) {
+      log(
+        `catalog: ${draft.catalog.candidates.length} candidate${draft.catalog.candidates.length === 1 ? '' : 's'} for ${draft.catalog.terms.map((t) => `"${t}"`).join(', ')}; ` +
+          `${draft.found.length} of ${draft.gaps.length} flagged item${draft.gaps.length === 1 ? '' : 's'} covered from other templates or the catalog`,
       );
     }
     if (draft.contingency) {

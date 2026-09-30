@@ -191,6 +191,7 @@ function fake(replies: unknown[]): Fake {
 }
 
 const ev = (quote: string) => [{ source: 'Robert Switzer, 2026-07-23', quote }];
+const NO_CATALOG = { kind: 'none', id: null, quantity: null, basis: '' };
 const DRAFT = {
   summary: 'Basement refresh with a flooring choice.',
   scopeOfWork: 'Paint and floor.',
@@ -200,8 +201,8 @@ const DRAFT = {
     { lineId: '22PLCchBuFMa', quantity: 6, basis: 'two coats', evidence: ev('painting'), option: null, confidence: 'medium', lookBack: [] },
   ],
   gaps: [
-    { scope: 'Skim-coat the concrete walls', why: 'no template line', unit: 'Hours', quantity: 24, costType: 'Labor', basis: 'guess', evidence: ev('skimming'), lookBack: ['skim coat', 'skim'] },
-    { scope: 'Move contents', why: 'no template line', unit: 'Hours', quantity: null, costType: 'Labor', basis: 'unknown', evidence: ev('moving'), lookBack: [] },
+    { scope: 'Skim-coat the concrete walls', why: 'no template line', unit: 'Hours', quantity: 24, costType: 'Labor', basis: 'guess', evidence: ev('skimming'), lookBack: ['skim coat', 'skim'], option: null },
+    { scope: 'Move contents', why: 'no template line', unit: 'Hours', quantity: null, costType: 'Labor', basis: 'unknown', evidence: ev('moving'), lookBack: [], option: null },
   ],
   questions: [],
   contingency: { rate: 8, why: 'The walls are stripped to the concrete and the floor comes up.' },
@@ -211,28 +212,28 @@ const HISTORY = {
     { target: { kind: 'line', id: '22PLhsr2Yx55' }, match: 'match', summary: 'DB subbed one epoxy floor, the Myers sunroom, to Rhino Concrete Coatings for $5,712 in August 2026.',
       pastWork: [{ jobName: '246466 Dennis Myers_Sunroom', what: 'Epoxy Sub Pckg', where: 'change order', when: '2026-08-31', vendor: 'Rhino Concrete Coatings', quantity: 1, unit: 'Lump Sum', unitCost: 5712, lineCost: 5712 }],
       suggestedUnitCost: 13.6, suggestionBasis: '$5,712 for the ~420 SF sunroom floor named in its description = $13.60/SF.', confidence: 'medium', typicallySubbed: true, usualVendor: 'Rhino Concrete Coatings',
-      regionalUnitCost: null, regionalBasis: '' },
+      regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
     { target: { kind: 'line', id: '22PLhtLxcz9S' }, match: 'partial', summary: 'DB has subbed interior painting to Jeff Southworth on four recent jobs, as lump sums.',
       pastWork: [], suggestedUnitCost: null, suggestionBasis: 'Lump sums with no wall area shown; nothing per hour.', confidence: 'low', typicallySubbed: true, usualVendor: "Jeff Southworth's Drywall & Painting",
-      regionalUnitCost: null, regionalBasis: '' },
+      regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
     { target: { kind: 'gap', id: 'gap-0' }, match: 'partial', summary: 'No skim coat in DB history; the nearest is a drywall sub at $920 lump sum.',
       pastWork: [{ jobName: '261282 McComas_Misc.', what: 'Drywall Sub', where: 'estimate', when: '2026-07-14', vendor: null, quantity: 1, unit: 'Lump Sum', unitCost: 920, lineCost: 920 }],
       suggestedUnitCost: 45, suggestionBasis: 'A drywall sub at $920 for about 20 hours of work = $45/hour, if the trade is the same.', confidence: 'low', typicallySubbed: null, usualVendor: null,
-      regionalUnitCost: null, regionalBasis: '' },
+      regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
     // History has nothing, so the model gave a regional ballpark; the gap has no quantity, so it cannot total.
     { target: { kind: 'gap', id: 'gap-1' }, match: 'none', summary: 'Nothing in DB history for moving contents.', pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
-      regionalUnitCost: 55, regionalBasis: 'Two of DB\'s own people at about $27.50/hour loaded, the going small-contractor rate around Van Wert.' },
+      regionalUnitCost: 55, regionalBasis: 'Two of DB\'s own people at about $27.50/hour loaded, the going small-contractor rate around Van Wert.', catalog: NO_CATALOG },
     { target: { kind: 'line', id: 'nope' }, match: 'none', summary: 'ignored', pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
-      regionalUnitCost: null, regionalBasis: '' },
+      regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
   ],
 };
 /** History finds nothing at all; the model prices the skim coat from the area instead. */
 const REGIONAL_ONLY = {
   findings: [
     { target: { kind: 'gap', id: 'gap-0' }, match: 'none', summary: 'No skim coat anywhere in DB history.', pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
-      regionalUnitCost: 45, regionalBasis: 'A finisher at about $45/hour loaded is what a small crew costs around Van Wert; skim coat is slow work.' },
+      regionalUnitCost: 45, regionalBasis: 'A finisher at about $45/hour loaded is what a small crew costs around Van Wert; skim coat is slow work.', catalog: NO_CATALOG },
     { target: { kind: 'gap', id: 'gap-1' }, match: 'none', summary: 'Nothing for moving contents.', pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
-      regionalUnitCost: null, regionalBasis: '' },
+      regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
   ],
 };
 
@@ -321,7 +322,7 @@ test('when nothing in history matches, the third call runs for the gaps alone an
   assert.match(asked, /- gap-0 · gap · Skim-coat the concrete walls/);
   assert.match(asked, /- gap-1 · gap · Move contents/);
   assert.doesNotMatch(asked, /22PLhsr2Yx55/, 'lines with no history are not sent: there is nothing to read for them');
-  assert.match(asked, /2 of these are gaps with no template line\. A gap that history cannot price gets a regional ballpark/);
+  assert.match(asked, /2 of these are gaps with no line in the chosen templates\. Match each to a catalog candidate/);
   assert.equal(d.history?.skipped, 'no past DB work matched any search term');
   assert.equal(d.history?.regional, 1);
 
@@ -406,7 +407,7 @@ test('without a margin, history gives a cost and no price; without history, noth
 
 test('attachHistory drops findings for ids nobody asked about and ignores non-positive costs', () => {
   const lines: Parameters<typeof attachHistory>[0] = [];
-  const gaps: Parameters<typeof attachHistory>[1] = [{ ...DRAFT.gaps[0]!, costType: 'Labor', history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null }];
+  const gaps: Parameters<typeof attachHistory>[1] = [{ ...DRAFT.gaps[0]!, costType: 'Labor', history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null, resolved: null, catalogNote: null }];
   attachHistory(lines, gaps, [
     { ...HISTORY.findings[2]!, suggestedUnitCost: 0 } as (typeof HISTORY.findings)[number],
     HISTORY.findings[4]!,
@@ -577,7 +578,7 @@ test('"nothing found" is remembered briefly, so the same empty search is not rep
   assert.equal(again.calls.length, 2, 'the gaps still go for a regional ballpark; the book only says DB has nothing');
   const asked = again.calls[1]!.content.map((c) => (c.type === 'text' ? c.text : '')).join('\n');
   // What the book holds for the skim coat is the first run's own finding (match none, ballpark stripped), and the model is told so.
-  assert.match(asked, /- gap-0 · gap · Skim-coat[^\n]*\n  basis: guess\n  note: DB's past work was already read for this \(learned 2026-09-30\): none\. No skim coat anywhere in DB history\. Give the regional ballpark\./);
+  assert.match(asked, /- gap-0 · gap · Skim-coat[^\n]*\n  basis: guess\n  note: DB's past work was already read for this \(learned 2026-09-30\): none\. No skim coat anywhere in DB history\. Match it to the catalog if a candidate is the same thing; otherwise give the regional ballpark\./);
   assert.match(draftSteps(d), /No past DB work matched this when it was last searched/);
   assert.equal(d.gaps[0]!.proposed?.source, 'regional');
 });

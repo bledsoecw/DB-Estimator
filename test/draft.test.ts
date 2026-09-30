@@ -84,7 +84,7 @@ const DRAFT = {
     { lineId: '22PLht84FDJ9', quantity: -2, basis: 'nonsense', evidence: [], option: null, confidence: 'low', lookBack: [] },
   ],
   gaps: [
-    { scope: 'Move basement contents before and after', why: 'no template line for moving the customer\'s things', unit: 'Hours', quantity: 4, costType: 'Labor', basis: 'two people, two hours', evidence: ev('Assistance with moving basement equipment and contents will be included as a separate labor line item'), lookBack: ['skim coat', 'skim'] },
+    { scope: 'Move basement contents before and after', why: 'no template line for moving the customer\'s things', unit: 'Hours', quantity: 4, costType: 'Labor', basis: 'two people, two hours', evidence: ev('Assistance with moving basement equipment and contents will be included as a separate labor line item'), lookBack: ['skim coat', 'skim'], option: null },
   ],
   questions: [{ question: 'Paint the ceiling or not?', why: 'the note says the decision is tentative' }],
   contingency: { rate: 7, why: 'The walls are skimmed to the concrete, so hidden conditions are likely.' },
@@ -245,7 +245,7 @@ test('the steps read as a recipe for JobTread, and the page carries them', async
   const d = await draftEstimate(fx.evidence, fx.index, load, fake([PICK, DRAFT]));
   const steps = draftSteps(d);
   assert.match(steps, /^261323 Haag_Remodel — budget draft\n/);
-  assert.match(steps, /^Base scope: .* — leaves out 1 flagged item with no template line \(step 6\)$/m);
+  assert.match(steps, /^Base scope: .* — leaves out 1 flagged item with no line anywhere in the catalog \(step 6\)$/m);
   assert.match(steps, /^Option "Flooring", one choice required:\n   LVP: \$8,286\.28 price.*\n   Epoxy: \$7,677\.75 price/m);
   assert.match(steps, /^Add-on "Ceiling paint", customer may decline: \$4,043\.62 price/m);
   assert.match(steps, /1\. Budget tab › Add from catalog › "X-Division 09 Finishes" \(the main template\)\.\n   Keep 9 lines, delete the other 17\.\n/);
@@ -257,7 +257,7 @@ test('the steps read as a recipe for JobTread, and the page carries them', async
   assert.match(steps, /2\. Budget tab › Add from catalog › "X-Division 01 General Requirements"\./);
   assert.match(steps, /4\. Selection groups, so the customer picks on the estimate:\n   - "Flooring", one choice required: LVP: Flooring; Flooring - Miscellaneous MAT; Flooring Labor · Epoxy: Flooring - Sub\n   - "Ceiling paint", optional add-on \(may pick none\): Paint Labor - Sub/);
   assert.match(steps, /5\. General Description:\n   Skim-coat and paint/);
-  assert.match(steps, /6\. Not in any template — take to Carl before the estimate goes out:\n   - Move basement contents before and after \(Labor, 4 Hours\)/);
+  assert.match(steps, /6\. Nowhere in the catalog — take to Carl before the estimate goes out:\n   - Move basement contents before and after \(Labor, 4 Hours\)/);
   assert.match(steps, /7\. Confirm before it goes out:\n   - Paint the ceiling or not\?/);
   assert.match(steps, /named 2 lines that are not in these templates; they were NOT added/);
   assert.match(steps, /Nothing here was written to JobTread/);
@@ -272,7 +272,7 @@ test('the steps read as a recipe for JobTread, and the page carries them', async
   assert.match(html, /the base price leaves it out/);
   assert.match(html, /<strong>Flooring<\/strong>, one choice required:/);
   assert.match(html, /<strong>Ceiling paint<\/strong>, optional add-on/);
-  assert.match(html, /Not in any template/);
+  assert.match(html, /Nowhere in the catalog/);
   assert.match(html, /Named by the model, not in the templates/);
   assert.match(html, /Copy the steps/);
   assert.match(html, /18 feet 4 inches \(width\)/, 'the evidence quote is on the page');
@@ -532,7 +532,7 @@ test('every construction draft ends its template steps with contingency: the sna
     '6,866.15 + 8,286.28 + 8% of (4,120.79 + 5,379.50); 6,866.15 + 7,677.75 + 8% of (4,120.79 + 5,295.00)');
   assert.match(steps, /^3\. Contingency at 8%: The walls are skimmed to the concrete, so hidden conditions are likely\.\n   No chosen template carries the contingency group yet\. Add a group "Phase 5 - Contingency" at the end of the scope \(after Phase 4 where the template has one\) and put the catalog item "Project Contingency" in it \(1 Lump Sum at \$1\.00 cost and \$1\.00 price\) with the quantity formula \{Contingency Base\} \* \{Contingency Rate\} \/ 100; then set the job parameters Contingency Rate = 8 and Contingency Base = 4120\.79: \$329\.66, at cost\.\n   Add the cost of each option the customer takes to Contingency Base: Flooring — LVP 5379\.50 \(\+\$430\.36 contingency\); Flooring — Epoxy 5295\.00 \(\+\$423\.60 contingency\); Ceiling paint 2788\.70 \(\+\$223\.10 contingency\)\.\n   Unused contingency is credited at closeout\.$/m);
   assert.match(steps, /^4\. Selection groups/m);
-  assert.match(steps, /leaves out 1 flagged item with no template line \(step 6\)/);
+  assert.match(steps, /leaves out 1 flagged item with no line anywhere in the catalog \(step 6\)/);
   assert.match(steps, /^Base scope: [^\n]* · 1 line to price by hand — leaves out/m, 'the Permit, not the tracking line');
 
   const html = renderDraft(fx.evidence, d);

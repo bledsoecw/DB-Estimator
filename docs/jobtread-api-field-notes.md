@@ -1120,3 +1120,27 @@ The first mutations this project issued, for the contingency line
   cost items' quantity, unit cost and unit price; the syntax is not in
   anything reachable from here, and nothing lets a line sum the budget, so
   the contingency line takes its base as a parameter.
+
+## Telling a template line from an ungrouped catalog item — VERIFIED 2026-09-30
+
+Both are `costItem`s with `job` and `document` null. The difference is the
+group:
+
+- An **ungrouped catalog item** has `costGroup: null` and its own
+  `unitCost`/`unitPrice` (`Crew Labor` $55 / $100 an hour, `Vapor Barrier
+  4 mil` $18.49 / $26.81 each, `Electrical Labor` $55 / $100.001 an hour,
+  `Insulation - Batt` $13.93 / $20.20 a square foot). It is the price of
+  record.
+- A **template line** has `costGroup` set, `unitCost`/`unitPrice` null,
+  and `organizationCostItem` pointing at the ungrouped item it prices from.
+  Walking `costGroup.parentCostGroup…` up to a group whose
+  `parentCostGroup` is null reaches the template root; DB's phased
+  templates are five deep (root › scope group › Phase › subgroup › line),
+  so the drafter asks six levels and treats a chain that never reaches
+  null as unknown.
+
+The same priced item sits behind lines in several templates
+(`Insulation - Batt` in X-Division 07 and in Addition/House Build), so a
+catalog search is folded to one candidate per priced item, with the other
+templates named. `name like %term%` and `description like %term%` both
+filter on `organization.costItems`; a hundred a page with `nextPage`.

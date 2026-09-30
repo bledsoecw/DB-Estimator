@@ -346,6 +346,15 @@ template rate or on the gap; proposals never enter the totals. What it finds
 is kept in a local **learned price book** (`.db-estimator/`, git-ignored) and
 reused for a year before that trade is searched again.
 
+**A gap is checked against the whole catalog before it is flagged.** When
+the chosen templates lack a line, every other template's lines and the
+ungrouped catalog items are searched by the gap's terms; the model picks
+the one that is the same thing and gives the quantity in its unit; the code
+prices it from the catalog and lists it under **Found in other templates
+and the catalog** ("add just this line: Addition/House Build › … ›
+Insulation › Insulation - Batt"). Crew Labor stands in for any labor with
+no line of its own. Only what nothing covers goes to Carl.
+
 **Where DB has nothing, it gives a regional ballpark and says so.** A gap
 that neither history nor the price book can price gets a cost per unit for
 DB's own market (Van Wert and northwest Ohio), with the assumption written

@@ -20,6 +20,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { attachmentBlocks } from '../scope/prompt.ts';
 import type { JobEvidence } from './evidence.ts';
+import { candidatesText, type CatalogCandidate } from './catalog.ts';
 import { historyText, type HistoryReport } from './history.ts';
 import {
   STRUCTURAL_GROUPS, groupPath, isContingencyLine, isStructural, orderedLines, type Template, type TemplateSummary,
@@ -61,7 +62,7 @@ Rules:
 3. Labor lines in Hours need your estimate of crew hours. Give the basis (crew size × days, or hours per unit of work) and mark confidence honestly. The rep will check these first.
 4. Options come in two kinds, and the name tells the rep which to build. When the customer chooses ONE of several alternatives (two flooring types), name the option "Group — Choice" and put it on every line of that choice: "Flooring — LVP" on the LVP lines, "Flooring — Epoxy" on the epoxy lines; the rep builds one selection group per Group with one choice required. When something is a yes-or-no add-on the customer may decline (paint the ceiling, move the contents), use a bare name with no dash — "Ceiling paint" — and the rep builds it as an optional selection. Lines with no option are the base scope.
 4a. A line whose description says it is non-monetized or for time tracking (Sales On-Site Support) is not a scope decision: keep it with quantity 0 so the crew can clock to it, and do not count it as work.
-5. Scope the evidence calls for that no line in these templates covers goes in gaps: what the work is, a unit, a quantity when the evidence gives one, the cost type, and the evidence. Never keep a line under a different meaning to cover it. Carl decides each gap.
+5. Scope the evidence calls for that no line in these templates covers goes in gaps: what the work is, a unit, a quantity when the evidence gives one, the cost type, the evidence, and the option it belongs to when it is part of one (the same option name as the lines it goes with; null for base scope). Never keep a line under a different meaning to cover it. The rest of the catalog is searched for each gap afterwards; what nothing covers goes to Carl.
 6. Do not price, mark up or compare to margins; do not mention money.
 7. Every kept line, gap and question cites its evidence: the comment (who and date), the photo file name, or "job description". A quantity with no evidence is a question, not a number.
 8. scopeOfWork is what the customer reads on the estimate's General Description line: three to eight plain sentences saying what is included, what is excluded, what is optional, and what the customer supplies or does themselves.
@@ -116,6 +117,8 @@ export const DraftSchema = z.object({
       basis: z.string(),
       evidence: Evidence,
       lookBack: z.array(z.string()),
+      /** The option this belongs to, named like the lines it goes with; null for base scope. */
+      option: z.string().nullable(),
     }),
   ),
   questions: z.array(z.object({ question: z.string(), why: z.string() })),
@@ -296,7 +299,8 @@ For each target say:
 - confidence: high when two or more billed or sold lines agree; medium for one good line; low for partial matches or old drafts.
 - typicallySubbed: for a Labor target, true when the past work shows DB using a subcontractor for this trade on two or more jobs, false when DB's own crew did it on two or more, null when the history does not say. usualVendor is the sub that appears most, or null.
 - summary: one or two plain sentences for the rep: what DB did before and what it cost.
-- regionalUnitCost, for GAP targets only: when history gives no suggestedUnitCost for a gap, give a ballpark cost per the gap's unit for DB's own market — Van Wert, Ohio and the surrounding small towns of northwest Ohio and northeast Indiana, not a national average and not a metro rate — for the kind of work the gap describes and the cost type it carries (a Labor gap is DB's own crew at a small-contractor wage; a Subcontractor gap is what a local sub would charge DB; a Materials gap is the supply-house price). Write regionalBasis as the assumption in one or two sentences ("a two-man crew at about $45/hour loaded; moving a basement of contents is two to four hours"). It is a ballpark for the rep to sanity-check, not a price; the code labels it so. Leave it null when the gap has no unit that a cost can be put per, when its quantity is what is unknown, or when it is a line target: template lines already have a price and never get a regional figure. Do not give a regional figure where you gave a suggestedUnitCost.
+- catalog, for GAP targets only: some gaps come with catalog candidates — lines in other budget templates, and ungrouped catalog items, each with its unit, cost type and price. Pick the one that is the same thing as the gap (kind and id exactly as listed) and give quantity in THAT line's unit, with the arithmetic in basis ("909 SF of wall; a 10 × 25 roll covers 250 SF, so 4 rolls with laps"). Crew Labor is DB's standard crew rate: it covers any labor a gap needs when no labor line is specific to that trade, with the hours as its quantity. A homonym is not a match ("Insulation - Sub" is a subcontractor, not the crew's batts); pick kind "none" when nothing listed is the same thing. A gap you match to the catalog is priced from the catalog by the code, so give it no regionalUnitCost; still say what history shows.
+- regionalUnitCost, for GAP targets only: when history gives no suggestedUnitCost for a gap and the catalog has nothing for it, give a ballpark cost per the gap's unit for DB's own market — Van Wert, Ohio and the surrounding small towns of northwest Ohio and northeast Indiana, not a national average and not a metro rate — for the kind of work the gap describes and the cost type it carries (a Labor gap is DB's own crew at a small-contractor wage; a Subcontractor gap is what a local sub would charge DB; a Materials gap is the supply-house price). Write regionalBasis as the assumption in one or two sentences ("a two-man crew at about $45/hour loaded; moving a basement of contents is two to four hours"). It is a ballpark for the rep to sanity-check, not a price; the code labels it so. Leave it null when the gap has no unit that a cost can be put per, when its quantity is what is unknown, or when it is a line target: template lines already have a price and never get a regional figure. Do not give a regional figure where you gave a suggestedUnitCost.
 
 Do not price anything that is not a target. Do not mention margins or markup: the code prices from the cost you cite, at the margin DB applies to that cost type. Reference targets by their id exactly as given.`;
 
@@ -328,6 +332,13 @@ export const HistorySchema = z.object({
       /** A gap only, and only when history gave nothing: a ballpark per unit for DB's own market. */
       regionalUnitCost: z.number().nullable(),
       regionalBasis: z.string(),
+      /** A gap only: the catalog line that covers it, from the candidates listed, with the quantity in that line's unit. */
+      catalog: z.object({
+        kind: z.enum(['templateLine', 'catalogItem', 'none']),
+        id: z.string().nullable(),
+        quantity: z.number().nullable(),
+        basis: z.string(),
+      }),
     }),
   ),
 });
@@ -349,6 +360,8 @@ export interface HistoryTarget {
   lookBack: string[];
   /** Something the model should know about this target that the search did not produce. */
   note?: string;
+  /** For a gap: what the rest of the catalog has that might cover it. */
+  candidates?: CatalogCandidate[];
 }
 
 export function historyTargetsText(summary: string, targets: HistoryTarget[]): string {
@@ -364,11 +377,18 @@ export function historyTargetsText(summary: string, targets: HistoryTarget[]): s
     );
     out.push(`  basis: ${t.basis}`);
     if (t.note) out.push(`  note: ${t.note}`);
+    if (t.candidates && t.candidates.length) {
+      out.push(`  catalog candidates (${t.candidates.length}), from other templates and the ungrouped catalog:`);
+      out.push(...candidatesText(t.candidates));
+    } else if (t.kind === 'gap') {
+      out.push('  catalog candidates: none found');
+    }
   }
   const gaps = targets.filter((t) => t.kind === 'gap').length;
   if (gaps) {
     out.push(
-      `\n${gaps} of these are gaps with no template line. A gap that history cannot price gets a regional ballpark (regionalUnitCost) instead; line targets never do.`,
+      `\n${gaps} of these are gaps with no line in the chosen templates. Match each to a catalog candidate when one is the same thing (catalog.kind and id, quantity in its unit); ` +
+        'a gap the catalog cannot cover and history cannot price gets a regional ballpark (regionalUnitCost) instead; line targets never do.',
     );
   }
   return out.join('\n');
@@ -392,7 +412,8 @@ export function buildHistoryContent(
       type: 'text',
       text:
         'For each target, say whether DB has done this before, cite the past lines that apply, and give a ' +
-        'unit cost only when the arithmetic from those lines is shown. For a gap that history leaves unpriced, ' +
+        'unit cost only when the arithmetic from those lines is shown. For each gap, pick the catalog candidate that is ' +
+        'the same thing, with the quantity in its unit, or none; for a gap the catalog cannot cover and history leaves unpriced, ' +
         'give the regional ballpark and its assumption. Return the findings in the required format.',
     },
   ];

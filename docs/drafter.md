@@ -313,6 +313,50 @@ it; when none does, an X-Division draft, it says how to add the group and
 the catalog item by hand. The line is never the model's to keep or drop,
 and it is priced at cost. `docs/contingency.md` has the whole story.
 
+## Gaps against the whole catalog
+
+Carl, reading pass 2 of 261323: the draft flagged batt insulation, the
+vapor barrier and the electrical work as having no line, "but at least in
+Addition/House Build › New Home Build › Phase 2 - Rough-In › Insulation",
+"Phase 3 Interiors › Electrical - Rough-in", and the catalog's "Vapor
+Barrier 4 mil"; and "standard Crew Labor in the catalog can be used for any
+labor item that does not have a specific labor line item." That is step 4
+of his process — when the template you brought in lacks the line, find
+another template that has it — and the drafter had only ever shown the
+model the chosen templates' lines.
+
+So a gap is no longer flagged until the whole catalog has been looked at:
+
+1. Every gap's search terms (its `lookBack`, or the telling words of its
+   scope) go to one Pave query over every catalog cost item — template
+   lines and ungrouped items alike, `job` and `document` null — by name and
+   description, plus Crew Labor by name. Template lines carry their group
+   chain up to the template root; structural groups, "DO NOT USE" groups
+   and the templates already chosen are left out. The result is folded to
+   one candidate per priced item: the ungrouped item, or the first template
+   that carries the line with the other templates named, so the rep is
+   pointed at a template when one exists.
+2. Each gap gets its candidates — a term in the name or description, the
+   gap's own cost type first, at most eight, and Crew Labor for any Labor
+   gap — and they ride along to the third call beside the gap.
+3. The model picks the candidate that is the same thing, or none, and gives
+   the quantity in that line's unit with the arithmetic ("909 SF of wall; a
+   10 × 25 roll covers 250 SF, so 4 rolls"). A homonym is not a match. An
+   id it names that was not a candidate is noted and not used, the same
+   rule as an invented line id; a match with no quantity in the line's unit
+   leaves the gap open with a note that the rep sets it.
+4. The code prices the match from the catalog like any kept line, puts it
+   in the gap's option, and lists it under **Found in other templates and
+   the catalog**: template › groups › line, or the catalog item, with the
+   quantity, the price, and where else the line lives. What history said
+   about the gap rides onto the line, per unit when the units agree, so a
+   $0.91/SF batt from a past invoice sits beside the catalog's $13.93.
+   Only what nothing covers stays under **Nowhere in the catalog**, with
+   its ballpark.
+
+`--no-catalog` turns the search off. A fixture captured with `--capture`
+carries the candidates, so a replay is offline.
+
 ## The rep's second pass
 
 Carl, 30 Sep 2026, reading the fourth run as the rep: *"forget the skim
@@ -407,12 +451,12 @@ he trusts.
   rep does by hand today. The only write so far is the template change in
   `docs/contingency.md`, through `src/jobtread/writer.ts` under a separate
   grant with three allowed mutations.
-- **Gaps against the whole catalog.** A gap is flagged with a unit, a
-  quantity and a cost type; history may propose a cost, and a regional
-  ballpark stands in where history has nothing. It does not yet search the
-  718 priced but ungrouped catalog items for one that already exists; that
-  is a cheap addition once the first live drafts show what the gaps look
-  like.
+- **Adding a found line by itself.** The page says "add just this line"
+  for a line found in another template. Whether JobTread's catalog picker
+  lets the rep check one line inside a template group, or the rep must add
+  the group and delete the rest as Carl described, is for the rep to
+  report from the first live use; the ungrouped catalog item behind the
+  line prices the same either way.
 - **The auditor on the draft.** Every kept line is priced from the catalog,
   so the pricing checks pass by construction; the comparables band (this
   draft's margin against approved jobs of its size) is the one worth

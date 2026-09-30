@@ -15,7 +15,7 @@ import { marginOf } from '../domain.ts';
 import { CSS } from '../report.ts';
 import { STRUCTURAL_GROUPS, groupPath } from './templates.ts';
 import type { JobEvidence } from './evidence.ts';
-import { parseOption, type Draft, type DraftGap, type DraftLine, type GapProposals, type TemplatePlan, type Totals } from './draft.ts';
+import { parseOption, type Draft, type DraftGap, type DraftLine, type FoundLine, type GapProposals, type TemplatePlan, type Totals } from './draft.ts';
 import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
 import { changesText, reviseCommand } from './revise.ts';
 import type { HistoryFinding } from './prompt.ts';
@@ -79,10 +79,14 @@ export function draftSteps(d: Draft): string {
     out.push('Take it to Carl before building anything.');
     return out.join('\n');
   }
+  const open = openGaps(d);
   out.push(
     `Base scope: ${totalsLine(d.totals.base)}` +
-      (d.gaps.length
-        ? ` — leaves out ${d.gaps.length} flagged item${d.gaps.length === 1 ? '' : 's'} with no template line (step ${gapStep(d)})`
+      (open.length
+        ? ` — leaves out ${open.length} flagged item${open.length === 1 ? '' : 's'} with no line anywhere in the catalog (step ${gapStep(d)})`
+        : '') +
+      (d.found.length
+        ? `${open.length ? ';' : ' —'} ${d.found.length} flagged item${d.found.length === 1 ? '' : 's'} found in other templates or the catalog, priced and included (step ${foundStep(d)})`
         : ''),
   );
   if (d.contingency) {
@@ -155,6 +159,21 @@ export function draftSteps(d: Draft): string {
       out.push(`   Delete: ${p.removed.map((l) => l.name).join('; ')}`);
     }
   }
+  if (d.found.length) {
+    step++;
+    out.push(`${step}. Found in other templates and the catalog — add just these lines (Budget tab › Add from catalog › search the name):`);
+    for (const l of d.found) {
+      const g = d.gaps[l.forGap]!;
+      out.push(
+        `   - ${foundWhere(l)}: ${qty(l.quantity)} ${l.unit ?? ''}`.trimEnd() +
+          (l.option ? ` [option: ${l.option}]` : '') +
+          (l.priced ? ` — ${formatMoney(l.unitPrice)}/${l.unit ?? 'unit'}, ${formatMoney(l.price)}` : ' [no catalog price — type it]') +
+          ` — for "${g.scope}": ${l.basis} (${CONFIDENCE_LABEL[l.confidence]})` +
+          (l.source.alsoIn.length ? ` — also in ${l.source.alsoIn.join(', ')}` : ''),
+      );
+      if (l.history && (l.historyUnitCost !== null || l.history.match !== 'none')) out.push(`       history: ${historyLineText(l)}`);
+    }
+  }
   if (d.contingency) {
     step++;
     const c = d.contingency;
@@ -204,11 +223,12 @@ export function draftSteps(d: Draft): string {
     out.push(`${step}. General Description:`);
     for (const line of d.scopeOfWork.split('\n')) out.push(`   ${line}`);
   }
-  if (d.gaps.length) {
+  if (open.length) {
     step++;
-    out.push(`${step}. Not in any template — take to Carl before the estimate goes out:`);
-    for (const g of d.gaps) {
-      out.push(`   - ${g.scope} (${g.costType}${g.quantity !== null ? `, ${qty(g.quantity)} ${g.unit}` : `, ${g.unit}`}): ${g.why}`);
+    out.push(`${step}. Nowhere in the catalog — take to Carl before the estimate goes out:`);
+    for (const g of open) {
+      out.push(`   - ${g.scope} (${g.costType}${g.quantity !== null ? `, ${qty(g.quantity)} ${g.unit}` : `, ${g.unit}`})${g.option ? ` [option: ${g.option}]` : ''}: ${g.why}`);
+      if (g.catalogNote) out.push(`     catalog: ${g.catalogNote}`);
       if (g.history) out.push(`     history: ${historyGapText(g)}`);
     }
   }
@@ -297,14 +317,32 @@ function pastWorkRows(h: HistoryFinding): string {
     .join('');
 }
 
-/** The contingency step comes right after the templates. */
-function contingencyStepNumber(d: Draft): number {
+/** Gaps the catalog did not cover: what still goes to Carl. */
+function openGaps(d: Draft): DraftGap[] {
+  return d.gaps.filter((g) => !g.resolved);
+}
+
+/** Where a found line is added from: its template and groups, or the ungrouped catalog. */
+function foundWhere(l: FoundLine): string {
+  return l.source.kind === 'templateLine'
+    ? `${l.templateName} › ${[...l.groupPath, l.name].join(' › ')}`
+    : `catalog item "${l.name}"`;
+}
+
+/** The found-in-the-catalog step comes right after the templates. */
+function foundStep(d: Draft): number {
   return d.plans.length + 1;
 }
 
-/** The number the "Not in any template" step gets, so the header can point at it. */
+/** Then contingency. */
+function contingencyStepNumber(d: Draft): number {
+  return d.plans.length + (d.found.length ? 1 : 0) + 1;
+}
+
+/** The number the "Nowhere in the catalog" step gets, so the header can point at it. */
 function gapStep(d: Draft): number {
   let step = d.plans.length;
+  if (d.found.length) step++;
   if (d.contingency) step++;
   if (d.totals.options.length) step++;
   if (d.scopeOfWork) step++;
@@ -356,8 +394,27 @@ export function draftJson(d: Draft): unknown {
           }
         : null,
     })),
+    /** Flagged items covered from elsewhere in the catalog. These lines are also in `lines` and in the totals. */
+    found: d.found.map((l) => ({
+      lineId: l.lineId,
+      name: l.name,
+      forGap: l.forGap,
+      source: { kind: l.source.kind, template: l.templateName, group: l.groupPath.join(' › '), alsoIn: l.source.alsoIn, pricedItemId: l.source.pricedItemId },
+      quantity: l.quantity,
+      unit: l.unit,
+      option: l.option,
+      unitCost: l.priced ? formatMoney(l.unitCost) : null,
+      unitPrice: l.priced ? formatMoney(l.unitPrice) : null,
+      cost: l.priced ? formatMoney(l.cost) : null,
+      price: l.priced ? formatMoney(l.price) : null,
+      basis: l.basis,
+      confidence: l.confidence,
+    })),
     gaps: d.gaps.map((g) => ({
       ...g,
+      resolved: g.resolved
+        ? { lineId: g.resolved.candidate.id, name: g.resolved.candidate.name, kind: g.resolved.candidate.kind, template: g.resolved.candidate.templateName, quantity: g.resolved.quantity, unit: g.resolved.candidate.unit, basis: g.resolved.basis }
+        : null,
       regionalUnitCost: g.regionalUnitCost === null ? null : formatMoney(g.regionalUnitCost),
       regionalUnitPrice: g.regionalUnitPrice === null ? null : formatMoney(g.regionalUnitPrice),
       proposed: g.proposed
@@ -386,6 +443,7 @@ export function draftJson(d: Draft): unknown {
     history: d.history
       ? { terms: d.history.terms, findings: d.history.findings, learned: d.history.learned, regional: d.history.regional, skipped: d.history.skipped, searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName), files: t.jobs.flatMap((j) => j.files.filter((f) => !f.skipped).map((f) => f.name)) })) }
       : null,
+    catalog: d.catalog ? { terms: d.catalog.terms, candidates: d.catalog.candidates.length, found: d.catalog.found } : null,
     /** Which pass this is and what the rep said; the next pass reads this back. */
     revision: d.revision
       ? { pass: d.revision.pass, directions: d.revision.directions, changes: d.revision.changes }
@@ -426,7 +484,8 @@ export interface RenderOptions {
 export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}): string {
   const title = `${d.jobName} — budget draft`;
   const steps = draftSteps(d);
-  const flagged = d.gaps.length + d.rejected.length + d.rejectedPicks.length;
+  const open = openGaps(d);
+  const flagged = open.length + d.rejected.length + d.rejectedPicks.length;
 
   return `<!doctype html>
 <html lang="en">
@@ -461,9 +520,10 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
         flagged
           ? `${flagged} item${flagged === 1 ? '' : 's'} flagged for Carl`
           : 'Every line comes from a budget template.'
-      }${d.gaps.length ? ` &middot; the base price leaves ${d.gaps.length === 1 ? 'it' : 'them'} out` : ''}${
-        d.totals.proposedForGaps.gaps ? ` &middot; history proposes ${d.totals.proposedForGaps.price === null ? formatMoney(d.totals.proposedForGaps.cost) + ' cost' : formatMoney(d.totals.proposedForGaps.price)} for ${d.totals.proposedForGaps.gaps === d.gaps.length ? 'them' : `${d.totals.proposedForGaps.gaps} of them`}` : ''}${
-        d.totals.regionalForGaps.gaps ? ` &middot; a regional ballpark of ${d.totals.regionalForGaps.price === null ? formatMoney(d.totals.regionalForGaps.cost) + ' cost' : formatMoney(d.totals.regionalForGaps.price)} for ${d.totals.regionalForGaps.gaps === d.gaps.length ? 'them' : `${d.totals.regionalForGaps.gaps} of them`}, not DB pricing` : ''}${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
+      }${open.length ? ` &middot; the base price leaves ${open.length === 1 ? 'it' : 'them'} out` : ''}${
+        d.found.length ? ` &middot; ${d.found.length} flagged item${d.found.length === 1 ? '' : 's'} found elsewhere in the catalog and priced` : ''}${
+        d.totals.proposedForGaps.gaps ? ` &middot; history proposes ${d.totals.proposedForGaps.price === null ? formatMoney(d.totals.proposedForGaps.cost) + ' cost' : formatMoney(d.totals.proposedForGaps.price)} for ${d.totals.proposedForGaps.gaps === open.length ? 'them' : `${d.totals.proposedForGaps.gaps} of them`}` : ''}${
+        d.totals.regionalForGaps.gaps ? ` &middot; a regional ballpark of ${d.totals.regionalForGaps.price === null ? formatMoney(d.totals.regionalForGaps.cost) + ' cost' : formatMoney(d.totals.regionalForGaps.price)} for ${d.totals.regionalForGaps.gaps === open.length ? 'them' : `${d.totals.regionalForGaps.gaps} of them`}, not DB pricing` : ''}${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
         d.totals.base.unpriced ? ` &middot; ${d.totals.base.unpriced} line${d.totals.base.unpriced === 1 ? '' : 's'} to price by hand` : ''
       }</p>`}
 
@@ -490,13 +550,23 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
 
   ${d.plans.map((p) => planSection(p)).join('\n')}
 
-  ${d.gaps.length ? `<section class="findings">
-    <div class="bar"><h2>Not in any template <span class="count">${d.gaps.length}</span></h2>
+  ${d.found.length ? `<section class="plan">
+    <div class="bar"><h2>Found in other templates and the catalog</h2>
+      <p class="tally">${d.found.length} flagged item${d.found.length === 1 ? '' : 's'} covered by a line elsewhere &middot; priced from the catalog, in the totals</p></div>
+    <p class="detail">Add just these lines: Budget tab › Add from catalog › search the name.</p>
+    <table class="lines">
+      <thead><tr><th>Flagged item → line</th><th>Qty</th><th>Unit price</th><th>Price</th><th>Basis</th></tr></thead>
+      <tbody>${d.found.map((l) => foundRow(l, d.gaps[l.forGap]!)).join('\n')}</tbody>
+    </table>
+  </section>` : ''}
+
+  ${open.length ? `<section class="findings">
+    <div class="bar"><h2>Nowhere in the catalog <span class="count">${open.length}</span></h2>
       <p class="tally">Carl decides each one before the estimate goes out</p></div>
-    ${d.gaps.map((g) => `<article class="card sev-pricing">
+    ${open.map((g) => `<article class="card sev-pricing">
       <div class="chip">${g.proposed?.source === 'history' ? 'Flagged · priced from history' : g.regionalUnitCost !== null ? 'Flagged · regional ballpark, not DB pricing' : 'Flagged'}</div>
-      <h3>${esc(g.scope)}</h3>
-      <p class="detail">${esc(g.why)}</p>
+      <h3>${esc(g.scope)}${g.option ? ` <span class="tag">${esc(g.option)}</span>` : ''}</h3>
+      <p class="detail">${esc(g.why)}${g.catalogNote ? ` ${esc(g.catalogNote)}.` : ''}</p>
       <table class="math">
         <tr><td>cost type</td><td>${esc(g.costType)}</td></tr>
         <tr><td>quantity</td><td>${g.quantity !== null ? `${esc(qty(g.quantity))} ${esc(g.unit)}` : esc(g.unit)}</td></tr>
@@ -623,6 +693,20 @@ function planSection(p: TemplatePlan): string {
       <ul>${p.removed.map((l) => `<li>${esc([...groupPath(p.template, l.groupId), l.name].join(' › '))}</li>`).join('')}</ul>
     </details>` : ''}
   </section>`;
+}
+
+function foundRow(l: FoundLine, g: DraftGap): string {
+  return `<tr class="conf-${l.confidence}">
+    <td><div class="path">${esc(g.scope)}</div><div class="name">${esc(foundWhere(l))}</div>${
+      l.option ? `<span class="tag">${esc(l.option)}</span>` : ''}${
+      l.source.alsoIn.length ? `<div class="path">also in ${esc(l.source.alsoIn.join(', '))}</div>` : ''}${
+      l.priced ? '' : '<span class="tag warn">no catalog price</span>'}</td>
+    <td class="num">${esc(qty(l.quantity))}<div class="unit">${esc(l.unit ?? '')}</div></td>
+    <td class="num">${money(l.unitPrice, l.priced)}<div class="unit">${l.priced ? `cost ${formatMoney(l.unitCost)}` : ''}</div></td>
+    <td class="num">${money(l.price, l.priced)}</td>
+    <td class="basis">${esc(l.basis)} <span class="conf">${CONFIDENCE_LABEL[l.confidence]}</span>${
+      l.history && (l.historyUnitCost !== null || l.history.match !== 'none') ? `<div class="hist"><span class="k">History</span> ${esc(historyLineText(l))}</div>` : ''}</td>
+  </tr>`;
 }
 
 function lineRow(l: DraftLine): string {

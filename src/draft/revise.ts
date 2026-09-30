@@ -76,7 +76,8 @@ export function previousFromJson(raw: unknown): PreviousDraft {
         template: str(l['template']),
       }))
       .filter((l) => l.lineId),
-    gaps: list(o['gaps']).map((g) => ({ scope: str(g['scope']), costType: str(g['costType']) })).filter((g) => g.scope),
+    // A gap the catalog covered is a kept line now, listed under lines; it is not flagged any more.
+    gaps: list(o['gaps']).filter((g) => !g['resolved']).map((g) => ({ scope: str(g['scope']), costType: str(g['costType']) })).filter((g) => g.scope),
     questions: list(o['questions']).map((q) => str(q['question'])).filter(Boolean),
     contingencyRate: contingency ? num(contingency['rate']) : null,
   };
@@ -171,9 +172,10 @@ export function diffDrafts(previous: PreviousDraft, next: Draft): DraftChanges {
   for (const l of previous.lines) {
     if (!nextL.has(l.lineId)) changes.linesRemoved.push({ name: l.name, quantity: l.quantity, unit: l.unit, option: l.option, template: l.template });
   }
+  const open = next.gaps.filter((g) => !g.resolved);
   const prevG = new Set(previous.gaps.map((g) => norm(g.scope)));
-  const nextG = new Set(next.gaps.map((g) => norm(g.scope)));
-  changes.gapsAdded = next.gaps.filter((g) => !prevG.has(norm(g.scope))).map((g) => g.scope);
+  const nextG = new Set(open.map((g) => norm(g.scope)));
+  changes.gapsAdded = open.filter((g) => !prevG.has(norm(g.scope))).map((g) => g.scope);
   changes.gapsRemoved = previous.gaps.filter((g) => !nextG.has(norm(g.scope))).map((g) => g.scope);
   if (previous.contingencyRate !== null && next.contingency && next.contingency.rate !== previous.contingencyRate) {
     changes.contingencyRate = { from: previous.contingencyRate, to: next.contingency.rate };

@@ -32,6 +32,7 @@ import {
 import type { HistoryReport } from './history.ts';
 import type { LearnedStore } from './learned.ts';
 import { chooseRate, contingencyAmount, contingencyLine, type ContingencyStep } from './contingency.ts';
+import { candidatesFor, gapTerms, type CatalogCandidate, type CatalogSource } from './catalog.ts';
 import { diffDrafts, revisionText, type Direction, type DraftChanges, type Revision } from './revise.ts';
 import {
   groupPath, isContingencyLine, scopeLines, type Template, type TemplateLine, type TemplateSummary,
@@ -88,7 +89,7 @@ export interface GapProposal {
   price: Money | null;
 }
 
-/** A gap, plus what history says about it and the price that would follow. */
+/** A gap, plus what the catalog and history say about it and the price that would follow. */
 export type DraftGap = DraftReplyGap & {
   history: AttachedFinding | null;
   /** Unit cost × the gap's quantity, at the margin for its cost type. A proposal, never a total. */
@@ -96,8 +97,22 @@ export type DraftGap = DraftReplyGap & {
   /** The regional ballpark per unit when the model gave one, whether or not a quantity let it total. */
   regionalUnitCost: Money | null;
   regionalUnitPrice: Money | null;
+  /** A line elsewhere in the catalog covers it: it is then a kept line in `found`, not a gap. */
+  resolved: { candidate: CatalogCandidate; quantity: number; basis: string } | null;
+  /** Why a catalog match the model named was not used. */
+  catalogNote: string | null;
 };
 export type DraftQuestion = DraftReplyQuestion;
+
+/** A gap covered from another template or the ungrouped catalog: a kept line, priced from the catalog like any other. */
+export type FoundLine = DraftLine & {
+  /** Index into `gaps`. */
+  forGap: number;
+  source: CatalogCandidate;
+};
+
+/** The template id a found line carries when it is an ungrouped catalog item, not a template line. */
+export const CATALOG_TEMPLATE_ID = 'catalog';
 
 export interface Totals {
   cost: Money;
@@ -151,7 +166,10 @@ export interface Draft {
   summary: string;
   scopeOfWork: string;
   plans: TemplatePlan[];
+  /** Every kept line, the found ones included. */
   lines: DraftLine[];
+  /** Gaps covered from other templates or the ungrouped catalog; these lines are in `lines` and in the totals. */
+  found: FoundLine[];
   gaps: DraftGap[];
   questions: DraftQuestion[];
   /** Ids the model named that exist in no chosen template. */
@@ -171,6 +189,8 @@ export interface Draft {
   contingency: ContingencyStep | null;
   /** A later pass: what the rep said, and what moved since the pass before. Null on the first pass. */
   revision: { pass: number; directions: Direction[]; changes: DraftChanges } | null;
+  /** The catalog step for the gaps: what was searched, what came back, how many gaps it covered. Null when it did not run. */
+  catalog: { terms: string[]; candidates: CatalogCandidate[]; found: number } | null;
   /** The past-work step: what was searched and what came of it. Null when it did not run. */
   history: {
     terms: string[];
@@ -206,6 +226,8 @@ export interface DraftOptions {
   history?: HistorySource;
   /** A later pass: the last pass and the rep's direction(s). Both calls are told; the draft records what moved. */
   revision?: Revision;
+  /** Search the rest of the catalog for each gap. Off when absent. */
+  catalog?: CatalogSource;
 }
 
 const PICK_MAX_TOKENS = 8_000;
@@ -292,11 +314,12 @@ export async function draftEstimate(
 
   const empty = (): Draft => ({
     jobId: evidence.jobId, jobName: evidence.jobName, model, pickSummary, noFit,
-    summary: pickSummary, scopeOfWork: '', plans: [], lines: [], gaps: [], questions: [],
+    summary: pickSummary, scopeOfWork: '', plans: [], lines: [], found: [], gaps: [], questions: [],
     rejected: [], rejectedPicks,
     totals: { base: totalsOf([]), options: [], all: totalsOf([]), proposedForGaps: NO_PROPOSALS, regionalForGaps: NO_PROPOSALS },
     contingency: null,
     revision: null,
+    catalog: null,
     history: null,
     usage, cost,
   });
@@ -316,21 +339,40 @@ export async function draftEstimate(
 
   const { lines, rejected } = priceLines(d.data, templates);
   const gaps: DraftGap[] = d.data.gaps.map((g) => ({
-    ...g, history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null,
+    ...g, option: g.option?.trim() || null,
+    history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null, resolved: null, catalogNote: null,
   }));
 
-  // ---- 3. what DB did last time, and a ballpark where it did nothing -----------
+  // ---- 3. the rest of the catalog, what DB did last time, and a ballpark where both have nothing ----
+  // Carl's step 4: a line the chosen template lacks is looked for in the other templates and
+  // the ungrouped catalog before it is flagged. The candidates ride along to the third call,
+  // which also reads history; the model matches, the code prices.
+  let catalog: Draft['catalog'] = null;
+  const candidatesByGap = new Map<number, CatalogCandidate[]>();
+  if (opts.catalog && gaps.length > 0) {
+    const terms = [...new Set(gaps.flatMap((g) => gapTerms(g)))];
+    const all = await opts.catalog.search(terms, templates.map((t) => t.id));
+    gaps.forEach((g, i) => candidatesByGap.set(i, candidatesFor(g, all)));
+    catalog = { terms, candidates: all, found: 0 };
+  }
+
   let history: Draft['history'] = null;
-  if (opts.history) {
+  const found: FoundLine[] = [];
+  if (opts.history || candidatesByGap.size > 0) {
     const allTargets = historyTargets(lines, gaps);
-    const store = opts.history.learned;
-    const margins = opts.history.margins;
+    for (const t of allTargets) {
+      if (t.kind !== 'gap') continue;
+      const c = candidatesByGap.get(Number(t.id.slice('gap-'.length)));
+      if (c && c.length) t.candidates = c;
+    }
+    const store = opts.history?.learned;
+    const margins = opts.history?.margins ?? {};
 
     // What the price book already knows is applied first and not searched again.
     const learnedFindings: AttachedFinding[] = [];
     const toSearch: HistoryTarget[] = [];
     for (const t of allTargets) {
-      const e = store?.lookup(t.lookBack) ?? null;
+      const e = opts.history ? (store?.lookup(t.lookBack) ?? null) : null;
       if (!e) { toSearch.push(t); continue; }
       const unitMismatch =
         e.finding.suggestedUnitCost !== null && e.unit !== null && t.unit !== null && e.unit !== t.unit
@@ -348,17 +390,18 @@ export async function draftEstimate(
     }
     attachHistory(lines, gaps, learnedFindings, margins);
 
-    const terms = uniqueTerms(toSearch);
+    const terms = opts.history ? uniqueTerms(toSearch) : [];
     let report: HistoryReport = { terms: [] };
-    if (terms.length > 0) report = await opts.history.search(terms);
-    const found = report.terms.some((t) => t.jobs.length > 0);
-    let skipped: string | null = terms.length > 0 && !found ? 'no past DB work matched any search term' : null;
-    if (!found) rememberNone(store, toSearch, evidence.jobName);
+    if (terms.length > 0) report = await opts.history!.search(terms);
+    const matched = report.terms.some((t) => t.jobs.length > 0);
+    let skipped: string | null = terms.length > 0 && !matched ? 'no past DB work matched any search term' : null;
+    if (!matched) rememberNone(store, toSearch, evidence.jobName);
 
     // Who goes to the model: every searched target when something was found;
-    // and every gap still without a number, so it gets a regional ballpark
-    // even when history — searched now or learned earlier — has nothing.
-    const forModel: HistoryTarget[] = found ? [...toSearch] : toSearch.filter((t) => t.kind === 'gap');
+    // and every gap still without a number, for a catalog match, a regional
+    // ballpark, or both — even when history, searched now or learned earlier,
+    // has nothing.
+    const forModel: HistoryTarget[] = matched ? [...toSearch] : toSearch.filter((t) => t.kind === 'gap');
     gaps.forEach((g, i) => {
       const id = `gap-${i}`;
       if (g.proposed !== null || forModel.some((t) => t.id === id)) return;
@@ -368,13 +411,13 @@ export async function draftEstimate(
       forModel.push({
         ...t,
         note: h
-          ? `DB's past work was already read for this (${h.origin.kind === 'learned' ? `learned ${h.origin.learnedAt.slice(0, 10)}` : 'this run'}): ${h.match}. ${h.summary} Give the regional ballpark.`
-          : 'Give the regional ballpark.',
+          ? `DB's past work was already read for this (${h.origin.kind === 'learned' ? `learned ${h.origin.learnedAt.slice(0, 10)}` : 'this run'}): ${h.match}. ${h.summary} Match it to the catalog if a candidate is the same thing; otherwise give the regional ballpark.`
+          : 'Match it to the catalog if a candidate is the same thing; otherwise give the regional ballpark.',
       });
     });
 
     let findings = 0;
-    if (forModel.length > 0 && (found || forModel.some((t) => t.kind === 'gap'))) {
+    if (forModel.length > 0 && (matched || forModel.some((t) => t.kind === 'gap'))) {
       const h = await runStructured(
         call,
         {
@@ -390,14 +433,18 @@ export async function draftEstimate(
       attachHistory(lines, gaps, searched, margins);
       findings = searched.length;
       remember(store, toSearch, searched, evidence.jobName);
+      found.push(...resolveGaps(gaps, searched, candidatesByGap, margins));
+      if (catalog) catalog.found = found.length;
     } else if (terms.length === 0 && forModel.length === 0 && allTargets.length > 0 && learnedFindings.length === 0) {
       skipped = 'nothing to search: no target carried a search term';
     }
-    if (allTargets.length > 0) {
+    if (opts.history && allTargets.length > 0) {
       const regional = gaps.filter((g) => g.regionalUnitCost !== null).length;
       history = { terms, report, findings, skipped, learned: learnedFindings.length, regional };
     }
   }
+  // A found line is a kept line: it prices, it totals, it belongs to its option.
+  lines.push(...found);
 
   const plans: TemplatePlan[] = templates.map((t, i) => {
     const pick = chosen[i]!;
@@ -424,6 +471,7 @@ export async function draftEstimate(
     scopeOfWork: d.data.scopeOfWork,
     plans,
     lines,
+    found,
     gaps,
     questions: d.data.questions,
     rejected,
@@ -435,10 +483,90 @@ export async function draftEstimate(
     },
     contingency: contingencyStep(evidence, d.data.contingency, byOption.base.cost, templates, byOption.options),
     revision: null,
+    catalog,
     history,
     usage,
     cost,
   });
+}
+
+/**
+ * Turn each gap the model matched to a catalog candidate into a kept line.
+ *
+ * The candidate must be one the model was shown for that gap — an id from
+ * elsewhere is noted and not used, the same rule as an invented line id —
+ * and the quantity must be in the candidate's unit; when the model gave none
+ * and the units differ, the gap stays a gap with a note saying the rep sets
+ * it. The line prices from the catalog like any template line; what history
+ * said about the gap is carried onto it, priced per unit only when the
+ * units agree, so a $0.91/SF batt from a past invoice shows beside the
+ * catalog's figure.
+ */
+export function resolveGaps(
+  gaps: DraftGap[],
+  findings: AttachedFinding[],
+  candidatesByGap: Map<number, CatalogCandidate[]>,
+  margins: Record<string, number>,
+): FoundLine[] {
+  const out: FoundLine[] = [];
+  for (const f of findings) {
+    if (f.target.kind !== 'gap' || !f.catalog || f.catalog.kind === 'none') continue;
+    const m = /^gap-(\d+)$/.exec(f.target.id);
+    const i = m ? Number(m[1]) : -1;
+    const g = gaps[i];
+    if (!g) continue;
+    const c = (candidatesByGap.get(i) ?? []).find((x) => x.id === f.catalog.id);
+    if (!c) {
+      g.catalogNote = `the model named catalog id ${f.catalog.id ?? 'none'}, which was not among the candidates it was shown; not used`;
+      continue;
+    }
+    const quantity = f.catalog.quantity ?? (c.unit !== null && c.unit === g.unit ? g.quantity : null);
+    if (quantity === null || !Number.isFinite(quantity) || quantity < 0) {
+      g.catalogNote = `"${c.name}" covers this, but no quantity in ${c.unit ?? 'its unit'} was given; the rep sets it`;
+      continue;
+    }
+    const unitCost = moneyFromApi(c.unitCost);
+    const unitPrice = moneyFromApi(c.unitPrice);
+    const q = qtyFromApi(quantity);
+    let historyUnitCost: Money | null = null;
+    let historyUnitPrice: Money | null = null;
+    if (f.suggestedUnitCost !== null && f.suggestedUnitCost > 0 && c.unit !== null && c.unit === g.unit) {
+      historyUnitCost = moneyFromApi(f.suggestedUnitCost);
+      const mg = margins[c.costTypeName ?? g.costType];
+      historyUnitPrice = mg === undefined || mg >= 1 ? null : roundToCents(priceFromCostAtMargin(historyUnitCost, rateFromApi(mg)));
+    }
+    out.push({
+      lineId: c.id,
+      name: c.name,
+      templateId: c.templateId ?? CATALOG_TEMPLATE_ID,
+      templateName: c.templateName ?? 'Catalog',
+      groupPath: c.groupPath,
+      unit: c.unit,
+      costTypeName: c.costTypeName ?? g.costType,
+      quantity,
+      unitCost,
+      unitPrice,
+      cost: roundToCents(mulQty(unitCost, q)),
+      price: roundToCents(mulQty(unitPrice, q)),
+      priced: c.unitCost !== null && (unitCost !== ZERO || unitPrice !== ZERO),
+      tracking: false,
+      basis: f.catalog.basis.trim() || g.basis,
+      evidence: g.evidence,
+      option: g.option,
+      confidence: f.confidence,
+      lookBack: [],
+      history: f,
+      historyUnitCost,
+      historyUnitPrice,
+      forGap: i,
+      source: c,
+    });
+    g.resolved = { candidate: c, quantity, basis: f.catalog.basis };
+    g.proposed = null;
+    g.regionalUnitCost = null;
+    g.regionalUnitPrice = null;
+  }
+  return out;
 }
 
 /**
@@ -597,10 +725,12 @@ export function remember(
     const { origin: _origin, ...finding } = f;
     store.remember(t.lookBack, {
       fromJob: jobName, targetName: t.name, unit: t.unit,
-      finding: { ...finding, regionalUnitCost: null, regionalBasis: '' },
+      finding: { ...finding, regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG_MATCH },
     });
   }
 }
+
+const NO_CATALOG_MATCH: HistoryFinding['catalog'] = { kind: 'none', id: null, quantity: null, basis: '' };
 
 /** Nothing matched any term: remember that too, briefly, so the next job does not search again next week. */
 function rememberNone(store: LearnedStore | undefined, targets: HistoryTarget[], jobName: string): void {
@@ -613,7 +743,7 @@ function rememberNone(store: LearnedStore | undefined, targets: HistoryTarget[],
         target: { kind: t.kind, id: t.id }, match: 'none',
         summary: 'No past DB work matched this when it was last searched.',
         pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low',
-        typicallySubbed: null, usualVendor: null, regionalUnitCost: null, regionalBasis: '',
+        typicallySubbed: null, usualVendor: null, regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG_MATCH,
       },
     });
   }
