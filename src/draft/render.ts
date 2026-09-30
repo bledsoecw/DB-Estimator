@@ -17,6 +17,7 @@ import { STRUCTURAL_GROUPS, groupPath } from './templates.ts';
 import type { JobEvidence } from './evidence.ts';
 import { parseOption, type Draft, type DraftGap, type DraftLine, type GapProposals, type TemplatePlan, type Totals } from './draft.ts';
 import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
+import { changesText, reviseCommand } from './revise.ts';
 import type { HistoryFinding } from './prompt.ts';
 
 /** What the rep types into the Contingency Base parameter: plain dollars, no symbol or commas. */
@@ -66,6 +67,12 @@ const CONFIDENCE_LABEL = { high: 'confident', medium: 'check', low: 'guess' } as
 export function draftSteps(d: Draft): string {
   const out: string[] = [];
   out.push(`${d.jobName} — budget draft`);
+  if (d.revision) {
+    const last = d.revision.directions[d.revision.directions.length - 1];
+    if (last) out.push(`Pass ${d.revision.pass}. The rep's direction after pass ${last.pass}: ${last.text.replace(/\s+/g, ' ')}`);
+    out.push(`Changed since pass ${d.revision.pass - 1}:`);
+    for (const c of changesText(d.revision.changes)) out.push(`   - ${c}`);
+  }
   if (d.noFit) {
     out.push('');
     out.push(`No budget template fits this job. ${d.noFit}`);
@@ -233,6 +240,7 @@ export function draftSteps(d: Draft): string {
   }
   out.push('');
   out.push(`Leave ${[...STRUCTURAL_GROUPS].join(', ')} untouched. Nothing here was written to JobTread.`);
+  out.push(`To change it, say what to change and rerun: ${reviseCommand(d.jobId, 'what to change')} — the next pass follows that as a decision and keeps the rest.`);
   return out.join('\n');
 }
 
@@ -378,6 +386,10 @@ export function draftJson(d: Draft): unknown {
     history: d.history
       ? { terms: d.history.terms, findings: d.history.findings, learned: d.history.learned, regional: d.history.regional, skipped: d.history.skipped, searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName), files: t.jobs.flatMap((j) => j.files.filter((f) => !f.skipped).map((f) => f.name)) })) }
       : null,
+    /** Which pass this is and what the rep said; the next pass reads this back. */
+    revision: d.revision
+      ? { pass: d.revision.pass, directions: d.revision.directions, changes: d.revision.changes }
+      : { pass: 1, directions: [], changes: null },
     questions: d.questions,
     rejected: d.rejected,
     rejectedPicks: d.rejectedPicks,
@@ -454,6 +466,13 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
         d.totals.regionalForGaps.gaps ? ` &middot; a regional ballpark of ${d.totals.regionalForGaps.price === null ? formatMoney(d.totals.regionalForGaps.cost) + ' cost' : formatMoney(d.totals.regionalForGaps.price)} for ${d.totals.regionalForGaps.gaps === d.gaps.length ? 'them' : `${d.totals.regionalForGaps.gaps} of them`}, not DB pricing` : ''}${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
         d.totals.base.unpriced ? ` &middot; ${d.totals.base.unpriced} line${d.totals.base.unpriced === 1 ? '' : 's'} to price by hand` : ''
       }</p>`}
+
+  ${d.revision ? `<section class="revision">
+    <h2>Pass ${d.revision.pass} &middot; the rep's direction</h2>
+    ${d.revision.directions.map((x) => `<blockquote><span class="when">after pass ${x.pass}, ${esc(x.at.slice(0, 10))}</span>${esc(x.text).replace(/\n/g, '<br>')}</blockquote>`).join('\n')}
+    <p class="detail">Changed since pass ${d.revision.pass - 1}:</p>
+    <ul>${changesText(d.revision.changes).map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+  </section>` : ''}
 
   ${d.totals.options.length ? `<section class="options">
     <h2>Options the customer picks</h2>
@@ -539,6 +558,15 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
     <pre id="steps">${esc(steps)}</pre>
   </section>
 
+  <section class="revise">
+    <div class="bar"><h2>Change it</h2>
+      <button type="button" id="copy-revise" class="no-print">Copy the rerun command</button></div>
+    <p class="detail">Say what to change &mdash; drop a line, name the product, add an option, settle a question &mdash; and rerun.
+      The next pass follows it as your decision and keeps everything you did not change; the page then shows what moved.</p>
+    <textarea id="direction" rows="4" class="no-print" placeholder="forget the skim coat; go with a mold-resistant concrete paint, or an option to frame out false walls 6-8 inches off the foundation with plastic, drywall above wainscot, batt insulation, painted"></textarea>
+    <pre id="revise-cmd">${esc(reviseCommand(d.jobId, 'what to change'))}</pre>
+  </section>
+
   <footer>
     <p><strong>A draft, not an estimate.</strong> Nothing here was written to JobTread. Prices are
     the catalog's, as JobTread would apply them when the template is added; quantities are the
@@ -550,15 +578,28 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
 </main>
 <script>
 (function () {
-  var b = document.getElementById('copy');
-  if (!b) return;
-  b.addEventListener('click', function () {
-    var t = document.getElementById('steps').textContent;
-    navigator.clipboard.writeText(t).then(function () {
-      b.textContent = 'Copied';
-      setTimeout(function () { b.textContent = 'Copy the steps'; }, 1500);
+  function copier(buttonId, sourceId, label) {
+    var b = document.getElementById(buttonId);
+    if (!b) return;
+    b.addEventListener('click', function () {
+      var t = document.getElementById(sourceId).textContent;
+      navigator.clipboard.writeText(t).then(function () {
+        b.textContent = 'Copied';
+        setTimeout(function () { b.textContent = label; }, 1500);
+      });
     });
-  });
+  }
+  copier('copy', 'steps', 'Copy the steps');
+  copier('copy-revise', 'revise-cmd', 'Copy the rerun command');
+  var ta = document.getElementById('direction');
+  var cmd = document.getElementById('revise-cmd');
+  if (ta && cmd) {
+    var job = ${JSON.stringify(d.jobId)};
+    ta.addEventListener('input', function () {
+      var t = ta.value.replace(/\\s+/g, ' ').replace(/"/g, "'").trim();
+      cmd.textContent = 'npm run draft -- ' + job + ' --revise "' + (t || 'what to change') + '"';
+    });
+  }
 })();
 </script>
 </body>
@@ -642,7 +683,17 @@ tr.conf-high .conf { color: var(--green); }
   background: var(--card); border-radius: 0 7px 7px 0; font-size: 14px; }
 .steps pre { margin: 10px 0 0; padding: 14px 16px; background: var(--card); border: 1px solid var(--line);
   border-radius: 7px; white-space: pre-wrap; font-size: 12.5px; line-height: 1.5; }
-.steps #copy { font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 6px;
+.steps #copy, .revise #copy-revise { font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 6px;
   border: 1px solid var(--rec); background: var(--rec); color: var(--bg); cursor: pointer; }
+.revision h2 { margin-top: 30px; }
+.revision blockquote { margin: 10px 0 0; padding: 12px 16px; border-left: 3px solid var(--amber);
+  background: var(--card); border-radius: 0 7px 7px 0; font-size: 14px; }
+.revision .when { display: block; font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.revision ul { margin: 6px 0 0; padding-left: 20px; font-size: 13.5px; }
+.revise { margin-top: 30px; }
+.revise textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 10px; padding: 10px 12px; font: inherit;
+  font-size: 13.5px; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 7px; resize: vertical; }
+.revise pre { margin: 8px 0 0; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 7px;
+  white-space: pre-wrap; word-break: break-word; font-size: 12.5px; }
 @media (max-width: 560px) { .removed ul { columns: 1; } table.lines { font-size: 12.5px; } }
 `;

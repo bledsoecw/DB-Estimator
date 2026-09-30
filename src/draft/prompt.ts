@@ -47,6 +47,8 @@ Choose:
 
 If no template fits the work at all, pick nothing and say why in noFit. Carl decides what happens then. Do not force a fit.
 
+When the message carries the rep's direction after an earlier pass, it outranks the photos and the notes: the rep was on site and has talked to the customer. The direction may call for templates the earlier pass did not use (new framing, insulation, drywall); keep the earlier templates unless the direction removes the need for them.
+
 Write the summary as two plain sentences saying what the job is, as the evidence describes it.`;
 
 export const DRAFT_SYSTEM = `${COMPANY}
@@ -67,6 +69,7 @@ Rules:
 10. questions are what the rep must confirm with the customer or the team before the estimate goes out: at most six, ordered by how much the answer changes the price. Leave out what the estimate already handles (a color choice, picking from stock).
 11. lookBack is a list of one to three short search terms for finding DB's past work of the same kind ("epoxy", "floor coating"; "skim coat", "skim"). Give them on every Subcontractor line, on every gap, and on any Labor line for a trade DB might subcontract (painting, flooring, drywall, tile, concrete). Leave the list empty on everything else. The terms are matched against past line names and descriptions, so use the words a rep would have typed, not sentences.
 12. contingency.rate is the contingency DB carries on this job, by its policy: 5 when everything stays in place (replace in kind, nothing moves), 8 for a remodel where anything moves (a fixture, a wall, an opening) or the finish is stripped to the substrate, 10 for an addition, structural work, or an older home where hidden conditions are likely. Say why in one sentence from the evidence. The code prices it; you do not.
+13. When the message carries the rep's direction after an earlier pass, it is a decision, not evidence to weigh: follow it even where the photos or notes point elsewhere, never turn it back into a question, and keep every line, quantity and option of the earlier pass that it does not touch. Say "per the rep's direction" in the basis of what it changed.
 
 Write for the rep: plain words, and line names exactly as listed. Reference lines by their id.`;
 
@@ -238,34 +241,44 @@ function attachments(e: JobEvidence): Anthropic.ContentBlockParam[] {
   return blocks;
 }
 
-/** The PICK turn: the job, its files, the template list, the ask. */
-export function buildPickContent(e: JobEvidence, index: TemplateSummary[]): Anthropic.ContentBlockParam[] {
+/** The rep's direction after an earlier pass (revise.ts `revisionText`), as one block after the evidence. */
+function revisionBlock(revision: string | undefined): Anthropic.ContentBlockParam[] {
+  return revision ? [{ type: 'text', text: revision }] : [];
+}
+
+/** The PICK turn: the job, its files, the rep's direction if this is a later pass, the template list, the ask. */
+export function buildPickContent(e: JobEvidence, index: TemplateSummary[], revision?: string): Anthropic.ContentBlockParam[] {
   return [
     { type: 'text', text: evidenceText(e) },
     ...attachments(e),
+    ...revisionBlock(revision),
     { type: 'text', text: templateIndexText(index) },
     {
       type: 'text',
       text:
         'Choose the budget template(s) this estimate should be built from, primary first, ' +
         `at most ${MAX_PICKS}. If nothing fits, pick none and say why in noFit. ` +
+        (revision ? "Follow the rep's direction above. " : '') +
         'Return the summary and the picks in the required format.',
     },
   ];
 }
 
-/** The DRAFT turn: the job, its files, every line of the chosen templates, the ask. */
-export function buildDraftContent(e: JobEvidence, templates: Template[]): Anthropic.ContentBlockParam[] {
+/** The DRAFT turn: the job, its files, the rep's direction if this is a later pass, every line of the chosen templates, the ask. */
+export function buildDraftContent(e: JobEvidence, templates: Template[], revision?: string): Anthropic.ContentBlockParam[] {
   return [
     { type: 'text', text: evidenceText(e) },
     ...attachments(e),
+    ...revisionBlock(revision),
     ...templates.map((t): Anthropic.ContentBlockParam => ({ type: 'text', text: templateLinesText(t) })),
     {
       type: 'text',
       text:
         'Draft the budget from these templates: keep the lines the evidence supports with a ' +
         'quantity and its basis, mark alternatives with an option name, put uncovered scope in gaps, ' +
-        'write the scope of work and the questions. Return them in the required format.',
+        'write the scope of work and the questions. ' +
+        (revision ? "Follow the rep's direction above as a decision, and keep what it does not change. " : '') +
+        'Return them in the required format.',
     },
   ];
 }

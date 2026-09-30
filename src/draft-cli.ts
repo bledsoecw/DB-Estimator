@@ -2,6 +2,7 @@
  * npm run draft -- <job> [--dry-run] [--out review] [--templates id,id] [--model ...]
  *                        [--fixture path] [--capture path] [--no-photos] [--no-history]
  *                        [--learned path] [--relearn] [--relearn-after days]
+ *                        [--revise "what to change" | --revise-file path]
  *
  * One job, drafted from the budget templates the way a rep would build it:
  * which template to add, which lines to keep with what quantity, which to
@@ -12,6 +13,11 @@
  * <job> is a JobTread job id, the six-digit number that starts the job
  * name (261323), or the hyphenated number (26-1323).
  *
+ * --revise is the rep's second pass: it reads the last draft's JSON in --out,
+ * hands the model the rep's direction as a decision beside what that pass
+ * kept, keeps the earlier pass on disk as -passN, and writes a page that
+ * says what moved. Run as many passes as it takes.
+ *
  * --dry-run reads everything and writes what the model WOULD read — the job
  * text and the template list — then stops. No key is needed and nothing
  * leaves the machine.
@@ -21,7 +27,7 @@
  * here that leaves the building, and only when a key is set.
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { anthropicFromEnv, preflight } from './anthropic.ts';
 import { formatMoney } from './money.ts';
@@ -36,6 +42,7 @@ import { evidenceText, templateIndexText } from './draft/prompt.ts';
 import { DEFAULT_MODEL, PRICING, anthropicStructuredCall, costOf } from './draft/model.ts';
 import { draftEstimate, type DraftFixture, type HistorySource } from './draft/draft.ts';
 import { draftJson, renderDraft } from './draft/render.ts';
+import { addDirection, changesText, previousFromJson, revisionText, type Revision } from './draft/revise.ts';
 
 /** Holds DB's pricing; git-ignored, on the machine that runs the drafter. */
 export const DEFAULT_LEARNED_PATH = '.db-estimator/learned-prices.json';
@@ -54,6 +61,9 @@ export interface DraftArgs {
   learned: string;
   relearn: boolean;
   relearnAfterDays: number;
+  /** The rep's direction for the next pass, inline or from a file. */
+  revise: string | null;
+  reviseFile: string | null;
 }
 
 export function parseDraftArgs(argv: string[]): DraftArgs {
@@ -61,10 +71,15 @@ export function parseDraftArgs(argv: string[]): DraftArgs {
     job: '', dryRun: false, out: 'review', model: DEFAULT_MODEL, templateIds: [],
     fixture: null, capture: null, photos: true, history: true,
     learned: DEFAULT_LEARNED_PATH, relearn: false, relearnAfterDays: DEFAULT_RELEARN_DAYS,
+    revise: null, reviseFile: null,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--dry-run') args.dryRun = true;
+    else if (a === '--revise') {
+      args.revise = argv[++i] ?? null;
+      if (args.revise === null || args.revise.startsWith('--')) throw new Error('--revise needs the direction in quotes: --revise "forget the skim coat; ..."');
+    } else if (a === '--revise-file') args.reviseFile = argv[++i] ?? null;
     else if (a === '--no-photos') args.photos = false;
     else if (a === '--no-history') args.history = false;
     else if (a === '--relearn') args.relearn = true;
@@ -85,8 +100,9 @@ export function parseDraftArgs(argv: string[]): DraftArgs {
     else throw new Error(`unexpected argument ${a}`);
   }
   if (!args.job && !args.fixture) {
-    throw new Error('usage: npm run draft -- <jobId | 261323 | 26-1323> [--dry-run] [--out review] [--templates id,id]');
+    throw new Error('usage: npm run draft -- <jobId | 261323 | 26-1323> [--dry-run] [--out review] [--templates id,id] [--revise "what to change"]');
   }
+  if (args.revise !== null && args.reviseFile !== null) throw new Error('give the direction once: --revise or --revise-file, not both');
   return args;
 }
 
@@ -225,8 +241,21 @@ async function main(): Promise<number> {
   mkdirSync(args.out, { recursive: true });
   const stem = join(args.out, `${evidence.jobId}-draft`);
 
+  // A later pass: the rep's direction on top of what the last pass kept.
+  let revision: Revision | undefined;
+  if (args.revise !== null || args.reviseFile !== null) {
+    const direction = args.revise ?? readFileSync(args.reviseFile!, 'utf8');
+    if (!existsSync(`${stem}.json`)) {
+      log(`nothing to revise: ${stem}.json does not exist. Run the draft once without --revise first.`);
+      return 2;
+    }
+    const previous = previousFromJson(JSON.parse(readFileSync(`${stem}.json`, 'utf8')));
+    revision = addDirection(previous, direction);
+    log(`pass ${previous.pass + 1}: the rep's direction after pass ${previous.pass}, on ${previous.lines.length} kept lines and ${previous.gaps.length} flagged`);
+  }
+
   if (args.dryRun) {
-    writeFileSync(`${stem}-packet.txt`, `${text}\n\n${templateIndexText(index)}\n`);
+    writeFileSync(`${stem}-packet.txt`, `${text}\n\n${revision ? `${revisionText(revision)}\n\n` : ''}${templateIndexText(index)}\n`);
     log(`dry run: what the model would read is in ${stem}-packet.txt. Nothing was sent.`);
     return 0;
   }
@@ -253,7 +282,17 @@ async function main(): Promise<number> {
     model: args.model,
     ...(args.templateIds.length ? { templateIds: args.templateIds } : {}),
     ...(historySource ? { history: historySource } : {}),
+    ...(revision ? { revision } : {}),
   });
+
+  // Keep the pass that was revised: the rep may want to compare, and the JSON is the record.
+  if (revision) {
+    const n = revision.previous.pass;
+    for (const ext of ['.json', '.html']) {
+      if (existsSync(`${stem}${ext}`)) renameSync(`${stem}${ext}`, `${stem}-pass${n}${ext}`);
+    }
+    log(`pass ${n} kept as ${stem}-pass${n}.html`);
+  }
 
   if (learned && draft.history) {
     learned.save(args.learned);
@@ -296,6 +335,10 @@ async function main(): Promise<number> {
     if (draft.contingency) {
       const c = draft.contingency;
       log(`contingency: ${c.rate}% on ${formatMoney(c.base)} base cost = ${formatMoney(c.amount)} at cost${c.line ? '' : ' (no template line: add the group by hand)'}`);
+    }
+    if (draft.revision) {
+      log(`pass ${draft.revision.pass}, changed since pass ${draft.revision.pass - 1}:`);
+      for (const c of changesText(draft.revision.changes)) log(`  - ${c}`);
     }
   }
   log(`page written to ${stem}.html; data in ${stem}.json`);

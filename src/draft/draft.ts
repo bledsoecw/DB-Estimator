@@ -32,6 +32,7 @@ import {
 import type { HistoryReport } from './history.ts';
 import type { LearnedStore } from './learned.ts';
 import { chooseRate, contingencyAmount, contingencyLine, type ContingencyStep } from './contingency.ts';
+import { diffDrafts, revisionText, type Direction, type DraftChanges, type Revision } from './revise.ts';
 import {
   groupPath, isContingencyLine, scopeLines, type Template, type TemplateLine, type TemplateSummary,
 } from './templates.ts';
@@ -168,6 +169,8 @@ export interface Draft {
   };
   /** The contingency line: the policy rate on the base cost. Null for a roofing job. */
   contingency: ContingencyStep | null;
+  /** A later pass: what the rep said, and what moved since the pass before. Null on the first pass. */
+  revision: { pass: number; directions: Direction[]; changes: DraftChanges } | null;
   /** The past-work step: what was searched and what came of it. Null when it did not run. */
   history: {
     terms: string[];
@@ -201,6 +204,8 @@ export interface DraftOptions {
   templateIds?: string[];
   /** Read DB's past work for subcontracted lines and gaps. Off when absent. */
   history?: HistorySource;
+  /** A later pass: the last pass and the rep's direction(s). Both calls are told; the draft records what moved. */
+  revision?: Revision;
 }
 
 const PICK_MAX_TOKENS = 8_000;
@@ -231,6 +236,18 @@ export async function draftEstimate(
   let usage = NO_USAGE;
   let cost: number | null = 0;
   const addCost = (c: number | null): void => { cost = cost === null || c === null ? null : cost + c; };
+  const revision = opts.revision ? revisionText(opts.revision) : undefined;
+  const withRevision = (draft: Draft): Draft =>
+    opts.revision
+      ? {
+          ...draft,
+          revision: {
+            pass: opts.revision.previous.pass + 1,
+            directions: opts.revision.directions,
+            changes: diffDrafts(opts.revision.previous, draft),
+          },
+        }
+      : draft;
 
   // ---- 1. which templates -----------------------------------------------------
   let picks: PickReply['picks'];
@@ -248,7 +265,7 @@ export async function draftEstimate(
   } else {
     const r = await runStructured(
       call,
-      { model, system: PICK_SYSTEM, content: buildPickContent(evidence, index), schema: PickSchema, maxTokens: PICK_MAX_TOKENS },
+      { model, system: PICK_SYSTEM, content: buildPickContent(evidence, index, revision), schema: PickSchema, maxTokens: PICK_MAX_TOKENS },
       'pick the templates',
     );
     usage = addUsage(usage, r.usage);
@@ -279,10 +296,11 @@ export async function draftEstimate(
     rejected: [], rejectedPicks,
     totals: { base: totalsOf([]), options: [], all: totalsOf([]), proposedForGaps: NO_PROPOSALS, regionalForGaps: NO_PROPOSALS },
     contingency: null,
+    revision: null,
     history: null,
     usage, cost,
   });
-  if (chosen.length === 0) return empty();
+  if (chosen.length === 0) return withRevision(empty());
 
   const templates: Template[] = [];
   for (const p of chosen) templates.push(await loadTemplate(p.templateId));
@@ -290,7 +308,7 @@ export async function draftEstimate(
   // ---- 2. which lines, what quantities ------------------------------------------
   const d = await runStructured(
     call,
-    { model, system: DRAFT_SYSTEM, content: buildDraftContent(evidence, templates), schema: DraftSchema, maxTokens: DRAFT_MAX_TOKENS },
+    { model, system: DRAFT_SYSTEM, content: buildDraftContent(evidence, templates, revision), schema: DraftSchema, maxTokens: DRAFT_MAX_TOKENS },
     'draft the budget',
   );
   usage = addUsage(usage, d.usage);
@@ -396,7 +414,7 @@ export async function draftEstimate(
   });
 
   const byOption = totalsByOption(lines);
-  return {
+  return withRevision({
     jobId: evidence.jobId,
     jobName: evidence.jobName,
     model,
@@ -416,10 +434,11 @@ export async function draftEstimate(
       regionalForGaps: proposedForGaps(gaps, 'regional'),
     },
     contingency: contingencyStep(evidence, d.data.contingency, byOption.base.cost, templates, byOption.options),
+    revision: null,
     history,
     usage,
     cost,
-  };
+  });
 }
 
 /**

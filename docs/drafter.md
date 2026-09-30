@@ -313,6 +313,43 @@ it; when none does, an X-Division draft, it says how to add the group and
 the catalog item by hand. The line is never the model's to keep or drop,
 and it is priced at cost. `docs/contingency.md` has the whole story.
 
+## The rep's second pass
+
+Carl, 30 Sep 2026, reading the fourth run as the rep: *"forget the skim
+coating and let's go with a mold-resistant concrete paint, or an option to
+frame out walls 6–8 inches from the foundation with plastic, drywall on top,
+wainscot on the bottom, paint it, insulation batts in the false walls. I
+would type this in the UI and run this update."*
+
+That is `--revise`. The rep says what to change, in plain words, and reruns:
+
+```
+npm run draft -- 261323 --revise "forget the skim coat; go with a mold-resistant concrete paint, or an option to frame out false walls ..."
+npm run draft -- 261323 --revise-file review/haag-notes.txt        # the same, from a file
+```
+
+The CLI reads the last pass's JSON from `--out`, and both model calls get
+one more block right after the job: the rep's direction (every direction so
+far, newest last), the rule that it is a decision made on site and outranks
+the photos and notes, and what the last pass kept — every line with its
+quantity and option, the gaps it flagged, the questions it asked, the
+contingency rate it carried. The picker may add templates the direction
+calls for (framing, insulation, drywall); the drafter changes what the
+direction changes, keeps the rest, drops the questions the direction
+answers, and says "per the rep's direction" in the basis of each changed
+line.
+
+The page then opens with the direction and **what moved**: templates added
+or dropped, lines added or dropped, quantities changed, options moved,
+flagged items resolved or new, the contingency rate. The earlier pass stays
+on disk as `-pass1.html` and `-pass1.json`, so the two can be compared, and
+the JSON records every direction so a third pass carries both. Every page,
+pass 1 included, ends with a **Change it** box: type the direction, copy the
+rerun command.
+
+There is no UI beyond that page yet. When there is one, this is the call it
+makes.
+
 ## Running it
 
 ```

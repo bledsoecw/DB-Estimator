@@ -310,7 +310,14 @@ npm run draft -- 261323 --out review       # needs ANTHROPIC_API_KEY in .env
 npm run draft -- 261323 --templates 22PLCZU3cbqS,22PF3gnGCuiB   # you pick the templates
 npm run draft -- 261323 --no-history                             # skip the past-work step
 npm run draft -- 261323 --relearn                                # ignore the learned price book this once
+npm run draft -- 261323 --revise "forget the skim coat; use a mold-resistant concrete paint"   # the rep's second pass
 ```
+
+**The rep gets a second pass.** After reading the draft, the rep says what
+to change in plain words and reruns with `--revise` (or `--revise-file`).
+The direction goes to the model as a decision made on site, beside what the
+last pass kept; the new page opens with what moved, and the earlier pass is
+kept as `-pass1`. The page's **Change it** box writes the command.
 
 The job is the six-digit number that starts its name, the hyphenated number
 JobTread stores, or the job id.
