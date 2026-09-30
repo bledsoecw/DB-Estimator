@@ -171,6 +171,14 @@ test('the second pass sends the direction to both calls, follows it, and the pag
   assert.match(html1, /<textarea id="direction"/);
 });
 
+test('a gap whose wording only gained or lost a trailing "(… option)" is the same gap', async () => {
+  const d1 = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...PASS1, gaps: [{ ...PASS1.gaps[0]!, scope: 'Move basement contents (Framed walls option)' }] }]), { templateIds: [FIN, GR] });
+  const prev = previousFromJson(draftJson(d1));
+  const d2 = await draftEstimate(fx.evidence, fx.index, load, fake([PASS1]), { templateIds: [FIN, GR] });
+  const c = diffDrafts(prev, d2);
+  assert.deepEqual([c.gapsAdded, c.gapsRemoved], [[], []]);
+});
+
 test('diffDrafts notices an option moving and a template being dropped', async () => {
   const d1 = await draftEstimate(fx.evidence, fx.index, load, fake([PASS1]), { templateIds: [FIN, GR] });
   const prev = previousFromJson(draftJson(d1));

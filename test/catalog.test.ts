@@ -18,6 +18,7 @@ import { draftEstimate, type DraftFixture } from '../src/draft/draft.ts';
 import { draftJson, draftSteps, renderDraft } from '../src/draft/render.ts';
 import { fixtureCatalog, parseDraftArgs } from '../src/draft-cli.ts';
 import type { StructuredArgs, StructuredCall } from '../src/draft/model.ts';
+import { LearnedStore } from '../src/draft/learned.ts';
 
 // ---- the raw catalog, as Pave returns it (shapes copied from the live organization) ----
 
@@ -231,13 +232,13 @@ test('a gap the catalog covers becomes a kept, priced line in its option; the re
   assert.equal(formatMoney(d.contingency!.options[0]!.cost), '$13,066.33', '12,662.37 + 73.96 + 330.00');
 
   const steps = draftSteps(d);
-  assert.match(steps, /^Base scope: [^\n]* — leaves out 1 flagged item nowhere in the catalog, to create on the job and price \(step 7\); 3 flagged items found in the catalog, placed and priced \(step 3\)$/m);
+  assert.match(steps, /^Base scope: [^\n]* — leaves out 1 flagged item still open, to add or create on the job and price \(step 7\); 3 flagged items found in the catalog, placed and priced \(step 3\)$/m);
   assert.match(steps, /^Start from the job's empty Budget tab: the templates below were chosen for this job, and only the job's copy of them is ever changed\.$/m);
   assert.match(steps, /^3\. Found in the catalog — on the job, add each into the section named \(open the section › Add from catalog › search the name\):\n   - Into X-Division 09 Finishes › FINISHES › Drywall\/Plaster: Insulation - Batt, 909 Square Foot \[option: Framed walls\] — \$20\.1985\/Square Foot, \$18,360\.44 — from Addition\/House Build › NEW HOME BUILD SCOPE › Phase 2 - Rough-In › Insulation › Insulation - Batt \(also in X-Division 07 Thermal & Moisture\) — for "Batt insulation in the false wall cavities": Same 909 SF of gross wall; the line is per square foot\. \(check\)\n       history: DB bought R15 wall batts[^\n]*History says \$0\.91\/Square Foot cost \(\$1\.32 price\) against the template's \$13\.93\./m);
   assert.match(steps, /^   - Into X-Division 09 Finishes › FINISHES › Drywall\/Plaster: Vapor Barrier 4 mil, 4 Each \[option: Framed walls\] — \$26\.8105\/Each, \$107\.24 — from the ungrouped catalog — for "Plastic vapor barrier[^"]*": 909 SF of wall; a 10 × 25 roll covers 250 SF, so 4 rolls with laps\. \(check\)$/m);
   assert.match(steps, /^   - Into the section the rep sees fit: Crew Labor, 6 Hours \[option: Framed walls\] — \$100\.00\/Hours, \$600\.00 — from the ungrouped catalog/m, 'no section named: the rep places it');
   assert.match(steps, /^4\. Contingency at 10%/m);
-  assert.match(steps, /^7\. Nowhere in the catalog — on the job, create each line under the section named and price it; take these to Carl before the estimate goes out:\n   - Under the section the rep sees fit, create "Extend or relocate outlets to the new false wall face" \(Subcontractor, Each\) \[option: Framed walls\]: no line in these templates\n     price to type: \$90\.00\/Each cost \(\$128\.57 price\) — NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out\n     catalog: the section not-a-group the model named is not a group in the chosen templates; the rep picks the section\n     history: Nothing in DB history\. Regional ballpark: \$90\.00\/Each cost \(\$128\.57 price\), quantity still to be confirmed/m);
+  assert.match(steps, /^7\. Still open — on the job, under the section named, add the catalog line where one covers it or create the line and price it; take these to Carl before the estimate goes out:\n   - Under the section the rep sees fit, create "Extend or relocate outlets to the new false wall face" \(Subcontractor, Each\) \[option: Framed walls\]: no line in these templates\n     price to type: \$90\.00\/Each cost \(\$128\.57 price\) — NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out\n     catalog: the section not-a-group the model named is not a group in the chosen templates; the rep picks the section\n     history: Nothing in DB history\. Regional ballpark: \$90\.00\/Each cost \(\$128\.57 price\), quantity still to be confirmed/m);
   assert.deepEqual(batt!.placeIn, { templateId: FIN, templateName: 'X-Division 09 Finishes', groupId: '22PLCchBuFMT', groupPath: ['FINISHES', 'Drywall/Plaster'] });
   assert.equal(crew!.placeIn, null);
   assert.equal(d.gaps[3]!.placeIn, null);
@@ -247,7 +248,7 @@ test('a gap the catalog covers becomes a kept, priced line in its option; the re
   assert.match(html, /<h2>Found in the catalog<\/h2>/);
   assert.match(html, /<div class="path">Batt insulation in the false wall cavities<\/div><div class="name">Insulation - Batt<\/div><div class="path">into X-Division 09 Finishes › FINISHES › Drywall\/Plaster<\/div>/);
   assert.match(html, /<tr><td>create under<\/td><td>the section the rep sees fit<\/td><\/tr>\s*<tr><td>price to type<\/td><td>\$90\.00\/Each cost/);
-  assert.match(html, /<h2>Nowhere in the catalog <span class="count">1<\/span><\/h2>/);
+  assert.match(html, /<h2>Still open <span class="count">1<\/span><\/h2>/);
   assert.match(html, /1 item flagged for Carl &middot; the base price leaves it out &middot; 3 flagged items found elsewhere in the catalog and priced/);
   const json0 = draftJson(d) as { found: { placeIn: { group: string } | null }[]; gaps: { placeIn: unknown }[] };
   assert.equal(json0.found[0]!.placeIn!.group, 'FINISHES › Drywall/Plaster');
@@ -277,7 +278,11 @@ test('a match the model names that was not a candidate, or with no quantity in t
   assert.match(d.gaps[0]!.catalogNote!, /named catalog id made-up, which was not among the candidates/);
   assert.match(d.gaps[1]!.catalogNote!, /"Vapor Barrier 4 mil" covers this, but no quantity in Each was given; the rep sets it/);
   assert.match(d.gaps[2]!.catalogNote!, /"Crew Labor" covers this, but no quantity in Hours was given/);
-  assert.match(draftSteps(d), /Plastic vapor barrier[^\n]*\n     price to type: [^\n]*\n     catalog: "Vapor Barrier 4 mil" covers this, but no quantity in Each was given; the rep sets it/);
+  assert.equal(d.gaps[1]!.catalogMatch?.name, 'Vapor Barrier 4 mil');
+  assert.match(draftSteps(d), /^   - Under the section the rep sees fit, add "Vapor Barrier 4 mil" from the catalog \(\$26\.8105\/Each\) for "Plastic vapor barrier between the foundation and the false walls" and set the Each count once it is known \[option: Framed walls\]: no line in these templates$/m,
+    'a match with no count is an add-from-catalog instruction, not a line to create');
+  assert.match(renderDraft(fx.evidence, d), /Add from the catalog · set the count<\/div>\s*<h3>Plastic vapor barrier/);
+  assert.equal(d.gaps[0]!.catalogMatch, null, 'an id that was never a candidate is not a match');
 
   // With no gaps there is nothing to search and no third call.
   const none = fake([{ ...DRAFT, gaps: [] }]);
@@ -302,6 +307,47 @@ test('a catalog search that fails after the draft call leaves the gaps unchecked
   const json = draftJson(d) as { catalog: { error: string | null; found: number } };
   assert.match(json.catalog.error!, /413/);
   assert.equal(json.catalog.found, 0);
+});
+
+test('a gap the price book already priced still goes to the model for the catalog, and the book\'s history rides onto the found line', async () => {
+  const T0 = new Date('2026-09-30T18:00:00Z');
+  const store = new LearnedStore([], { now: () => T0 });
+  store.remember(['insulation', 'batt'], {
+    fromJob: '261323 Haag_Remodel', targetName: 'Batt insulation in the false wall cavities', unit: 'Square Foot',
+    finding: {
+      target: { kind: 'gap', id: 'gap-0' }, match: 'match', summary: 'DB bought R15 wall batts from Fidelity for the Myers sunroom at about $0.91/SF.',
+      pastWork: [], suggestedUnitCost: 0.91, suggestionBasis: '$62/bag over 67.81 SF.', confidence: 'medium', typicallySubbed: null, usualVendor: null,
+      regionalUnitCost: null, regionalBasis: '', catalog: { kind: 'none', id: null, quantity: null, basis: '', sectionGroupId: null },
+    },
+  });
+  const all = foldCandidates(RAW as never, ['tplChosen']);
+  const searches: string[][] = [];
+  const call = fake([DRAFT, { findings: [
+    // The model was not shown history for gap-0 and says so; only its catalog match counts.
+    finding('gap-0', { match: 'none', summary: 'not shown history', catalog: { kind: 'templateLine', id: 'lineBattAdd', quantity: 909, basis: 'Same 909 SF; the line is per square foot.', sectionGroupId: '22PLCchBuFMT' } }),
+    finding('gap-1', { catalog: { kind: 'catalogItem', id: 'itemVapor', quantity: 4, basis: '4 rolls', sectionGroupId: null } }),
+  ] }]);
+  const d = await draftEstimate(fx.evidence, fx.index, load, call, {
+    templateIds: [FIN, GR],
+    history: { search: async (t) => { searches.push(t); return { terms: [] }; }, margins: MARGINS, learned: store },
+    catalog: { search: async () => all },
+  });
+  assert.deepEqual(searches, [['vapor barrier', 'poly', 'electrical', 'outlet']], 'the book answered insulation; the rest was searched');
+  assert.equal(call.calls.length, 2);
+  const asked = call.calls[1]!.content.map((c) => (c.type === 'text' ? c.text : '')).join('\n');
+  assert.match(asked, /- gap-0 · gap · Batt insulation[^\n]*\n  basis: [^\n]*\n  note: DB's past work was already read for this \(learned 2026-09-30\): match\. DB bought R15 wall batts[^\n]*It is priced from that history unless a catalog candidate is the same thing; if one is, match it and give the quantity in its unit\./);
+  const batt = d.found.find((l) => l.name === 'Insulation - Batt')!;
+  assert.ok(batt, 'the catalog line wins over the history price');
+  assert.equal(batt.history?.origin.kind, 'learned');
+  assert.match(batt.history!.summary, /DB bought R15 wall batts/);
+  assert.equal(formatMoney(batt.historyUnitCost!), '$0.91', 'the book\'s figure sits beside the catalog price');
+  assert.equal(formatMoney(batt.unitCost), '$13.93');
+  assert.deepEqual(batt.placeIn?.groupPath, ['FINISHES', 'Drywall/Plaster']);
+  assert.equal(d.gaps[0]!.resolved?.candidate.name, 'Insulation - Batt');
+  assert.equal(d.gaps[0]!.proposed, null);
+  assert.equal(d.history?.learned, 1);
+  assert.match(draftSteps(d), /Into X-Division 09 Finishes › FINISHES › Drywall\/Plaster: Insulation - Batt, 909 Square Foot[^\n]*\n       history: DB bought R15 wall batts[^\n]*History says \$0\.91\/Square Foot cost[^\n]*against the template's \$13\.93\.[^\n]*Learned 2026-09-30/);
+  assert.equal(store.entries.get('insulation')!.finding.suggestedUnitCost, 0.91, 'the book is not rewritten by a catalog-only pass');
 });
 
 test('a fixture replays the catalog by term, and the CLI can turn the search off', async () => {

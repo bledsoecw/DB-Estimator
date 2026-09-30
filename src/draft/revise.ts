@@ -140,7 +140,8 @@ export interface DraftChanges {
   contingencyRate: { from: number; to: number } | null;
 }
 
-const norm = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, ' ');
+/** Gap wording, loosely: case and spacing aside, and without a trailing "(Framed walls option)" the model may add or drop between passes. */
+const norm = (s: string): string => s.trim().toLowerCase().replace(/\s*\([^()]*\)\s*$/, '').replace(/\s+/g, ' ').trim();
 
 /** What moved between the last pass and this one, by template line id and by gap wording. */
 export function diffDrafts(previous: PreviousDraft, next: Draft): DraftChanges {

@@ -99,6 +99,8 @@ export type DraftGap = DraftReplyGap & {
   regionalUnitPrice: Money | null;
   /** A line elsewhere in the catalog covers it: it is then a kept line in `found`, not a gap. */
   resolved: { candidate: CatalogCandidate; quantity: number; basis: string } | null;
+  /** A catalog line covers it but no quantity in that line's unit was given: the rep adds it and sets the count. */
+  catalogMatch: CatalogCandidate | null;
   /** Why a catalog match the model named was not used. */
   catalogNote: string | null;
   /** The section of a chosen template's copy on the job where the line goes: pulled from the catalog, or created new. */
@@ -357,7 +359,8 @@ export async function draftEstimate(
   const { lines, rejected } = priceLines(d.data, templates);
   const gaps: DraftGap[] = d.data.gaps.map((g) => ({
     ...g, option: g.option?.trim() || null,
-    history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null, resolved: null, catalogNote: null, placeIn: null,
+    history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null,
+    resolved: null, catalogMatch: null, catalogNote: null, placeIn: null,
   }));
 
   // ---- 3. the rest of the catalog, what DB did last time, and a ballpark where both have nothing ----
@@ -420,21 +423,29 @@ export async function draftEstimate(
     if (!matched) rememberNone(store, toSearch, evidence.jobName);
 
     // Who goes to the model: every searched target when something was found;
-    // and every gap still without a number, for a catalog match, a regional
-    // ballpark, or both — even when history, searched now or learned earlier,
-    // has nothing.
+    // every gap still without a number, for a catalog match, a regional
+    // ballpark, or both; and every gap the price book DID price that has
+    // catalog candidates — the book answers the history, but only the model
+    // can say whether a catalog line is the same thing, and a catalog line
+    // beats a history price (pass 3 of 261323 flagged batt insulation as
+    // nowhere in the catalog because the book had priced it).
     const forModel: HistoryTarget[] = matched ? [...toSearch] : toSearch.filter((t) => t.kind === 'gap');
     gaps.forEach((g, i) => {
       const id = `gap-${i}`;
-      if (g.proposed !== null || forModel.some((t) => t.id === id)) return;
+      const hasCandidates = (candidatesByGap.get(i)?.length ?? 0) > 0;
+      if (forModel.some((t) => t.id === id) || (g.proposed !== null && !hasCandidates)) return;
       const t = allTargets.find((x) => x.id === id);
       if (!t) return;
       const h = g.history;
+      const already = h
+        ? `DB's past work was already read for this (${h.origin.kind === 'learned' ? `learned ${h.origin.learnedAt.slice(0, 10)}` : 'this run'}): ${h.match}. ${h.summary} `
+        : '';
       forModel.push({
         ...t,
-        note: h
-          ? `DB's past work was already read for this (${h.origin.kind === 'learned' ? `learned ${h.origin.learnedAt.slice(0, 10)}` : 'this run'}): ${h.match}. ${h.summary} Match it to the catalog if a candidate is the same thing; otherwise give the regional ballpark.`
-          : 'Match it to the catalog if a candidate is the same thing; otherwise give the regional ballpark.',
+        note:
+          g.proposed !== null
+            ? `${already}It is priced from that history unless a catalog candidate is the same thing; if one is, match it and give the quantity in its unit. Do not repeat the history; your history fields for this target are ignored.`
+            : `${already}Match it to the catalog if a candidate is the same thing; otherwise give the regional ballpark.`,
       });
     });
 
@@ -451,7 +462,17 @@ export async function draftEstimate(
       );
       usage = addUsage(usage, h.usage);
       addCost(h.cost);
-      const searched: AttachedFinding[] = h.data.findings.map((f) => ({ ...f, origin: { kind: 'searched' } }));
+      // A gap the book answered was sent for the catalog only: its history stays the book's,
+      // and the model's catalog match (and any ballpark) is laid over it.
+      const learnedByTarget = new Map(learnedFindings.map((f) => [f.target.id, f]));
+      const searchedIds = new Set(toSearch.map((t) => t.id));
+      const searched: AttachedFinding[] = h.data.findings.map((f) => {
+        const learned = learnedByTarget.get(f.target.id);
+        if (learned && !searchedIds.has(f.target.id)) {
+          return { ...learned, catalog: f.catalog, regionalUnitCost: f.regionalUnitCost, regionalBasis: f.regionalBasis };
+        }
+        return { ...f, origin: { kind: 'searched' } };
+      });
       attachHistory(lines, gaps, searched, margins);
       findings = searched.length;
       remember(store, toSearch, searched, evidence.jobName);
@@ -574,6 +595,7 @@ export function resolveGaps(
     }
     const quantity = f.catalog.quantity ?? (c.unit !== null && c.unit === g.unit ? g.quantity : null);
     if (quantity === null || !Number.isFinite(quantity) || quantity < 0) {
+      g.catalogMatch = c;
       g.catalogNote = `"${c.name}" covers this, but no quantity in ${c.unit ?? 'its unit'} was given; the rep sets it`;
       continue;
     }

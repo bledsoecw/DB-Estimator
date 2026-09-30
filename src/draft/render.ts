@@ -10,7 +10,7 @@
  * It decides nothing and writes nothing to JobTread.
  */
 
-import { type Money, ZERO, add, formatMoney, formatPercent, toNumber } from '../money.ts';
+import { type Money, ZERO, add, formatMoney, formatPercent, moneyFromApi, toNumber } from '../money.ts';
 import { marginOf } from '../domain.ts';
 import { CSS } from '../report.ts';
 import { STRUCTURAL_GROUPS, groupPath } from './templates.ts';
@@ -84,7 +84,7 @@ export function draftSteps(d: Draft): string {
   out.push(
     `Base scope: ${totalsLine(d.totals.base)}` +
       (open.length
-        ? ` — leaves out ${open.length} flagged item${open.length === 1 ? '' : 's'} nowhere in the catalog, to create on the job and price (step ${gapStep(d)})`
+        ? ` — leaves out ${open.length} flagged item${open.length === 1 ? '' : 's'} still open, to add or create on the job and price (step ${gapStep(d)})`
         : '') +
       (d.found.length
         ? `${open.length ? ';' : ' —'} ${d.found.length} flagged item${d.found.length === 1 ? '' : 's'} found in the catalog, placed and priced (step ${foundStep(d)})`
@@ -227,14 +227,23 @@ export function draftSteps(d: Draft): string {
   }
   if (open.length) {
     step++;
-    out.push(`${step}. Nowhere in the catalog — on the job, create each line under the section named and price it; take these to Carl before the estimate goes out:`);
+    out.push(`${step}. Still open — on the job, under the section named, add the catalog line where one covers it or create the line and price it; take these to Carl before the estimate goes out:`);
     for (const g of open) {
-      out.push(
-        `   - Under ${placeText(g.placeIn)}, create "${g.scope}" (${g.costType}${g.quantity !== null ? `, ${qty(g.quantity)} ${g.unit}` : `, ${g.unit}`})` +
-          `${g.option ? ` [option: ${g.option}]` : ''}: ${g.why}`,
-      );
-      out.push(`     price to type: ${gapPriceText(g)}`);
-      if (g.catalogNote) out.push(`     catalog: ${g.catalogNote}`);
+      const tail = `${g.option ? ` [option: ${g.option}]` : ''}: ${g.why}`;
+      if (g.catalogMatch) {
+        const c = g.catalogMatch;
+        out.push(
+          `   - Under ${placeText(g.placeIn)}, add "${c.name}" from the catalog` +
+            (c.unitPrice !== null ? ` (${formatMoney(moneyFromApi(c.unitPrice))}/${c.unit ?? 'unit'})` : '') +
+            ` for "${g.scope}" and set the ${c.unit ?? 'unit'} count once it is known` + tail,
+        );
+      } else {
+        out.push(
+          `   - Under ${placeText(g.placeIn)}, create "${g.scope}" (${g.costType}${g.quantity !== null ? `, ${qty(g.quantity)} ${g.unit}` : `, ${g.unit}`})` + tail,
+        );
+        out.push(`     price to type: ${gapPriceText(g)}`);
+      }
+      if (g.catalogNote && !g.catalogMatch) out.push(`     catalog: ${g.catalogNote}`);
       if (g.history) out.push(`     history: ${historyGapText(g)}`);
     }
   }
@@ -442,6 +451,7 @@ export function draftJson(d: Draft): unknown {
       resolved: g.resolved
         ? { lineId: g.resolved.candidate.id, name: g.resolved.candidate.name, kind: g.resolved.candidate.kind, template: g.resolved.candidate.templateName, quantity: g.resolved.quantity, unit: g.resolved.candidate.unit, basis: g.resolved.basis }
         : null,
+      catalogMatch: g.catalogMatch ? { lineId: g.catalogMatch.id, name: g.catalogMatch.name, kind: g.catalogMatch.kind, unit: g.catalogMatch.unit } : null,
       placeIn: g.placeIn ? { template: g.placeIn.templateName, group: g.placeIn.groupPath.join(' › '), groupId: g.placeIn.groupId } : null,
       regionalUnitCost: g.regionalUnitCost === null ? null : formatMoney(g.regionalUnitCost),
       regionalUnitPrice: g.regionalUnitPrice === null ? null : formatMoney(g.regionalUnitPrice),
@@ -589,15 +599,17 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
   </section>` : ''}
 
   ${open.length ? `<section class="findings">
-    <div class="bar"><h2>Nowhere in the catalog <span class="count">${open.length}</span></h2>
-      <p class="tally">Create each on the job, under the section named, and price it &middot; Carl decides before the estimate goes out</p></div>
+    <div class="bar"><h2>Still open <span class="count">${open.length}</span></h2>
+      <p class="tally">Add the catalog line where one covers it, or create the line and price it, under the section named &middot; Carl decides before the estimate goes out</p></div>
     ${open.map((g) => `<article class="card sev-pricing">
-      <div class="chip">${g.proposed?.source === 'history' ? 'Create · price from history' : g.regionalUnitCost !== null ? 'Create · regional ballpark, not DB pricing' : 'Create · Carl prices'}</div>
+      <div class="chip">${g.catalogMatch ? 'Add from the catalog · set the count' : g.proposed?.source === 'history' ? 'Create · price from history' : g.regionalUnitCost !== null ? 'Create · regional ballpark, not DB pricing' : 'Create · Carl prices'}</div>
       <h3>${esc(g.scope)}${g.option ? ` <span class="tag">${esc(g.option)}</span>` : ''}</h3>
       <p class="detail">${esc(g.why)}${g.catalogNote ? ` ${esc(g.catalogNote)}.` : ''}</p>
       <table class="math">
-        <tr><td>create under</td><td>${esc(placeText(g.placeIn))}</td></tr>
-        <tr><td>price to type</td><td>${esc(gapPriceText(g))}</td></tr>
+        <tr><td>${g.catalogMatch ? 'add under' : 'create under'}</td><td>${esc(placeText(g.placeIn))}</td></tr>
+        ${g.catalogMatch
+          ? `<tr><td>catalog line</td><td>${esc(g.catalogMatch.name)}${g.catalogMatch.unitPrice !== null ? ` at ${formatMoney(moneyFromApi(g.catalogMatch.unitPrice))}/${esc(g.catalogMatch.unit ?? 'unit')}` : ''}; the rep sets the ${esc(g.catalogMatch.unit ?? 'unit')} count</td></tr>`
+          : `<tr><td>price to type</td><td>${esc(gapPriceText(g))}</td></tr>`}
         <tr><td>cost type</td><td>${esc(g.costType)}</td></tr>
         <tr><td>quantity</td><td>${g.quantity !== null ? `${esc(qty(g.quantity))} ${esc(g.unit)}` : esc(g.unit)}</td></tr>
         <tr><td>basis</td><td>${esc(g.basis)}</td></tr>

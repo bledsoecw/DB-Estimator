@@ -407,7 +407,7 @@ test('without a margin, history gives a cost and no price; without history, noth
 
 test('attachHistory drops findings for ids nobody asked about and ignores non-positive costs', () => {
   const lines: Parameters<typeof attachHistory>[0] = [];
-  const gaps: Parameters<typeof attachHistory>[1] = [{ ...DRAFT.gaps[0]!, costType: 'Labor', history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null, resolved: null, catalogNote: null, placeIn: null }];
+  const gaps: Parameters<typeof attachHistory>[1] = [{ ...DRAFT.gaps[0]!, costType: 'Labor', history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null, resolved: null, catalogMatch: null, catalogNote: null, placeIn: null }];
   attachHistory(lines, gaps, [
     { ...HISTORY.findings[2]!, suggestedUnitCost: 0 } as (typeof HISTORY.findings)[number],
     HISTORY.findings[4]!,
