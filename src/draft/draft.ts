@@ -11,16 +11,19 @@
  * to see.
  */
 
-import { type Money, ZERO, add, moneyFromApi, mulQty, qtyFromApi, roundToCents } from '../money.ts';
+import {
+  type Money, ZERO, add, moneyFromApi, mulQty, priceFromCostAtMargin, qtyFromApi, rateFromApi, roundToCents,
+} from '../money.ts';
 import type { JobEvidence } from './evidence.ts';
 import {
   DEFAULT_MODEL, NO_USAGE, addUsage, runStructured, type StructuredCall, type Usage,
 } from './model.ts';
 import {
-  DraftSchema, MAX_PICKS, PICK_SYSTEM, DRAFT_SYSTEM, PickSchema,
-  buildDraftContent, buildPickContent,
-  type DraftReply, type DraftReplyGap, type DraftReplyQuestion, type PickReply,
+  DraftSchema, HISTORY_SYSTEM, HistorySchema, MAX_PICKS, PICK_SYSTEM, DRAFT_SYSTEM, PickSchema,
+  buildDraftContent, buildHistoryContent, buildPickContent,
+  type DraftReply, type DraftReplyGap, type DraftReplyQuestion, type HistoryFinding, type HistoryTarget, type PickReply,
 } from './prompt.ts';
+import type { HistoryReport } from './history.ts';
 import { groupPath, scopeLines, type Template, type TemplateLine, type TemplateSummary } from './templates.ts';
 
 export type Confidence = 'high' | 'medium' | 'low';
@@ -47,9 +50,21 @@ export interface DraftLine {
   evidence: { source: string; quote: string }[];
   option: string | null;
   confidence: Confidence;
+  /** Search terms the model gave for DB's past work of this kind. */
+  lookBack: string[];
+  /** What DB did last time, when history was read for this line. */
+  history: HistoryFinding | null;
+  /** History's unit cost and the price at DB's subcontractor margin; null when history gave none. */
+  historyUnitCost: Money | null;
+  historyUnitPrice: Money | null;
 }
 
-export type DraftGap = DraftReplyGap;
+/** A gap, plus what history says about it and the price that would follow. */
+export type DraftGap = DraftReplyGap & {
+  history: HistoryFinding | null;
+  /** From history's unit cost × the gap's quantity, at the subcontractor margin. A proposal, never a total. */
+  proposed: { unitCost: Money; unitPrice: Money | null; cost: Money; price: Money | null } | null;
+};
 export type DraftQuestion = DraftReplyQuestion;
 
 export interface Totals {
@@ -104,19 +119,37 @@ export interface Draft {
   rejected: { lineId: string; reason: string }[];
   /** Template ids the picker named that are not in the index. */
   rejectedPicks: { templateId: string; reason: string }[];
-  totals: { base: Totals; options: OptionGroup[]; all: Totals };
+  totals: {
+    base: Totals;
+    options: OptionGroup[];
+    all: Totals;
+    /** What history proposes for the gaps. Shown beside the total, never inside it. */
+    proposedForGaps: { cost: Money; price: Money | null; gaps: number };
+  };
+  /** The past-work step: what was searched and what came of it. Null when it did not run. */
+  history: { terms: string[]; report: HistoryReport; findings: number; skipped: string | null } | null;
   usage: Usage;
   cost: number | null;
+}
+
+export interface HistorySource {
+  search: (terms: string[]) => Promise<HistoryReport>;
+  /** The Subcontractor cost type's margin as a fraction (0.3), for pricing what history proposes. */
+  subMargin: number | null;
 }
 
 export interface DraftOptions {
   model?: string;
   /** Skip the picker and use these templates, first as primary. */
   templateIds?: string[];
+  /** Read DB's past work for subcontracted lines and gaps. Off when absent. */
+  history?: HistorySource;
 }
 
 const PICK_MAX_TOKENS = 8_000;
 const DRAFT_MAX_TOKENS = 32_000;
+const HISTORY_MAX_TOKENS = 16_000;
+const MAX_TERMS = 10;
 
 /** Everything the CLI freezes to disk with --capture, and reads back with --fixture. */
 export interface DraftFixture {
@@ -185,7 +218,8 @@ export async function draftEstimate(
     jobId: evidence.jobId, jobName: evidence.jobName, model, pickSummary, noFit,
     summary: pickSummary, scopeOfWork: '', plans: [], lines: [], gaps: [], questions: [],
     rejected: [], rejectedPicks,
-    totals: { base: totalsOf([]), options: [], all: totalsOf([]) },
+    totals: { base: totalsOf([]), options: [], all: totalsOf([]), proposedForGaps: { cost: ZERO, price: ZERO, gaps: 0 } },
+    history: null,
     usage, cost,
   });
   if (chosen.length === 0) return empty();
@@ -203,6 +237,35 @@ export async function draftEstimate(
   addCost(d.cost);
 
   const { lines, rejected } = priceLines(d.data, templates);
+  const gaps: DraftGap[] = d.data.gaps.map((g) => ({ ...g, history: null, proposed: null }));
+
+  // ---- 3. what DB did last time -----------------------------------------------
+  let history: Draft['history'] = null;
+  if (opts.history) {
+    const targets = historyTargets(lines, gaps);
+    const terms = uniqueTerms(targets);
+    if (terms.length > 0) {
+      const report = await opts.history.search(terms);
+      const found = report.terms.some((t) => t.jobs.length > 0);
+      if (!found) {
+        history = { terms, report, findings: 0, skipped: 'no past DB work matched any search term' };
+      } else {
+        const h = await runStructured(
+          call,
+          {
+            model, system: HISTORY_SYSTEM,
+            content: buildHistoryContent(d.data.summary, targets, report),
+            schema: HistorySchema, maxTokens: HISTORY_MAX_TOKENS,
+          },
+          'read the history',
+        );
+        usage = addUsage(usage, h.usage);
+        addCost(h.cost);
+        attachHistory(lines, gaps, h.data.findings, opts.history.subMargin);
+        history = { terms, report, findings: h.data.findings.length, skipped: null };
+      }
+    }
+  }
 
   const plans: TemplatePlan[] = templates.map((t, i) => {
     const pick = chosen[i]!;
@@ -228,14 +291,112 @@ export async function draftEstimate(
     scopeOfWork: d.data.scopeOfWork,
     plans,
     lines,
-    gaps: d.data.gaps,
+    gaps,
     questions: d.data.questions,
     rejected,
     rejectedPicks,
-    totals: totalsByOption(lines),
+    totals: { ...totalsByOption(lines), proposedForGaps: proposedForGaps(gaps) },
+    history,
     usage,
     cost,
   };
+}
+
+/** Subcontracted lines, lines the model wanted looked up, and every gap. */
+export function historyTargets(lines: DraftLine[], gaps: DraftGap[]): HistoryTarget[] {
+  const out: HistoryTarget[] = [];
+  for (const l of lines) {
+    if (l.costTypeName !== 'Subcontractor' && l.lookBack.length === 0) continue;
+    out.push({
+      kind: 'line', id: l.lineId, name: l.name, quantity: l.quantity, unit: l.unit,
+      costTypeName: l.costTypeName, basis: l.basis,
+      templateUnitCost: l.priced ? Number(l.unitCost) / 10_000 : null,
+      lookBack: l.lookBack,
+    });
+  }
+  gaps.forEach((g, i) => {
+    out.push({
+      kind: 'gap', id: `gap-${i}`, name: g.scope, quantity: g.quantity, unit: g.unit,
+      costTypeName: g.costType, basis: g.basis, templateUnitCost: null, lookBack: g.lookBack,
+    });
+  });
+  return out;
+}
+
+/** Lower-cased, deduplicated, and capped; the search costs a query a term. */
+export function uniqueTerms(targets: HistoryTarget[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of targets) {
+    for (const raw of t.lookBack) {
+      const term = raw.trim().toLowerCase();
+      if (!term || seen.has(term)) continue;
+      seen.add(term);
+      out.push(term);
+      if (out.length >= MAX_TERMS) return out;
+    }
+  }
+  return out;
+}
+
+/**
+ * Put each finding on its line or gap and price what history proposes.
+ *
+ * The model cites a unit cost from past lines; the code turns it into
+ * Money and into a price at the subcontractor margin, the same one JobTread
+ * applies to a Subcontractor line. A finding for an id nobody asked about
+ * is dropped: it cannot be shown on anything.
+ */
+export function attachHistory(
+  lines: DraftLine[],
+  gaps: DraftGap[],
+  findings: HistoryFinding[],
+  subMargin: number | null,
+): void {
+  const margin = subMargin === null ? null : rateFromApi(subMargin);
+  // A proposed unit price is rounded to the cent: it is read by a person, not stored by JobTread.
+  const price = (cost: Money): Money | null => (margin === null ? null : roundToCents(priceFromCostAtMargin(cost, margin)));
+  const byLine = new Map(lines.map((l) => [l.lineId, l]));
+  for (const f of findings) {
+    if (f.target.kind === 'line') {
+      const l = byLine.get(f.target.id);
+      if (!l) continue;
+      l.history = f;
+      if (f.suggestedUnitCost !== null && f.suggestedUnitCost > 0) {
+        l.historyUnitCost = moneyFromApi(f.suggestedUnitCost);
+        l.historyUnitPrice = price(l.historyUnitCost);
+      }
+    } else {
+      const m = /^gap-(\d+)$/.exec(f.target.id);
+      const g = m ? gaps[Number(m[1])] : undefined;
+      if (!g) continue;
+      g.history = f;
+      if (f.suggestedUnitCost !== null && f.suggestedUnitCost > 0 && g.quantity !== null && g.quantity > 0) {
+        const unitCost = moneyFromApi(f.suggestedUnitCost);
+        const unitPrice = price(unitCost);
+        const q = qtyFromApi(g.quantity);
+        g.proposed = {
+          unitCost,
+          unitPrice,
+          cost: roundToCents(mulQty(unitCost, q)),
+          price: unitPrice === null ? null : roundToCents(mulQty(unitPrice, q)),
+        };
+      }
+    }
+  }
+}
+
+export function proposedForGaps(gaps: DraftGap[]): Draft['totals']['proposedForGaps'] {
+  let cost = ZERO;
+  let price: Money | null = ZERO;
+  let n = 0;
+  for (const g of gaps) {
+    if (!g.proposed) continue;
+    n++;
+    cost = add(cost, g.proposed.cost);
+    price = price === null || g.proposed.price === null ? null : add(price, g.proposed.price);
+  }
+  return { cost, price, gaps: n };
 }
 
 /**
@@ -304,6 +465,10 @@ export function priceLines(
       evidence: r.evidence,
       option: r.option?.trim() || null,
       confidence: r.confidence,
+      lookBack: r.lookBack.map((t) => t.trim()).filter(Boolean),
+      history: null,
+      historyUnitCost: null,
+      historyUnitPrice: null,
     });
   }
   return { lines, rejected };
@@ -332,7 +497,7 @@ export function parseOption(option: string): { group: string; choice: string | n
 }
 
 /** Base scope, then each option group with its choices, then everything together. */
-export function totalsByOption(lines: DraftLine[]): Draft['totals'] {
+export function totalsByOption(lines: DraftLine[]): Omit<Draft['totals'], 'proposedForGaps'> {
   const base = lines.filter((l) => l.option === null);
   const groups = new Map<string, Map<string, DraftLine[]>>();
   for (const l of lines) {

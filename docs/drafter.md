@@ -77,6 +77,52 @@ Rules the model is held to, from the roadmap's "failures must be visible":
 - at most six questions, ordered by how much the answer changes the price;
 - pricing, markup and margin are not its business and are not mentioned.
 
+## Learning from past work
+
+Carl's rule, 2026-09-30: when DB usually subcontracts a trade, the estimate
+should lean on what the sub charged last time, not on a template rate. That
+evidence is already in JobTread. Every past estimate, change order, work
+order, vendor bill and invoice is a cost item with a job behind it, and a
+vendor document names the sub in `document.account`.
+
+So the draft has a third, short call:
+
+1. In the draft call the model gives one to three search terms (`lookBack`)
+   on every Subcontractor line, every gap, and any labor line for a trade DB
+   might sub: "epoxy", "floor coating"; "skim coat", "skim".
+2. The code searches JobTread once per term, name and description, on real
+   jobs only. Test jobs, the job being drafted, $0 placeholders, credits and
+   time-tracking lines are dropped. Lines are grouped by job and tagged by
+   how much they prove: **billed** (a vendor bill DB paid), **sold** (an
+   approved estimate, change order or invoice), **ordered** (a work or
+   purchase order), **quoted** (a bid request), **draft**. For the top jobs
+   it also reads the other lines on the same document, so a lump sum can be
+   put against the job's size when that size was written down.
+3. The model reads the matches and, per target, says whether DB has done
+   this before, cites the lines it relies on, and gives a unit cost only when
+   the arithmetic from those lines is shown. A lump sum with no area behind
+   it stays a lump sum and the model says what would settle it. For a labor
+   line it says whether DB usually subs that trade, and to whom.
+
+The code then prices what history proposes at the Subcontractor cost type's
+margin, the same one JobTread applies, and shows it as a **proposal**: on a
+subcontracted line, beside the template rate ("history says $13.60/SF against
+the template's $7.50"); on a gap, as the cost and price the gap would carry.
+Proposals never enter the totals. The header says how much history proposes
+for the flagged items and that Carl confirms.
+
+On 261323 the history read as follows. Epoxy: one job, 246466 Myers, an
+"Epoxy Sub Pckg" at $5,712 from Rhino Concrete Coatings, approved, ordered
+and invoiced in August and September 2026, with no square footage on the
+change order. Skim coat: nothing, by name or description; the nearest thing
+is a drywall sub. Painting: DB subs it often, mostly as lump sums from Jeff
+Southworth's Drywall & Painting, and 261257 Reynolds carries a
+"Seal/Prime & Paint Ceiling" line at $3.95 a square foot. When there is no
+match at all the third call is skipped and the page says what was searched.
+
+`--no-history` turns the step off. A `--capture` saves the history that was
+read, so a replay from the fixture is offline.
+
 ## What the rep gets
 
 `review/<jobId>-draft.html`, one self-contained page:
@@ -178,7 +224,8 @@ It stops there with a plain sentence, and nothing is spent.
 ## Cost
 
 Two calls on Claude Opus 5.5 at $4 per million input tokens and $20 per
-million output. The pick reads the job and 18 photos plus the template list
+million output, plus a third, text-only call of a few thousand tokens when
+past work matched. The pick reads the job and 18 photos plus the template list
 (about 40,000 tokens); the draft reads the job and photos again plus two
 templates' lines (about 45,000 tokens) and writes perhaps 6,000. Roughly
 $0.50 for a job like 261323; a large addition against the 350-line
@@ -210,9 +257,10 @@ he trusts.
   is roadmap §7, still off. The steps on the page are what the rep does by
   hand today.
 - **Gaps against the whole catalog.** A gap is flagged with a unit, a
-  quantity and a cost type. It does not yet search the 718 priced but
-  ungrouped catalog items for one that already exists; that is a cheap
-  addition once the first live drafts show what the gaps look like.
+  quantity and a cost type, and history may propose a cost. It does not yet
+  search the 718 priced but ungrouped catalog items for one that already
+  exists; that is a cheap addition once the first live drafts show what the
+  gaps look like.
 - **The auditor on the draft.** Every kept line is priced from the catalog,
   so the pricing checks pass by construction; the comparables band (this
   draft's margin against approved jobs of its size) is the one worth

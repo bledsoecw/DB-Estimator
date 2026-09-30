@@ -20,6 +20,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { attachmentBlocks } from '../scope/prompt.ts';
 import type { JobEvidence } from './evidence.ts';
+import { historyText, type HistoryReport } from './history.ts';
 import {
   STRUCTURAL_GROUPS, groupPath, isStructural, orderedLines, type Template, type TemplateSummary,
 } from './templates.ts';
@@ -64,6 +65,7 @@ Rules:
 8. scopeOfWork is what the customer reads on the estimate's General Description line: three to eight plain sentences saying what is included, what is excluded, what is optional, and what the customer supplies or does themselves.
 9. summary is two sentences saying what the job is, as the evidence describes it.
 10. questions are what the rep must confirm with the customer or the team before the estimate goes out: at most six, ordered by how much the answer changes the price. Leave out what the estimate already handles (a color choice, picking from stock).
+11. lookBack is a list of one to three short search terms for finding DB's past work of the same kind ("epoxy", "floor coating"; "skim coat", "skim"). Give them on every Subcontractor line, on every gap, and on any Labor line for a trade DB might subcontract (painting, flooring, drywall, tile, concrete). Leave the list empty on everything else. The terms are matched against past line names and descriptions, so use the words a rep would have typed, not sentences.
 
 Write for the rep: plain words, and line names exactly as listed. Reference lines by their id.`;
 
@@ -96,6 +98,8 @@ export const DraftSchema = z.object({
       /** The alternative this line belongs to; null for base scope. */
       option: z.string().nullable(),
       confidence: z.enum(['high', 'medium', 'low']),
+      /** Search terms for DB's past work of this kind; empty when history is not worth reading. */
+      lookBack: z.array(z.string()),
     }),
   ),
   gaps: z.array(
@@ -107,6 +111,7 @@ export const DraftSchema = z.object({
       costType: z.enum(['Labor', 'Materials', 'Subcontractor', 'Other']),
       basis: z.string(),
       evidence: Evidence,
+      lookBack: z.array(z.string()),
     }),
   ),
   questions: z.array(z.object({ question: z.string(), why: z.string() })),
@@ -256,6 +261,101 @@ export function buildDraftContent(e: JobEvidence, templates: Template[]): Anthro
         'Draft the budget from these templates: keep the lines the evidence supports with a ' +
         'quantity and its basis, mark alternatives with an option name, put uncovered scope in gaps, ' +
         'write the scope of work and the questions. Return them in the required format.',
+    },
+  ];
+}
+
+// ---- the third call: what DB did last time --------------------------------------
+
+export const HISTORY_SYSTEM = `${COMPANY}
+
+You are reading DB's own past work so the draft can lean on it. For each target — a subcontracted line, a labor line for a trade DB might sub, or a gap with no template line — you are shown the past cost items that match its search terms: real lines on real jobs, each tagged by how much it proves ([billed] a vendor bill DB paid, [sold] an approved estimate or invoice, [ordered] a work or purchase order, [quoted] a bid request, [draft] a budget or unsent document).
+
+For each target say:
+- match: "match" when past work is the same kind of job (epoxy floor to epoxy floor), "partial" when it is related but not the same (a drywall sub for a skim coat), "none" when nothing shown applies. The same word appearing in a line name is not a match by itself: "Epoxy" in a tile-grout line is not an epoxy floor.
+- pastWork: the lines you are relying on, copied from what you were shown — job, what, where, when, vendor, quantity, unit, unit cost, line cost. Only lines you were shown. Prefer billed over sold over ordered over quoted over draft, and recent over old.
+- suggestedUnitCost: a cost per the TARGET's unit, derived from pastWork by arithmetic you show in suggestionBasis ("$5,712 lump sum for a ~420 SF sunroom floor = $13.60/SF"). Use an area or count only when it is written in the past job's own lines or description; if a lump sum cannot be put per unit because the past job's size is not shown, leave suggestedUnitCost null and say what would settle it. Never take a unit cost from a line whose cost is 0 or blank, and never guess a figure.
+- confidence: high when two or more billed or sold lines agree; medium for one good line; low for partial matches or old drafts.
+- typicallySubbed: for a Labor target, true when the past work shows DB using a subcontractor for this trade on two or more jobs, false when DB's own crew did it on two or more, null when the history does not say. usualVendor is the sub that appears most, or null.
+- summary: one or two plain sentences for the rep: what DB did before and what it cost.
+
+Do not price anything that is not a target. Do not mention margins or markup: the code prices from the cost you cite, at DB's subcontractor margin. Reference targets by their id exactly as given.`;
+
+export const HistorySchema = z.object({
+  findings: z.array(
+    z.object({
+      target: z.object({ kind: z.enum(['line', 'gap']), id: z.string() }),
+      match: z.enum(['match', 'partial', 'none']),
+      summary: z.string(),
+      pastWork: z.array(
+        z.object({
+          jobName: z.string(),
+          what: z.string(),
+          where: z.string(),
+          when: z.string(),
+          vendor: z.string().nullable(),
+          quantity: z.number().nullable(),
+          unit: z.string().nullable(),
+          unitCost: z.number().nullable(),
+          lineCost: z.number().nullable(),
+        }),
+      ),
+      /** Per the target's unit. Null when history cannot honestly give one. */
+      suggestedUnitCost: z.number().nullable(),
+      suggestionBasis: z.string(),
+      confidence: z.enum(['high', 'medium', 'low']),
+      typicallySubbed: z.boolean().nullable(),
+      usualVendor: z.string().nullable(),
+    }),
+  ),
+});
+export type HistoryReply = z.infer<typeof HistorySchema>;
+export type HistoryFinding = HistoryReply['findings'][number];
+
+/** One thing the history is read for: a kept line or a gap. */
+export interface HistoryTarget {
+  kind: 'line' | 'gap';
+  /** The template line id, or "gap-N". */
+  id: string;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  costTypeName: string;
+  basis: string;
+  /** What the template would price it at, per unit, when there is one. */
+  templateUnitCost: number | null;
+  lookBack: string[];
+}
+
+export function historyTargetsText(summary: string, targets: HistoryTarget[]): string {
+  const out: string[] = [];
+  out.push(`# The job being drafted\n${summary}`);
+  out.push(`\n# Targets (${targets.length})`);
+  out.push('id · kind · name · quantity and unit · cost type · template unit cost · search terms');
+  for (const t of targets) {
+    out.push(
+      `- ${t.id} · ${t.kind} · ${t.name} · ${t.quantity === null ? 'no quantity' : t.quantity} ${t.unit ?? ''}`.trimEnd() +
+        ` · ${t.costTypeName} · ${t.templateUnitCost === null ? 'no template price' : `$${t.templateUnitCost.toFixed(2)}`}` +
+        ` · terms: ${t.lookBack.map((x) => `"${x}"`).join(', ') || 'none'}`,
+    );
+    out.push(`  basis: ${t.basis}`);
+  }
+  return out.join('\n');
+}
+
+export function buildHistoryContent(
+  summary: string,
+  targets: HistoryTarget[],
+  report: HistoryReport,
+): Anthropic.ContentBlockParam[] {
+  return [
+    { type: 'text', text: historyTargetsText(summary, targets) },
+    { type: 'text', text: historyText(report) },
+    {
+      type: 'text',
+      text:
+        'For each target, say whether DB has done this before, cite the past lines that apply, and give a ' +
+        'unit cost only when the arithmetic from those lines is shown. Return the findings in the required format.',
     },
   ];
 }

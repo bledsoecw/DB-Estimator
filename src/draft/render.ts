@@ -15,7 +15,8 @@ import { marginOf } from '../domain.ts';
 import { CSS } from '../report.ts';
 import { STRUCTURAL_GROUPS, groupPath } from './templates.ts';
 import type { JobEvidence } from './evidence.ts';
-import { parseOption, type Draft, type DraftLine, type TemplatePlan, type Totals } from './draft.ts';
+import { parseOption, type Draft, type DraftGap, type DraftLine, type TemplatePlan, type Totals } from './draft.ts';
+import type { HistoryFinding } from './prompt.ts';
 
 function esc(s: string): string {
   return s
@@ -59,6 +60,13 @@ export function draftSteps(d: Draft): string {
         ? ` — leaves out ${d.gaps.length} flagged item${d.gaps.length === 1 ? '' : 's'} with no template line (step ${gapStep(d)})`
         : ''),
   );
+  if (d.totals.proposedForGaps.gaps > 0) {
+    const pf = d.totals.proposedForGaps;
+    out.push(
+      `History proposes ${pf.price === null ? `${formatMoney(pf.cost)} cost` : `${formatMoney(pf.price)} price (${formatMoney(pf.cost)} cost)`}` +
+        ` for ${pf.gaps} of the flagged item${d.gaps.length === 1 ? '' : 's'} — a proposal for Carl, not in the totals above`,
+    );
+  }
   for (const o of d.totals.options) {
     if (o.required) {
       out.push(`Option "${o.group}", one choice required:`);
@@ -84,6 +92,7 @@ export function draftSteps(d: Draft): string {
           (l.option ? ` [option: ${l.option}]` : '') +
           (l.tracking ? ' [time tracking, $0]' : l.priced ? '' : ' [no catalog price — type it]') +
           ` — ${l.basis} (${CONFIDENCE_LABEL[l.confidence]})`);
+        if (l.history) out.push(`       history: ${historyLineText(l)}`);
       }
     }
     if (p.removed.length) {
@@ -117,12 +126,25 @@ export function draftSteps(d: Draft): string {
     out.push(`${step}. Not in any template — take to Carl before the estimate goes out:`);
     for (const g of d.gaps) {
       out.push(`   - ${g.scope} (${g.costType}${g.quantity !== null ? `, ${qty(g.quantity)} ${g.unit}` : `, ${g.unit}`}): ${g.why}`);
+      if (g.history) out.push(`     history: ${historyGapText(g)}`);
     }
   }
   if (d.questions.length) {
     step++;
     out.push(`${step}. Confirm before it goes out:`);
     for (const q of d.questions) out.push(`   - ${q.question} — ${q.why}`);
+  }
+  const subbed = d.lines.filter((l) => l.costTypeName === 'Labor' && l.history?.typicallySubbed === true);
+  if (subbed.length) {
+    out.push('');
+    out.push('History says DB usually subcontracts this work, drafted here as crew labor:');
+    for (const l of subbed) {
+      out.push(`   - ${l.name}: ${l.history!.summary}${l.history!.usualVendor ? ` Usual sub: ${l.history!.usualVendor}.` : ''}`);
+    }
+  }
+  if (d.history?.skipped) {
+    out.push('');
+    out.push(`Past work was searched for ${d.history.terms.map((t) => `"${t}"`).join(', ')}: ${d.history.skipped}.`);
   }
   if (d.rejected.length) {
     out.push('');
@@ -132,6 +154,41 @@ export function draftSteps(d: Draft): string {
   out.push('');
   out.push(`Leave ${[...STRUCTURAL_GROUPS].join(', ')} untouched. Nothing here was written to JobTread.`);
   return out.join('\n');
+}
+
+function historyLineText(l: DraftLine): string {
+  const h = l.history!;
+  let out = h.summary;
+  if (l.historyUnitCost !== null) {
+    out += ` History says ${formatMoney(l.historyUnitCost)}/${l.unit ?? 'unit'} cost` +
+      (l.historyUnitPrice !== null ? ` (${formatMoney(l.historyUnitPrice)} price)` : '') +
+      (l.priced ? ` against the template's ${formatMoney(l.unitCost)}` : '') +
+      `. ${h.suggestionBasis}`;
+  } else if (h.match !== 'none') {
+    out += ` ${h.suggestionBasis}`;
+  }
+  return `${out} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
+}
+
+function historyGapText(g: DraftGap): string {
+  const h = g.history!;
+  let out = h.summary;
+  if (g.proposed) {
+    out += ` Proposed from history: ${formatMoney(g.proposed.unitCost)}/${g.unit} × ${qty(g.quantity!)} = ${formatMoney(g.proposed.cost)} cost` +
+      (g.proposed.price !== null ? `, ${formatMoney(g.proposed.price)} price` : '') +
+      ` — Carl confirms. ${h.suggestionBasis}`;
+  } else if (h.match !== 'none') {
+    out += ` ${h.suggestionBasis}`;
+  }
+  return `${out} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
+}
+
+function pastWorkRows(h: HistoryFinding): string {
+  return h.pastWork
+    .map((w) => `<tr><td>${esc(w.jobName)}</td><td>${esc(w.what)} · ${w.quantity !== null ? `${esc(qty(w.quantity))} ${esc(w.unit ?? '')}` : ''}${
+      w.unitCost !== null ? ` · $${w.unitCost.toFixed(2)}/${esc(w.unit ?? 'unit')}` : ''}${
+      w.lineCost !== null ? ` · $${w.lineCost.toFixed(2)}` : ''} · ${esc(w.where)}${w.vendor ? ` from ${esc(w.vendor)}` : ''} · ${esc(w.when)}</td></tr>`)
+    .join('');
 }
 
 /** The number the "Not in any template" step gets, so the header can point at it. */
@@ -178,8 +235,29 @@ export function draftJson(d: Draft): unknown {
       basis: l.basis,
       confidence: l.confidence,
       evidence: l.evidence,
+      lookBack: l.lookBack,
+      history: l.history
+        ? {
+            ...l.history,
+            unitCost: l.historyUnitCost === null ? null : formatMoney(l.historyUnitCost),
+            unitPrice: l.historyUnitPrice === null ? null : formatMoney(l.historyUnitPrice),
+          }
+        : null,
     })),
-    gaps: d.gaps,
+    gaps: d.gaps.map((g) => ({
+      ...g,
+      proposed: g.proposed
+        ? {
+            unitCost: formatMoney(g.proposed.unitCost),
+            unitPrice: g.proposed.unitPrice === null ? null : formatMoney(g.proposed.unitPrice),
+            cost: formatMoney(g.proposed.cost),
+            price: g.proposed.price === null ? null : formatMoney(g.proposed.price),
+          }
+        : null,
+    })),
+    history: d.history
+      ? { terms: d.history.terms, findings: d.history.findings, skipped: d.history.skipped, searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName) })) }
+      : null,
     questions: d.questions,
     rejected: d.rejected,
     rejectedPicks: d.rejectedPicks,
@@ -191,6 +269,11 @@ export function draftJson(d: Draft): unknown {
         choices: o.choices.map((c) => ({ name: c.name, ...(t(c.totals) as object) })),
       })),
       all: t(d.totals.all),
+      proposedForGaps: {
+        cost: formatMoney(d.totals.proposedForGaps.cost),
+        price: d.totals.proposedForGaps.price === null ? null : formatMoney(d.totals.proposedForGaps.price),
+        gaps: d.totals.proposedForGaps.gaps,
+      },
     },
     usage: d.usage,
     cost: d.cost,
@@ -240,7 +323,8 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
         flagged
           ? `${flagged} item${flagged === 1 ? '' : 's'} flagged for Carl`
           : 'Every line comes from a budget template.'
-      }${d.gaps.length ? ` &middot; the base price leaves ${d.gaps.length === 1 ? 'it' : 'them'} out` : ''}${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
+      }${d.gaps.length ? ` &middot; the base price leaves ${d.gaps.length === 1 ? 'it' : 'them'} out` : ''}${
+        d.totals.proposedForGaps.gaps ? ` &middot; history proposes ${d.totals.proposedForGaps.price === null ? formatMoney(d.totals.proposedForGaps.cost) + ' cost' : formatMoney(d.totals.proposedForGaps.price)} for ${d.totals.proposedForGaps.gaps === d.gaps.length ? 'them' : `${d.totals.proposedForGaps.gaps} of them`}` : ''}${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
         d.totals.base.unpriced ? ` &middot; ${d.totals.base.unpriced} line${d.totals.base.unpriced === 1 ? '' : 's'} to price by hand` : ''
       }</p>`}
 
@@ -272,6 +356,7 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
         <tr><td>quantity</td><td>${g.quantity !== null ? `${esc(qty(g.quantity))} ${esc(g.unit)}` : esc(g.unit)}</td></tr>
         <tr><td>basis</td><td>${esc(g.basis)}</td></tr>
         ${g.evidence.map((ev) => `<tr><td>${esc(ev.source)}</td><td>${esc(ev.quote)}</td></tr>`).join('')}
+        ${g.history ? `<tr class="em"><td>history</td><td>${esc(historyGapText(g))}</td></tr>${pastWorkRows(g.history)}` : ''}
       </table>
     </article>`).join('\n')}
   </section>` : ''}
@@ -291,6 +376,16 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
     ${[...d.rejectedPicks.map((r) => `<article class="card sev-data"><div class="chip">Template</div><h3><code>${esc(r.templateId)}</code></h3><p class="detail">${esc(r.reason)}</p></article>`),
        ...d.rejected.map((r) => `<article class="card sev-data"><div class="chip">Line</div><h3><code>${esc(r.lineId)}</code></h3><p class="detail">${esc(r.reason)}</p></article>`)].join('\n')}
   </section>` : ''}
+
+  ${(() => {
+    const subbed = d.lines.filter((l) => l.costTypeName === 'Labor' && l.history?.typicallySubbed === true);
+    if (!subbed.length && !d.history) return '';
+    return `<section class="findings">
+    <div class="bar"><h2>What history says</h2>${d.history ? `<p class="tally">searched ${d.history.terms.map((t) => `"${esc(t)}"`).join(', ')}</p>` : ''}</div>
+    ${d.history?.skipped ? `<p class="detail">${esc(d.history.skipped)}.</p>` : ''}
+    ${subbed.map((l) => `<article class="card sev-info"><div class="chip">Usually subcontracted</div><h3>${esc(l.name)}</h3><p class="detail">${esc(l.history!.summary)}${l.history!.usualVendor ? ` Usual sub: ${esc(l.history!.usualVendor)}.` : ''} Drafted here as crew labor.</p></article>`).join('\n')}
+  </section>`;
+  })()}
 
   ${d.scopeOfWork ? `<section class="scope">
     <h2>General Description</h2>
@@ -360,7 +455,9 @@ function lineRow(l: DraftLine): string {
     <td class="num">${esc(qty(l.quantity))}<div class="unit">${esc(l.unit ?? '')}</div></td>
     <td class="num">${money(l.unitPrice, l.priced)}<div class="unit">${l.priced ? `cost ${formatMoney(l.unitCost)}` : ''}</div></td>
     <td class="num">${money(l.price, l.priced)}</td>
-    <td class="basis">${esc(l.basis)} <span class="conf">${CONFIDENCE_LABEL[l.confidence]}</span>${ev}</td>
+    <td class="basis">${esc(l.basis)} <span class="conf">${CONFIDENCE_LABEL[l.confidence]}</span>${ev}${
+      l.history ? `<div class="hist"><span class="k">History</span> ${esc(historyLineText(l))}${
+        l.history.pastWork.length ? `<details class="ev"><summary>past work</summary><table class="math">${pastWorkRows(l.history)}</table></details>` : ''}</div>` : ''}</td>
   </tr>`;
 }
 
@@ -390,6 +487,8 @@ tr.conf-high .conf { color: var(--green); }
   background: var(--blue); color: #fff; }
 .tag.warn { background: var(--amber); }
 .tag.dim { background: var(--dim); }
+.hist { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 12.5px; }
+.hist .k { font-weight: 700; color: var(--ink); text-transform: uppercase; font-size: 10.5px; letter-spacing: .06em; margin-right: 4px; }
 .ev { margin-top: 4px; }
 .ev summary { cursor: pointer; font-size: 11.5px; }
 .ev ul { margin: 4px 0 0; padding-left: 16px; font-size: 12px; }

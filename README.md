@@ -105,7 +105,7 @@ npm run audit -- --recent 20 --status approved --out review          # a batch
 npm run audit -- --catalog --out review                              # the whole catalog
 npm run draft -- 261323 --dry-run                                    # what the drafter would read
 npm run draft -- 261323 --out review                                 # draft the budget (needs a key)
-npm test                                                            # 159 tests
+npm test                                                            # 166 tests
 ```
 
 The `--` is required. Without it npm eats the arguments instead of passing them on.
@@ -308,6 +308,7 @@ drawings or quotes — and builds the budget the way a rep does, from DB's own
 npm run draft -- 261323 --dry-run          # sends nothing; writes what the model would read
 npm run draft -- 261323 --out review       # needs ANTHROPIC_API_KEY in .env
 npm run draft -- 261323 --templates 22PLCZU3cbqS,22PF3gnGCuiB   # you pick the templates
+npm run draft -- 261323 --no-history                             # skip the past-work step
 ```
 
 The job is the six-digit number that starts its name, the hyphenated number
@@ -324,6 +325,15 @@ kept line from its catalog item, rounded to cents once. Scope with no template
 line lands under **Not in any template**, flagged for Carl. A line id the
 model names that is in no chosen template is **rejected and listed**, never
 added — that is the "made it up" case, and it is meant to be seen.
+
+**It reads DB's own past work for anything subcontracted.** For every
+subcontracted line, every gap, and any labor line for a trade DB might sub,
+the model names search terms, the code finds the matching lines on past jobs
+in JobTread (estimates, change orders, work orders, vendor bills, invoices,
+each tagged by how much it proves and by the sub who did it), and a third
+short call says what DB did last time and what it cost. A cost it cites is
+priced at the subcontractor margin and shown as a **proposal** beside the
+template rate or on the gap; proposals never enter the totals.
 
 The page is written as the steps the rep takes in JobTread — add this
 template, keep these lines, delete those, set these quantities, put these in

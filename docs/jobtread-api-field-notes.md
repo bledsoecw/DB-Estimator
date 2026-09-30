@@ -211,6 +211,13 @@ Selected fields (full type has ~45):
   The auditor's `budget.drift` rule exists because of this.
 - The org's job template puts three zero-cost groups in every budget — `CLOCK IN ITEMS`,
   `BURDEN`, `GENERAL AND ADMINISTRATIVE` — 42 lines on this job, none on any document.
+- **Past work is a cost-item search.** VERIFIED 2026-09-30: `organization.costItems` filters
+  on `[["name"],"like","%epoxy%"]`, on `[["description"],"like",...]`, and on
+  `[["job","id"],"!=",null]` (the `!=` operator works), so "what did DB do before" is one
+  query per term. On a vendor document (`vendorOrder`, `vendorBill`) the sub or supplier is
+  `document.account { name, type: "vendor" }` — Rhino Concrete Coatings on the Myers epoxy
+  work order — and `toOrganizationName` carries it too; on a customer document `account` is
+  the customer. Roughly 30 KB of nodes per query passes; the search asks for 50 at a time.
 - **Query-size refusal.** A query is refused with HTTP 413 `Request Entity Too Large`, in
   plain text, when the page sizes it DECLARES multiply out too far. VERIFIED 2026-09-30 that
   this is decided before the query runs, from the shape and not the data:

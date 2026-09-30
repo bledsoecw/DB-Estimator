@@ -1,6 +1,6 @@
 /**
  * npm run draft -- <job> [--dry-run] [--out review] [--templates id,id] [--model ...]
- *                        [--fixture path] [--capture path] [--no-photos]
+ *                        [--fixture path] [--capture path] [--no-photos] [--no-history]
  *
  * One job, drafted from the budget templates the way a rep would build it:
  * which template to add, which lines to keep with what quantity, which to
@@ -25,10 +25,13 @@ import { join } from 'node:path';
 import { anthropicFromEnv, preflight } from './anthropic.ts';
 import { clientFromEnv } from './jobtread/client.ts';
 import { fetchJobEvidence, resolveJobId, type JobEvidence } from './draft/evidence.ts';
+import { searchHistory, type HistoryReport } from './draft/history.ts';
+import { fetchCostTypes } from './jobtread/queries.ts';
+import type { ApiCostType } from './jobtread/types.ts';
 import { fetchTemplate, fetchTemplateIndex, type Template, type TemplateSummary } from './draft/templates.ts';
 import { evidenceText, templateIndexText } from './draft/prompt.ts';
 import { DEFAULT_MODEL, PRICING, anthropicStructuredCall, costOf } from './draft/model.ts';
-import { draftEstimate, type DraftFixture } from './draft/draft.ts';
+import { draftEstimate, type DraftFixture, type HistorySource } from './draft/draft.ts';
 import { draftJson, renderDraft } from './draft/render.ts';
 
 export interface DraftArgs {
@@ -40,17 +43,19 @@ export interface DraftArgs {
   fixture: string | null;
   capture: string | null;
   photos: boolean;
+  history: boolean;
 }
 
 export function parseDraftArgs(argv: string[]): DraftArgs {
   const args: DraftArgs = {
     job: '', dryRun: false, out: 'review', model: DEFAULT_MODEL, templateIds: [],
-    fixture: null, capture: null, photos: true,
+    fixture: null, capture: null, photos: true, history: true,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--dry-run') args.dryRun = true;
     else if (a === '--no-photos') args.photos = false;
+    else if (a === '--no-history') args.history = false;
     else if (a === '--out') args.out = argv[++i] ?? args.out;
     else if (a === '--model') args.model = argv[++i] ?? args.model;
     else if (a === '--fixture') args.fixture = argv[++i] ?? null;
@@ -81,20 +86,35 @@ export function estimateDraftTokens(e: JobEvidence, text: string): number {
   return n;
 }
 
+/** A fixture may also carry the history that was searched and the cost types, so a replay is offline. */
+export interface DraftFixtureFile extends DraftFixture {
+  history?: HistoryReport;
+  costTypes?: ApiCostType[];
+}
+
 /** Everything a fixture needs, minus the photo bytes. */
 export function toFixture(
   organizationId: string,
   evidence: JobEvidence,
   index: TemplateSummary[],
   templates: Template[],
-): DraftFixture {
+  extra: { history?: HistoryReport; costTypes?: ApiCostType[] } = {},
+): DraftFixtureFile {
   return {
     capturedAt: new Date().toISOString(),
     organizationId,
     evidence: { ...evidence, attachments: [] },
     index,
     templates,
+    ...(extra.history ? { history: extra.history } : {}),
+    ...(extra.costTypes ? { costTypes: extra.costTypes } : {}),
   };
+}
+
+/** The Subcontractor cost type's margin, for pricing what history proposes. */
+export function subMarginOf(costTypes: ApiCostType[]): number | null {
+  const sub = costTypes.find((c) => c.name === 'Subcontractor');
+  return sub?.margin ?? null;
 }
 
 async function main(): Promise<number> {
@@ -107,11 +127,22 @@ async function main(): Promise<number> {
   let organizationId: string;
   const loaded: Template[] = [];
 
+  let historySource: HistorySource | undefined;
+  let costTypes: ApiCostType[] | undefined;
+
   if (args.fixture) {
-    const f = JSON.parse(readFileSync(args.fixture, 'utf8')) as DraftFixture;
+    const f = JSON.parse(readFileSync(args.fixture, 'utf8')) as DraftFixtureFile;
     evidence = f.evidence;
     index = f.index;
     organizationId = f.organizationId;
+    costTypes = f.costTypes;
+    if (args.history && f.history) {
+      const saved = f.history;
+      historySource = {
+        search: async (terms) => ({ terms: saved.terms.filter((t) => terms.includes(t.term)) }),
+        subMargin: subMarginOf(f.costTypes ?? []),
+      };
+    }
     const byId = new Map(f.templates.map((t) => [t.id, t]));
     loadTemplate = async (id) => {
       const t = byId.get(id);
@@ -134,6 +165,16 @@ async function main(): Promise<number> {
       loaded.push(t);
       return t;
     };
+    if (args.history) {
+      costTypes = await fetchCostTypes(client);
+      historySource = {
+        search: async (terms) => {
+          log(`searching past work for ${terms.map((t) => `"${t}"`).join(', ')}`);
+          return searchHistory(client, terms, { excludeJobId: job.id });
+        },
+        subMargin: subMarginOf(costTypes),
+      };
+    }
   }
 
   const text = evidenceText(evidence);
@@ -181,10 +222,15 @@ async function main(): Promise<number> {
   const draft = await draftEstimate(evidence, index, loadTemplate, anthropicStructuredCall(anthropic), {
     model: args.model,
     ...(args.templateIds.length ? { templateIds: args.templateIds } : {}),
+    ...(historySource ? { history: historySource } : {}),
   });
 
   if (args.capture) {
-    writeFileSync(args.capture, JSON.stringify(toFixture(organizationId, evidence, index, loaded), null, 2));
+    const extra = {
+      ...(draft.history ? { history: draft.history.report } : {}),
+      ...(costTypes ? { costTypes } : {}),
+    };
+    writeFileSync(args.capture, JSON.stringify(toFixture(organizationId, evidence, index, loaded, extra), null, 2));
     log(`fixture written to ${args.capture}`);
   }
 
@@ -201,6 +247,14 @@ async function main(): Promise<number> {
         (draft.rejected.length ? `, ${draft.rejected.length} line ids rejected` : '') +
         (draft.cost !== null ? ` ($${draft.cost.toFixed(2)})` : ''),
     );
+    if (draft.history) {
+      log(
+        draft.history.skipped
+          ? `history: searched ${draft.history.terms.length} term${draft.history.terms.length === 1 ? '' : 's'}; ${draft.history.skipped}`
+          : `history: ${draft.history.findings} finding${draft.history.findings === 1 ? '' : 's'} from ${draft.history.terms.length} term${draft.history.terms.length === 1 ? '' : 's'}` +
+            (draft.totals.proposedForGaps.gaps ? `; proposes a price for ${draft.totals.proposedForGaps.gaps} gap${draft.totals.proposedForGaps.gaps === 1 ? '' : 's'}` : ''),
+      );
+    }
   }
   log(`page written to ${stem}.html; data in ${stem}.json`);
   return 0;
