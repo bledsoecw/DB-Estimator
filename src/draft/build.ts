@@ -45,6 +45,7 @@
 
 import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_GROUP_DESCRIPTION, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
 import { STRUCTURAL_GROUPS, groupPath, orderedLines, type Template, type TemplateLine } from './templates.ts';
+import { doubleCounts, openLines, sortFlags, unitConflictFlag, type CheckLine, type ReviewFlag } from './checks.ts';
 import { isTestJob, type Reader } from '../jobtread/queries.ts';
 import type { ApiBudget } from '../jobtread/types.ts';
 
@@ -166,6 +167,12 @@ export interface NewItem {
   description?: string | null;
   /** For the page only; `groupMutation` strips it. */
   unitName?: string | null;
+  /** For the checks only: the cost type's name. */
+  costTypeName?: string | null;
+  /** For the checks only: the unit the draft counted in, when it is not `unitName`. */
+  draftUnit?: string | null;
+  /** For the checks only: the unit the catalog price is per, when it is not `unitName`. */
+  pricedUnit?: string | null;
 }
 
 export interface NewGroup {
@@ -197,6 +204,8 @@ export interface BuildPlan {
   contingency: { rate: number; base: number; amount: number; shares: ContingencyShare[] } | null;
   /** What could not be built as asked, in plain words. */
   notes: string[];
+  /** What the rep must look at before --apply, problems first (checks.ts). */
+  flags: ReviewFlag[];
   counts: { lines: number; found: number; created: number; options: number };
 }
 
@@ -266,7 +275,7 @@ export function planBuild(
   }
 
   // A kept template line as a job line: catalog item, quantity, today's price of record.
-  const itemFrom = (t: Template, l: TemplateLine, quantity: number | null): NewItem => {
+  const itemFrom = (t: Template, l: TemplateLine, quantity: number | null, draftUnit: string | null = null): NewItem => {
     if (!l.priced) notes.push(`"${l.name}" in ${t.name} points at no catalog item; created unpriced for the rep to price`);
     return {
       _type: 'costItem',
@@ -274,12 +283,15 @@ export function planBuild(
       ...(l.priced ? { organizationCostItemId: l.priced.id } : {}),
       unitId: need(names.units, 'unit', l.unit, notes),
       costTypeId: need(names.costTypes, 'cost type', l.costTypeName, notes),
+      costTypeName: l.costTypeName,
       costCodeId: codeOf(l.costCodeName),
       quantity,
       unitCost: l.priced?.unitCost ?? null,
       unitPrice: l.priced?.unitPrice ?? null,
       description: l.description,
       unitName: l.unit,
+      ...(draftUnit !== null && draftUnit !== l.unit ? { draftUnit } : {}),
+      ...(l.pricedUnit ? { pricedUnit: l.pricedUnit } : {}),
     };
   };
 
@@ -349,7 +361,7 @@ export function planBuild(
       notes.push(`line ${d.lineId} "${d.name}" is in no template that was read; skipped`);
       continue;
     }
-    const item = itemFrom(hit.t, hit.l, d.quantity);
+    const item = itemFrom(hit.t, hit.l, d.quantity, d.unit);
     const dest = d.option ? choiceFor(d.option) : groupFor(hit.t, hit.l.groupId);
     dest.lineItems.push(item);
     lines++;
@@ -389,12 +401,14 @@ export function planBuild(
       organizationCostItemId: p.id,
       unitId: need(names.units, 'unit', p.unit, notes),
       costTypeId: need(names.costTypes, 'cost type', p.costTypeName, notes),
+      costTypeName: p.costTypeName,
       costCodeId: codeOf(p.costCodeName),
       quantity: f.quantity,
       unitCost: p.unitCost,
       unitPrice: p.unitPrice,
       description: p.description,
       unitName: p.unit,
+      ...(f.unit !== null && p.unit !== null && f.unit !== p.unit ? { draftUnit: f.unit } : {}),
     };
     const dest = f.option ? choiceFor(f.option) : placeFor(f.placeIn, templates, groupFor, rootFor, primaryId, notes, `found line "${p.name}"`);
     dest.lineItems.push(item);
@@ -416,6 +430,7 @@ export function planBuild(
           organizationCostItemId: p.id,
           unitId: need(names.units, 'unit', p.unit, notes),
           costTypeId: need(names.costTypes, 'cost type', p.costTypeName, notes),
+          costTypeName: p.costTypeName,
           costCodeId: codeOf(p.costCodeName),
           quantity: 0,
           unitCost: p.unitCost,
@@ -441,6 +456,7 @@ export function planBuild(
       name: `${g.scope} ${DRAFT_TAG}`,
       unitId: need(names.units, 'unit', g.unit, notes),
       costTypeId: need(names.costTypes, 'cost type', g.costType, notes),
+      costTypeName: g.costType,
       costCodeId: codeOf('General Requirements'),
       quantity: g.quantity ?? 0,
       unitCost,
@@ -552,8 +568,75 @@ export function planBuild(
     contingencyQuantity,
     contingency,
     notes,
+    flags: reviewPlan(groups, contingency, notes),
     counts: { lines, found, created, options },
   };
+}
+
+/** Every line of the plan with the path of groups it sits in, for the checks and the page. */
+export function planLines(groups: NewGroup[]): { where: string; item: NewItem }[] {
+  const out: { where: string; item: NewItem }[] = [];
+  const walk = (g: NewGroup, path: string[]): void => {
+    const here = [...path, g.name];
+    for (const li of g.lineItems) {
+      if (li._type === 'costGroup') walk(li, here);
+      else out.push({ where: here.join(' › '), item: li });
+    }
+  };
+  for (const g of groups) walk(g, []);
+  return out;
+}
+
+const dollars = (n: number): string => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** The checks on a plan: double counts, units, open lines, the plan's notes, and what the contingency comes to. */
+export function reviewPlan(groups: NewGroup[], contingency: BuildPlan['contingency'], notes: string[]): ReviewFlag[] {
+  const all = planLines(groups);
+  const lines: CheckLine[] = all.map(({ where, item }) => ({
+    where,
+    name: item.name,
+    costType: costTypeOf(item),
+    quantity: item.quantity,
+    unit: item.unitName ?? null,
+    cost: item.unitCost === null ? null : Math.round((item.quantity ?? 1) * item.unitCost * 100) / 100,
+    tracking: item.unitCost === 0 && (item.unitPrice === 0 || item.unitPrice === null) && item.organizationCostItemId !== undefined,
+  }));
+  const flags: ReviewFlag[] = [...doubleCounts(lines), ...openLines(lines.filter((l) => l.name !== CONTINGENCY_LINE))];
+  for (const { where, item } of all) {
+    if (item.draftUnit && item.unitName) {
+      const q = item.quantity ?? 0;
+      flags.push({
+        severity: 'problem', kind: 'unit', lines: [{ where, name: item.name }],
+        text: `${where}: the draft counted "${item.name}" as ${q} ${item.draftUnit}, but the line is now in ${item.unitName}. Built as it is, that is ${q} ${item.unitName}${item.unitCost === null ? '' : ` = ${dollars(q * item.unitCost)}`}. Draft it again, or set the quantity in ${item.unitName} on the job.`,
+      });
+    }
+    if (item.pricedUnit) flags.push(unitConflictFlag(where, item.name, item.unitName ?? null, item.pricedUnit, item.quantity, item.unitCost));
+  }
+  for (const n of notes) flags.push({ severity: 'check', kind: 'note', text: n, lines: [] });
+  if (contingency) {
+    const holder = groups.find((g) => g.name === OPTIONS_GROUP);
+    const picked = (holder?.lineItems ?? []).flatMap((og) =>
+      og._type === 'costGroup' ? og.lineItems.filter((c): c is NewGroup => c._type === 'costGroup' && c.isSelected === true).map((c) => ({ og: og.name, c })) : []);
+    const pickedCost = picked.reduce((n, p) => n + costCents(p.c), 0) / 100;
+    const pickedShares = picked.reduce((n, p) => n + (contingency.shares.find((s) => s.group === p.og && s.choice === p.c.name)?.amount ?? 0), 0);
+    const baseCost = contingency.base;
+    // The shares sit inside the choices, so the picked cost already holds them; the scope under contingency is without them.
+    const scope = baseCost + pickedCost - pickedShares;
+    flags.push({
+      severity: 'info', kind: 'contingency', lines: [],
+      text: `Contingency ${contingency.rate}%: ${dollars(contingency.amount)} on the ${dollars(baseCost)} base scope` +
+        (picked.length
+          ? `; with the pre-selected choices (${picked.map((p) => p.c.name).join(', ')}) the budget carries ${dollars(contingency.amount + pickedShares)} on ${dollars(scope)} of work.`
+          : '.') +
+        (contingency.shares.length ? ' Each option carries its own share, so the total follows what the customer picks.' : ''),
+    });
+  }
+  return sortFlags(flags);
+}
+
+/** The cost type's name back from its id, for the checks: only the three that matter are told apart. */
+function costTypeOf(item: NewItem): string | null {
+  return item.costTypeName ?? null;
 }
 
 /** Where a found or created line goes: the section the model named, else the primary template's group. */
@@ -610,6 +693,12 @@ export function planText(plan: BuildPlan): string {
       (c.shares.length ? `; inside each option: ${c.shares.map((s) => `${s.group} — ${s.choice} +$${s.amount.toFixed(2)}`).join(', ')}` : ''));
   }
   if (plan.parameters.length) out.push(`Job parameters: ${plan.parameters.map((p) => `${p.name} = ${p.value}`).join(', ')}`);
+  const shown = plan.flags.filter((f) => f.kind !== 'note' && f.kind !== 'contingency');
+  if (shown.length) {
+    out.push('');
+    out.push(`CHECK BEFORE --apply (${shown.filter((f) => f.severity === 'problem').length} problems, ${shown.filter((f) => f.severity === 'check').length} to check):`);
+    shown.forEach((f, i) => out.push(`  ${i + 1}. ${f.severity === 'problem' ? 'PROBLEM' : 'check'}: ${f.text}`));
+  }
   for (const n of plan.notes) out.push(`note: ${n}`);
   return out.join('\n');
 }
@@ -714,8 +803,8 @@ function forWire(g: NewGroup): NewGroup {
     ...g,
     lineItems: g.lineItems.map((li) => {
       if (li._type === 'costGroup') return forWire(li);
-      const { unitName, ...item } = li;
-      void unitName;
+      const { unitName, draftUnit, pricedUnit, costTypeName, ...item } = li;
+      void unitName; void draftUnit; void pricedUnit; void costTypeName;
       return item;
     }),
   };

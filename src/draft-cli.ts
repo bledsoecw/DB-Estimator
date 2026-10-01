@@ -41,7 +41,7 @@ import { fetchTemplate, fetchTemplateIndex, type Template, type TemplateSummary 
 import { evidenceText, templateIndexText } from './draft/prompt.ts';
 import { DEFAULT_MODEL, PRICING, anthropicStructuredCall, costOf } from './draft/model.ts';
 import { draftEstimate, type DraftFixture, type HistorySource } from './draft/draft.ts';
-import { draftJson, renderDraft } from './draft/render.ts';
+import { draftFlags, draftJson, renderDraft } from './draft/render.ts';
 import { addDirection, changesText, previousFromJson, revisionText, type Revision } from './draft/revise.ts';
 import { CREW_LABOR, searchCatalog, type CatalogCandidate, type CatalogSource } from './draft/catalog.ts';
 
@@ -375,6 +375,7 @@ async function main(): Promise<number> {
       const c = draft.contingency;
       log(`contingency: ${c.rate}% on ${formatMoney(c.base)} base cost = ${formatMoney(c.amount)} at cost${c.line ? '' : ' (no template line: add the group by hand)'}`);
     }
+    for (const f of draftFlags(draft)) log(`${f.severity === 'problem' ? 'PROBLEM' : 'check'}: ${f.text}`);
     if (draft.revision) {
       log(`pass ${draft.revision.pass}, changed since pass ${draft.revision.pass - 1}:`);
       for (const c of changesText(draft.revision.changes)) log(`  - ${c}`);

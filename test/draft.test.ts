@@ -530,7 +530,7 @@ test('every construction draft ends its template steps with contingency: the sna
   assert.match(steps, /^Contingency 8% on \$4,120\.79 base cost = \$329\.66, at cost; with it the base scope is \$7,195\.81 price \(step 3\)\n   Options add their own share: Flooring — LVP \+\$430\.36 · Flooring — Epoxy \+\$423\.60 · Ceiling paint \+\$223\.10$/m);
   assert.match(steps, /^With each choice \(base \+ choice \+ contingency; add-ons not included\): Flooring — LVP \$15,912\.45 · Flooring — Epoxy \$15,297\.16$/m,
     '6,866.15 + 8,286.28 + 8% of (4,120.79 + 5,379.50); 6,866.15 + 7,677.75 + 8% of (4,120.79 + 5,295.00)');
-  assert.match(steps, /^3\. Contingency at 8%: The walls are skimmed to the concrete, so hidden conditions are likely\.\n   No chosen template carries the contingency group yet\. On the job's budget, add a group "Phase 5 - Contingency" at the end of the scope \(after Phase 4 where the template has one\) and put the catalog item "Project Contingency" in it \(1 Lump Sum at \$1\.00 cost and \$1\.00 price\) with the quantity formula \{Contingency Base\} \* \{Contingency Rate\} \/ 100; then set the job parameters Contingency Rate = 8 and Contingency Base = 4120\.79: \$329\.66, at cost\.\n   Add the cost of each option the customer takes to Contingency Base: Flooring — LVP 5379\.50 \(\+\$430\.36 contingency\); Flooring — Epoxy 5295\.00 \(\+\$423\.60 contingency\); Ceiling paint 2788\.70 \(\+\$223\.10 contingency\)\.\n   Unused contingency is credited at closeout\.$/m);
+  assert.match(steps, /^3\. Contingency at 8%: The walls are skimmed to the concrete, so hidden conditions are likely\.\n   No chosen template carries the contingency group yet\. On the job's budget, add a group "Phase 5 - Contingency" at the end of the scope \(after Phase 4 where the template has one\) and put the catalog item "Project Contingency" in it \(1 Lump Sum at \$1\.00 cost and \$1\.00 price\) with the quantity formula \{Contingency Base\} \* \{Contingency Rate\} \/ 100; then set the job parameters Contingency Rate = 8 and Contingency Base = 4120\.79: \$329\.66, at cost\.\n   Each option carries its own share, so the contingency follows what the customer picks: in each choice group add "Project Contingency" \(Lump Sum, \$1\.00 cost and price, no formula\) with the quantity Flooring — LVP 430\.36; Flooring — Epoxy 423\.60; Ceiling paint 223\.10\.\n   Unused contingency is credited at closeout\.$/m);
   assert.match(steps, /^4\. Selection groups/m);
   assert.match(steps, /leaves out 1 flagged item still open, to add or create on the job and price \(step 6\)/);
   assert.match(steps, /^Base scope: [^\n]* · 1 line to price by hand — leaves out/m, 'the Permit, not the tracking line');
@@ -538,8 +538,9 @@ test('every construction draft ends its template steps with contingency: the sna
   const html = renderDraft(fx.evidence, d);
   assert.match(html, /<span class="k">\+ 8% contingency<\/span><span class="v">\$7,195\.81<\/span>/);
   assert.match(html, /<h2>Contingency, 8%<\/h2>/);
-  assert.match(html, /<tr><td>Contingency Base<\/td><td>4120\.79, plus the cost of each option taken<\/td><\/tr>/);
-  assert.match(html, /<tr><td>Flooring — LVP<\/td><td>5379\.50 more base, \+\$430\.36 contingency<\/td><\/tr>/);
+  assert.match(html, /<tr><td>Contingency Base<\/td><td>4120\.79, the base scope only<\/td><\/tr>/);
+  assert.match(html, /<tr><td>Flooring — LVP<\/td><td>\+\$430\.36 contingency, its own line inside the choice \(5379\.50 of cost\)<\/td><\/tr>/);
+
   const json = draftJson(d) as { contingency: { rate: number; amount: string; parameters: Record<string, number>; line: null; options: { option: string; amount: string }[] } };
   assert.equal(json.contingency.amount, '$329.66');
   assert.deepEqual(json.contingency.parameters, { 'Contingency Rate': 8, 'Contingency Base': 4120.79 });
@@ -548,7 +549,7 @@ test('every construction draft ends its template steps with contingency: the sna
   // No options, no shares, and the step says only what it needs to.
   const bare = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, lines: DRAFT.lines.filter((l) => l.option === null) }]), { templateIds: [FIN, GR] });
   assert.deepEqual(bare.contingency!.options, []);
-  assert.doesNotMatch(draftSteps(bare), /Options add their own share|With each choice|Add the cost of each option/);
+  assert.doesNotMatch(draftSteps(bare), /Options add their own share|With each choice|Each option carries its own share/);
 
   // A roofing job carries none, and the steps close up.
   const roof = await draftEstimate({ ...fx.evidence, jobType: 'Roofing' }, fx.index, load, fake([DRAFT]), { templateIds: [FIN, GR] });

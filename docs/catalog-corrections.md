@@ -49,3 +49,28 @@ It sat in the same x1.80 cluster as the steep-pitch steel panels, which were
 approved as a premium, but it is not a pitch item. Carl changed it to cost
 type Labor at the 45% margin: $65 -> $118.18. Read back from JobTread the same
 day.
+
+## Found 2026-10-01, not yet changed: template lines counted in one unit and priced per another
+
+Found on test job 25-0000, where the budget carried $21.42 of drywall board for
+about 600 SF of wall. JobTread computes a line's cost as quantity times the
+price of the item it points at, whatever the line's own unit says, so a line
+whose unit disagrees with its price's unit gets counted in the wrong unit.
+The drafter and the build now flag these as problems (`src/draft/checks.ts`);
+the catalog still wants the fix, and which unit is right is Carl's call.
+
+| Template line | Templates | Line's unit | Its price | Likely fix |
+|---|---|---|---|---|
+| Drywall Brd- Mat `22PLCchBuFMU` | X-Division 09 Finishes | Each | Drywall Board - Mat `22PCCE2cGYqw`, $1.02 / $1.479 per Square Foot | the line to Square Foot |
+| Drywall Board- Mat `22PLwktUit8p` | Addition/House Build | Each | the same | the line to Square Foot |
+| Drywall Board- Mat `22PPsvvVSeBZ` | Bathroom Remodel | Each | the same | the line to Square Foot |
+| Drywall Board - Mat `22PSSe3pfzsD` | Countertop Replacement | Each | the same | the line to Square Foot |
+| Drywall - Sub `22PLwnKctZFM`, `22PM23fwBfbf`, `22PPsvvVSeBd` | Addition/House Build, Door/Window Installation, Bathroom Remodel | Hours | Drywall Sub `22PLN6M7K2w8`, $55 / $79.75 per Lump Sum | the item to Hours, if $55 is an hourly rate |
+
+Kitchen Remodel's copy, `Drywall Brd- Mat 22PHGfWHEStj`, already says Square
+Foot. The evidence for square feet on the board: the item's own unit, and
+past budgets that used it at 990 (Currier) and 20 (Edgemont Colony) where a
+count of sheets would be 30 and 1; two reps overrode its price to $12 and
+$13.98 a sheet instead. This list comes from one catalog search for
+"drywall"; the rest of the templates have not been swept for the same thing.
+

@@ -42,6 +42,8 @@ export interface PricedItem {
   unitCost: number | null;
   unitPrice: number | null;
   costTypeName: string | null;
+  /** The unit the price is per. Absent on fixtures captured before it was read. */
+  unit?: string | null;
 }
 
 export interface TemplateLine {
@@ -58,6 +60,16 @@ export interface TemplateLine {
   quantityFormula: string | null;
   /** null when the template line points at nothing priced. */
   priced: PricedItem | null;
+  /**
+   * The unit the line's catalog price is per, set only when it is not the
+   * line's own `unit`. One of the two is wrong in the catalog, and which one
+   * is a judgment: "Drywall Brd- Mat" says Each but its $1.02 is per Square
+   * Foot (21 sheets at $1.02 is $21 of drywall), while "Drywall - Sub" says
+   * Hours and its $55 price item says Lump Sum. So the line keeps its own
+   * unit and the conflict is flagged for a person (checks.ts), never fixed
+   * by guessing.
+   */
+  pricedUnit?: string | null;
 }
 
 export interface Template {
@@ -103,6 +115,13 @@ export function groupPath(t: Template, groupId: string | null): string[] {
     id = g.parentId;
   }
   return out;
+}
+
+/** The line, noting the unit its price is per when that is not the line's own. */
+export function withPricedUnit(line: TemplateLine): TemplateLine {
+  const priced = line.priced?.unit;
+  if (!priced || priced === line.unit) return line;
+  return { ...line, pricedUnit: priced };
 }
 
 export function isStructural(t: Template, line: TemplateLine): boolean {
@@ -271,6 +290,7 @@ interface RawLine {
     unitCost: number | null;
     unitPrice: number | null;
     costType: { name: string } | null;
+    unit: { name: string } | null;
   } | null;
 }
 
@@ -285,7 +305,7 @@ const LINE_FIELDS = {
   costCode: { name: {} },
   costGroup: { id: {} },
   organizationCostItem: {
-    id: {}, name: {}, unitCost: {}, unitPrice: {}, costType: { name: {} },
+    id: {}, name: {}, unitCost: {}, unitPrice: {}, costType: { name: {} }, unit: { name: {} },
   },
 } as const;
 
@@ -351,7 +371,7 @@ async function fetchTemplateAt(client: Reader, id: string, linePage: number): Pr
       parentId: r.parentCostGroup?.id ?? null,
       isSelection: r.isSimpleSelection,
     })),
-    lines: lines.map((r) => ({
+    lines: lines.map((r): TemplateLine => withPricedUnit({
       id: r.id,
       name: r.name,
       description: r.description?.trim() || null,
@@ -370,6 +390,7 @@ async function fetchTemplateAt(client: Reader, id: string, linePage: number): Pr
             unitCost: r.organizationCostItem.unitCost,
             unitPrice: r.organizationCostItem.unitPrice,
             costTypeName: r.organizationCostItem.costType?.name ?? null,
+            unit: r.organizationCostItem.unit?.name ?? null,
           }
         : null,
     })),

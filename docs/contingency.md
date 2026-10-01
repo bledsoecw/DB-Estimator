@@ -153,3 +153,13 @@ Project Contingency line inside every option's choice group, for
 and the budget's contingency follows the selection the way the rest of the
 option does. The main line keeps the formula; the shares carry only their
 dollars, since a formula cannot reference its group's cost.
+
+**In the templates?** No, and it cannot be. A template has no customer
+options in it: the selection groups are made on each job, from the draft, so
+there is nothing in a template to hang an option's share on. What the
+templates carry (Phase 5 - Contingency, the line on the formula) is right for
+the base and stays as it is. The shares are made where the options are made:
+`build-budget` writes them into every budget it builds, and the draft page's
+hand-build step tells a rep building by hand to add a Project Contingency
+line in each choice with its amount.
+

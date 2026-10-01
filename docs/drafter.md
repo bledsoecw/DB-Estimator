@@ -466,6 +466,33 @@ terminal and on the page, whether each group is there with as many lines as
 planned, the contingency line has its quantity, and the parameters are set.
 A run the gate refuses writes the page too, with the reason.
 
+**Check before you apply.** Both pages open with a box of what to look at
+before anything is built (`src/draft/checks.ts`), problems first, each with
+the lines and the dollars, and the build page tags every row a check names
+(`problem 1`, `check 3`). The terminal prints the same list after the tree.
+
+- **The same work paid twice** in one place: a subcontractor line beside
+  DB's crew for the same trade (a problem), beside DB's material for it (a
+  check, and a problem when both are for the same amount, as "Insulation -
+  Sub" and "Insulation - Batt" both for 909 SF were on 25-0000), two subs of
+  one trade, or one line twice.
+- **A line counted in one unit and priced per another**: "Drywall Brd- Mat"
+  says Each in four templates, but its catalog price, $1.02, is per square
+  foot, so 21 sheets came to $21.42 of drywall. The line keeps its own unit
+  (for "Drywall - Sub" the template's Hours is the likely-right one and the
+  price item's Lump Sum the wrong one, so neither is assumed); the page says
+  what the count comes to, the model is told the line is in conflict and
+  gives the count in both units, and the catalog gets fixed by a person. A
+  draft counted before such a fix is caught on the build too.
+- **What is not final**: lines with no count yet, lines with no price, and
+  the DRAFT lines Carl confirms, with their total.
+- **What the contingency comes to** on the base and with the pre-selected
+  choices, so a figure like $44 on a $30,000 budget is seen.
+
+Rule 14 of the drafting prompt tells the model to do the work one way (the
+sub or the crew, not both) and to put a genuine choice in questions; the
+check is there for when it does not.
+
 Three gates, in `gateBuild`:
 
 - only a **test job** (a name with "test", the Kay Oss customer, or

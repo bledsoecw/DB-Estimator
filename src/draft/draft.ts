@@ -55,6 +55,8 @@ export interface DraftLine {
   templateName: string;
   groupPath: string[];
   unit: string | null;
+  /** The unit the catalog price is per, when it is not `unit`: the catalog wants fixing (templates.ts). */
+  pricedUnit?: string | null;
   costTypeName: string;
   quantity: number;
   unitCost: Money;
@@ -893,6 +895,7 @@ export function priceLines(
       templateName: hit.t.name,
       groupPath: groupPath(hit.t, hit.l.groupId),
       unit: hit.l.unit,
+      ...(hit.l.pricedUnit ? { pricedUnit: hit.l.pricedUnit } : {}),
       costTypeName: hit.l.costTypeName,
       quantity: r.quantity,
       unitCost,

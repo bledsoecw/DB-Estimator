@@ -77,7 +77,7 @@ interface RawItem {
   unit: { name: string } | null;
   costType: { name: string } | null;
   costCode: { name: string } | null;
-  organizationCostItem: { id: string; unitCost: number | null; unitPrice: number | null } | null;
+  organizationCostItem: { id: string; unitCost: number | null; unitPrice: number | null; unit?: { name: string } | null } | null;
   costGroup: RawGroup | null;
 }
 
@@ -90,7 +90,7 @@ function groupSelection(depth: number): Record<string, unknown> {
 const ITEM_FIELDS = {
   id: {}, name: {}, description: {}, unitCost: {}, unitPrice: {},
   unit: { name: {} }, costType: { name: {} }, costCode: { name: {} },
-  organizationCostItem: { id: {}, unitCost: {}, unitPrice: {} },
+  organizationCostItem: { id: {}, unitCost: {}, unitPrice: {}, unit: { name: {} } },
   costGroup: groupSelection(PARENTS),
 };
 
@@ -192,7 +192,8 @@ export function foldCandidates(raw: RawItem[], excludeTemplateIds: string[]): Ca
     }
     byItem.set(key, {
       id: r.id, kind: 'templateLine', name: r.name, description: r.description ?? have?.description ?? null,
-      unit: r.unit?.name ?? have?.unit ?? null,
+      // The price's unit, not the template line's: the price is per that unit.
+      unit: priced?.unit?.name ?? r.unit?.name ?? have?.unit ?? null,
       costTypeName: r.costType?.name ?? have?.costTypeName ?? null, costCodeName: r.costCode?.name ?? have?.costCodeName ?? null,
       unitCost: priced?.unitCost ?? have?.unitCost ?? null, unitPrice: priced?.unitPrice ?? have?.unitPrice ?? null,
       pricedItemId: key, templateId: root.id, templateName: root.name, groupPath: path, alsoIn: [],

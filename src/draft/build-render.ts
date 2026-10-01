@@ -13,6 +13,24 @@ import { CSS } from '../report.ts';
 import { EXTRA_CSS } from './render.ts';
 import { CONTINGENCY_GROUP, CONTINGENCY_LINE } from './contingency.ts';
 import { DRAFT_TAG, OPTIONS_GROUP, countItems, type BuildPlan, type BuildRecord, type Gate, type NewGroup, type NewItem } from './build.ts';
+import { CHECKS_CSS, flagsHtml, type ReviewFlag } from './checks.ts';
+
+/** Which checks a row is named in, numbered as the box numbers them. */
+type Marks = Map<string, { n: number; severity: ReviewFlag['severity'] }[]>;
+const markKey = (where: string, name: string): string => `${where}\u0000${name}`;
+
+function marksOf(flags: ReviewFlag[]): Marks {
+  const m: Marks = new Map();
+  flags.forEach((f, i) => {
+    for (const l of f.lines) {
+      const k = markKey(l.where, l.name);
+      const list = m.get(k) ?? [];
+      list.push({ n: i + 1, severity: f.severity });
+      m.set(k, list);
+    }
+  });
+  return m;
+}
 
 export interface BuildPageInput {
   job: { id: string; name: string };
@@ -66,11 +84,13 @@ function totals(g: NewGroup): { cost: number; price: number } {
   return { cost, price };
 }
 
-function rowHtml(r: Row): string {
+function rowHtml(r: Row, top: string, marks: Marks): string {
   const li = r.item;
   const draft = li.name.endsWith(DRAFT_TAG);
   const name = draft ? li.name.slice(0, -DRAFT_TAG.length).trim() : li.name;
+  const flagged = marks.get(markKey([top, ...r.path].join(' › '), li.name)) ?? [];
   const tags = [
+    ...flagged.filter((f) => f.severity !== 'info').map((f) => `<span class="tag ${f.severity === 'problem' ? 'bad' : 'warn'}">${f.severity === 'problem' ? 'problem' : 'check'} ${f.n}</span>`),
     ...r.tags.map((t) => `<span class="tag ${t === 'pre-selected' ? '' : t === 'not selected' ? 'dim' : 'sel'}">${esc(t)}</span>`),
     draft ? '<span class="tag warn">DRAFT — Carl confirms</span>' : '',
     !li.organizationCostItemId && !draft ? '<span class="tag warn">no catalog item</span>' : '',
@@ -85,7 +105,7 @@ function rowHtml(r: Row): string {
       : li.organizationCostItemId
         ? (li.unitCost === null ? 'no price on the catalog item' : 'priced from the catalog item')
         : esc(li.description ?? '');
-  return `<tr class="${draft ? 'draft' : ''}">
+  return `<tr class="${[draft ? 'draft' : '', flagged.some((f) => f.severity === 'problem') ? 'problem' : ''].filter(Boolean).join(' ')}">
     <td>${r.path.length ? `<div class="path">${esc(r.path.join(' › '))}</div>` : ''}<div class="name">${esc(name)}</div>${tags}</td>
     <td class="num">${esc(qtyText(li.quantity))}<div class="unit">${esc(li.unitName ?? '')}</div></td>
     <td class="num">${usd(li.unitPrice, 4)}<div class="unit">cost ${usd(li.unitCost, 4)}</div></td>
@@ -94,7 +114,7 @@ function rowHtml(r: Row): string {
   </tr>`;
 }
 
-function groupSection(g: NewGroup, record: BuildRecord | null): string {
+function groupSection(g: NewGroup, record: BuildRecord | null, marks: Marks): string {
   const t = totals(g);
   const kind = g.name === OPTIONS_GROUP ? 'The options the customer picks; each choice priced on its own.'
     : g.name === CONTINGENCY_GROUP ? 'At cost. The quantity is the dollars; the formula is stored for the rep who changes the parameters in JobTread.'
@@ -108,7 +128,7 @@ function groupSection(g: NewGroup, record: BuildRecord | null): string {
     ${kind ? `<p class="detail">${esc(kind)}</p>` : ''}
     <table class="lines">
       <thead><tr><th>Line</th><th>Qty</th><th>Unit price</th><th>Price</th><th>Note</th></tr></thead>
-      <tbody>${rows(g).map(rowHtml).join('\n')}</tbody>
+      <tbody>${rows(g).map((r) => rowHtml(r, g.name, marks)).join('\n')}</tbody>
     </table>
   </section>`;
 }
@@ -135,7 +155,7 @@ export function renderBuildPage(x: BuildPageInput): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<style>${CSS}${EXTRA_CSS}${BUILD_CSS}</style>
+<style>${CSS}${EXTRA_CSS}${CHECKS_CSS}${BUILD_CSS}</style>
 </head>
 <body>
 <main>
@@ -153,6 +173,8 @@ export function renderBuildPage(x: BuildPageInput): string {
   </header>
 
   ${verdict}
+
+  ${plan ? flagsHtml(plan.flags, esc, x.applied ? 'Checked before it was built' : 'Check before you apply') : ''}
 
   ${gate.ok && gate.warnings.length ? `<ul class="notes">${gate.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
   ${gate.ok && gate.deletes.length ? `<p class="detail">--replace takes down first: ${gate.deletes.map((d) => `<strong>${esc(d.name)}</strong>`).join(', ')}.</p>` : ''}
@@ -174,9 +196,7 @@ export function renderBuildPage(x: BuildPageInput): string {
     ${plan.parameters.length ? `<p class="fine">Job parameters: ${plan.parameters.map((p) => `${esc(p.name)} = ${p.value}`).join(', ')}.</p>` : ''}
   </section>
 
-  ${plan.groups.map((g) => groupSection(g, x.applied?.record ?? null)).join('\n')}
-
-  ${plan.notes.length ? `<section class="summary"><h2>Notes</h2><ul class="notes">${plan.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></section>` : ''}` : ''}
+  ${plan.groups.map((g) => groupSection(g, x.applied?.record ?? null, marksOf(plan.flags))).join('\n')}` : ''}
 
   ${x.applied ? `<section class="summary">
     <h2>Read back from JobTread</h2>
@@ -199,6 +219,7 @@ export function renderBuildPage(x: BuildPageInput): string {
 const BUILD_CSS = `
 .tag.sel { background: var(--green); }
 tr.draft td { background: color-mix(in srgb, var(--amber) 8%, transparent); }
+tr.problem td { background: color-mix(in srgb, var(--red) 9%, transparent); }
 .id { font-size: 11px; color: var(--dim); font-weight: 400; margin-left: 6px; }
 .notes { margin: 10px 0 0; padding-left: 20px; font-size: 13.5px; color: var(--dim); }
 .checks { margin: 8px 0 0; padding-left: 20px; font-size: 13.5px; list-style: none; }

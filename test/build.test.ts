@@ -315,7 +315,8 @@ test('planText reads as the tree the rep will see', () => {
   assert.match(text, /- Project Contingency: 217\.6 = \{Contingency Base\} \* \{Contingency Rate\} \/ 100 · \$1 \/ \$1/);
   assert.match(text, /\n      - Project Contingency: 348 · \$1 \/ \$1\n/);
   assert.match(text, /\nContingency 8%: \$217\.60 on the \$2720\.00 base scope; inside each option: Flooring — LVP \+\$348\.00, Flooring — Epoxy \+\$390\.00, Walls — Framed false walls \+\$208\.86, Walls — Paint the block \+\$32\.72, Ceiling paint — Ceiling paint \+\$205\.40\n/);
-  assert.match(text, /\nJob parameters: Contingency Rate = 8, Contingency Base = 2720$/);
+  assert.match(text, /\nJob parameters: Contingency Rate = 8, Contingency Base = 2720\n/);
+  assert.match(text, /\nCHECK BEFORE --apply \(0 problems, 2 to check\):\n  1\. check: 1 line has no count yet and cost nothing until the rep sets it: "Electrical Labor"\.\n  2\. check: 3 lines were created for Carl to confirm/);
 });
 
 test('groupMutation: jobId and the group at the root with no discriminator, nested _type kept, nothing undefined, the created ids asked back', () => {
@@ -576,3 +577,147 @@ test('the unit name rides on the plan for the page and never goes on the wire', 
   assert.ok(!JSON.stringify(groupMutation('job1', top(p, 'FINISHES'))).includes('unitName'));
   assert.ok(!JSON.stringify(groupMutation('job1', top(p, OPTIONS_GROUP))).includes('unitName'));
 });
+
+// ---- the checks (checks.ts) ----------------------------------------------------------------
+
+test('checks: a sub beside DB\'s own crew for the same trade is a problem; beside DB\'s material it is a check, a problem when the amounts match', async () => {
+  const { doubleCounts, stemOf } = await import('../src/draft/checks.ts');
+  assert.equal(stemOf('Insulation - Sub'), 'insulation');
+  assert.equal(stemOf('Insulation - Batt (DRAFT - Carl confirms)'), 'insulation');
+  assert.equal(stemOf('Drywall Brd- Labor'), 'drywall');
+  const w = 'CUSTOMER OPTIONS › Walls › Framed walls';
+  const flags = doubleCounts([
+    { where: w, name: 'Insulation - Sub', costType: 'Subcontractor', quantity: 909, unit: 'Square Foot', cost: 7744.68 },
+    { where: w, name: 'Insulation - Batt', costType: 'Materials', quantity: 909, unit: 'Square Foot', cost: 1181.7 },
+    { where: w, name: 'Paint Labor - Sub', costType: 'Subcontractor', quantity: 909, unit: 'Square Foot', cost: 3590.55 },
+    { where: w, name: 'Paint Labor', costType: 'Labor', quantity: 16, unit: 'Hours', cost: 880 },
+    { where: w, name: 'Paint', costType: 'Materials', quantity: 4, unit: 'Gallons', cost: 340 },
+    // Different places are not compared: the ceiling's sub beside the walls' crew is two jobs.
+    { where: 'CUSTOMER OPTIONS › Ceiling paint › Ceiling paint', name: 'Insulation - Sub', costType: 'Subcontractor', quantity: 1, unit: 'Lump Sum', cost: 1 },
+  ]);
+  assert.deepEqual(flags.map((f) => [f.severity, f.lines.map((l) => l.name).join(' + ')]), [
+    ['problem', 'Insulation - Sub + Insulation - Batt'],
+    ['problem', 'Paint Labor - Sub + Paint Labor'],
+    ['check', 'Paint Labor - Sub + Paint'],
+  ]);
+  assert.equal(flags[0]!.text, `${w}: "Insulation - Sub" (a subcontractor, $7,744.68) and "Insulation - Batt" (DB's material, $1,181.70) are the same insulation work. Both are for 909 Square Foot. If the sub supplies the material, $1,181.70 is paid twice.`);
+  assert.match(flags[1]!.text, /pay twice for the same paint work\. Keep the one that does the work\./);
+});
+
+test('checks: the same line twice in one place, and two subs of one trade', async () => {
+  const { doubleCounts } = await import('../src/draft/checks.ts');
+  const w = 'FINISHES › Tile';
+  const flags = doubleCounts([
+    { where: w, name: 'Tile Sub', costType: 'Subcontractor', quantity: 40, unit: 'Square Foot', cost: 2000 },
+    { where: w, name: 'Tile Package - Kitchen', costType: 'Subcontractor', quantity: 40, unit: 'Square Foot', cost: 800 },
+    { where: w, name: 'Primer', costType: 'Materials', quantity: 1, unit: 'Gallons', cost: 30 },
+    { where: w, name: 'Primer', costType: 'Materials', quantity: 2, unit: 'Gallons', cost: 60 },
+    { where: w, name: 'Project Contingency', costType: 'Other', quantity: 10, unit: 'Lump Sum', cost: 10 },
+    { where: w, name: 'Project Contingency', costType: 'Other', quantity: 10, unit: 'Lump Sum', cost: 10 },
+  ]);
+  assert.deepEqual(flags.map((f) => [f.severity, f.text]), [
+    ['problem', '"Primer" is in FINISHES › Tile twice.'],
+    ['check', 'FINISHES › Tile: two subcontractor lines for tile, "Tile Package - Kitchen" ($800.00) and "Tile Sub" ($2,000.00). Check they are different parts of the work.'],
+  ]);
+});
+
+test('the build plan flags a sub and the crew for the same work in one section, and puts it first', () => {
+  // Keep Paint Labor - Sub beside Paint Labor in FINISHES › Paint: the template offers both; the draft must pick one.
+  const draft: DraftFile = { ...fx.draft, lines: [...fx.draft.lines, { lineId: '22PLhtLxcz9T', name: 'Paint Labor - Sub', template: 'X-Division 09 Finishes', quantity: 909, unit: 'Square Foot', option: null }] };
+  const p = plan(draft);
+  assert.equal(p.flags[0]!.severity, 'problem');
+  assert.equal(p.flags[0]!.kind, 'double-count');
+  assert.deepEqual(p.flags[0]!.lines, [{ where: 'FINISHES › Paint', name: 'Paint Labor - Sub' }, { where: 'FINISHES › Paint', name: 'Paint Labor' }]);
+  assert.match(planText(p), /CHECK BEFORE --apply \(1 problems?.*\n  1\. PROBLEM: FINISHES › Paint: "Paint Labor - Sub" \(a subcontractor, \$3,590\.55\) and "Paint Labor" \(DB's crew, \$1,320\.00\) pay twice/);
+});
+
+test('a line counted in one unit and priced per another is a problem with the dollars in it; the line keeps its own unit', async () => {
+  const { withPricedUnit } = await import('../src/draft/templates.ts');
+  const { templateLinesText } = await import('../src/draft/prompt.ts');
+  const fin = templates.get('22PLCZU3cbqS')!;
+  // As JobTread holds it: "Drywall Brd- Mat" says Each, its price "Drywall Board - Mat" is $1.02 per Square Foot.
+  const conflicted: Template = { ...fin, lines: fin.lines.map((l) => withPricedUnit(l.name === 'Drywall Brd- Mat' ? { ...l, priced: { ...l.priced!, unit: 'Square Foot' } } : l)) };
+  const board = conflicted.lines.find((l) => l.name === 'Drywall Brd- Mat')!;
+  assert.equal(board.unit, 'Each');
+  assert.equal(board.pricedUnit, 'Square Foot');
+  // A line whose units agree is the same object; one whose price carries no unit (an older fixture) is left alone.
+  const primer = fin.lines.find((l) => l.name === 'Primer')!;
+  const agreeing = { ...primer, priced: { ...primer.priced!, unit: 'Gallons' } };
+  assert.equal(withPricedUnit(agreeing), agreeing);
+  assert.equal(withPricedUnit(primer), primer);
+  // The model is told, and asked for the count in both units.
+  assert.match(templateLinesText(conflicted), /- 22PLCchBuFMU · Drywall Brd- Mat · Each · Materials · CATALOG CONFLICT: its price is per Square Foot\n/);
+
+  const tpl = new Map([...templates, [fin.id, conflicted]]);
+  // The live 25-0000 draft counted 21 sheets.
+  const counted: DraftFile = { ...fx.draft, lines: fx.draft.lines.map((l) => (l.name === 'Drywall Brd- Mat' ? { ...l, quantity: 21, unit: 'Each' } : l)) };
+  const p = planBuild(counted, tpl, names, priced);
+  const conflict = p.flags.find((f) => f.kind === 'unit-conflict')!;
+  assert.equal(conflict.severity, 'problem');
+  assert.equal(conflict.text, 'CUSTOMER OPTIONS › Walls › Framed false walls: "Drywall Brd- Mat" is counted in Each, but its catalog price ($1.02) is per Square Foot. 21 Each at $1.02 comes to $21.42. Set the count in the unit the price is really per, and fix whichever unit is wrong in the catalog.');
+  assert.ok(!p.flags.some((f) => f.kind === 'unit'), 'the draft and the line agree on Each');
+  const item = allItems(top(p, OPTIONS_GROUP)).find((i) => i.name === 'Drywall Brd- Mat')!;
+  assert.equal(item.unitId, UNITS['Each']);
+  // Page-only fields never go on the wire.
+  const wire = JSON.stringify(groupMutation('job1', top(p, OPTIONS_GROUP)));
+  for (const k of ['draftUnit', 'pricedUnit', 'costTypeName', 'unitName']) assert.ok(!wire.includes(k), k);
+
+  // After the catalog is fixed (the template line now says Square Foot), an old draft that counted sheets is caught.
+  const fixed: Template = { ...fin, lines: fin.lines.map((l) => (l.name === 'Drywall Brd- Mat' ? { ...l, unit: 'Square Foot' } : l)) };
+  const q = planBuild(counted, new Map([...templates, [fin.id, fixed]]), names, priced);
+  const stale = q.flags.find((f) => f.kind === 'unit')!;
+  assert.equal(stale.severity, 'problem');
+  assert.equal(stale.text, 'CUSTOMER OPTIONS › Walls › Framed false walls: the draft counted "Drywall Brd- Mat" as 21 Each, but the line is now in Square Foot. Built as it is, that is 21 Square Foot = $21.42. Draft it again, or set the quantity in Square Foot on the job.');
+  assert.ok(!q.flags.some((f) => f.kind === 'unit-conflict'));
+});
+
+test('the build page puts the checks at the top and tags the rows they name', async () => {
+  const { renderBuildPage } = await import('../src/draft/build-render.ts');
+  const draft: DraftFile = { ...fx.draft, lines: [...fx.draft.lines, { lineId: '22PLhtLxcz9T', name: 'Paint Labor - Sub', template: 'X-Division 09 Finishes', quantity: 909, unit: 'Square Foot', option: null }] };
+  const p = plan(draft);
+  const gate = gateBuild({ job: TEST_JOB, draft, budget: budgetWith(STRUCTURAL), record: null, live: false, replace: false });
+  const html = renderBuildPage({ job: TEST_JOB, draftPath: 'd.json', planPath: 'p.json', plannedAt: '2026-10-01T20:00:00.000Z', gate, plan: p });
+  const box = html.indexOf('<section class="review has-problems">');
+  assert.ok(box > 0 && box < html.indexOf('<h2>FINISHES</h2>'), 'the box comes before the groups');
+  // The problem (the sub beside the crew), the sub beside the paint it may supply, the line with no count, the DRAFT lines.
+  assert.match(html, /<h2>Check before you apply <span class="counts">1 problem &middot; 3 to check<\/span><\/h2>/);
+  assert.match(html, /<li class="check"><span class="sev">Check<\/span> FINISHES › Paint: &quot;Paint Labor - Sub&quot; \(a subcontractor, \$3,590\.55\) and &quot;Paint&quot; \(DB&#39;s material|<li class="check"><span class="sev">Check<\/span> FINISHES › Paint: &quot;Paint Labor - Sub&quot; \(a subcontractor, \$3,590\.55\) and &quot;Paint&quot; \(DB's material/);
+  assert.match(html, /<li class="problem"><span class="sev">Problem<\/span> FINISHES › Paint: &quot;Paint Labor - Sub&quot;/);
+  assert.match(html, /<li class="info"><span class="sev">Figure<\/span> Contingency 8%: \$\d/);
+  assert.match(html, /<div class="name">Paint Labor - Sub<\/div><span class="tag bad">problem 1<\/span>/);
+  assert.match(html, /<div class="name">Paint Labor<\/div><span class="tag bad">problem 1<\/span>/);
+});
+
+test('the draft page shows the same checks: a sub beside the crew in one section, and a line priced per another unit', async () => {
+  const { draftFlags } = await import('../src/draft/render.ts');
+  const { moneyFromApi } = await import('../src/money.ts');
+  const money = (n: number): bigint => moneyFromApi(n);
+  const line = (name: string, costTypeName: string, quantity: number, unit: string, cost: number, extra: Record<string, unknown> = {}) => ({
+    lineId: name, name, templateId: 't', templateName: 'X-Division 09 Finishes', groupPath: ['FINISHES', 'Paint'], unit, costTypeName, quantity,
+    unitCost: money(cost / quantity), unitPrice: money(cost / quantity), cost: money(cost), price: money(cost), priced: true, tracking: false,
+    basis: '', evidence: [], option: null, confidence: 'high', lookBack: [], history: null, historyUnitCost: null, historyUnitPrice: null, ...extra,
+  });
+  const d = {
+    lines: [
+      line('Paint Labor - Sub', 'Subcontractor', 909, 'Square Foot', 3590.55),
+      line('Paint Labor', 'Labor', 24, 'Hours', 1320),
+      line('Drywall Brd- Mat', 'Materials', 21, 'Each', 21.42, { pricedUnit: 'Square Foot', groupPath: ['FINISHES', 'Drywall/Plaster'] }),
+    ],
+    found: [],
+  } as unknown as Parameters<typeof draftFlags>[0];
+  const flags = draftFlags(d);
+  assert.deepEqual(flags.map((f) => [f.severity, f.kind]), [['problem', 'double-count'], ['problem', 'unit-conflict']]);
+  assert.match(flags[0]!.text, /^X-Division 09 Finishes › FINISHES › Paint: "Paint Labor - Sub"/);
+  assert.equal(flags[1]!.text, 'X-Division 09 Finishes › FINISHES › Drywall/Plaster: "Drywall Brd- Mat" is counted in Each, but its catalog price ($1.02) is per Square Foot. 21 Each at $1.02 comes to $21.42. Set the count in the unit the price is really per, and fix whichever unit is wrong in the catalog.');
+});
+
+test('checks: a $0 time-tracking line is not "no count" or "unpriced"', async () => {
+  const { openLines } = await import('../src/draft/checks.ts');
+  const flags = openLines([
+    { where: 'GENERAL REQUIREMENTS › Project/Site Management', name: 'Sales On-Site Support', costType: 'Labor', quantity: 0, unit: 'Hours', cost: 0, tracking: true },
+    { where: 'CUSTOMER OPTIONS › Walls › Framed walls', name: 'Electrical Sub (DRAFT - Carl confirms)', costType: 'Subcontractor', quantity: 0, unit: 'Lump Sum', cost: 0 },
+  ]);
+  assert.deepEqual(flags.map((f) => f.lines.map((l) => l.name)), [['Electrical Sub (DRAFT - Carl confirms)'], ['Electrical Sub (DRAFT - Carl confirms)']]);
+  assert.equal(flags[0]!.text, '1 line has no count yet and cost nothing until the rep sets it: "Electrical Sub".');
+});
+

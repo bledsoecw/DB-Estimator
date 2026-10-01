@@ -71,6 +71,8 @@ Rules:
 11. lookBack is a list of one to three short search terms for finding DB's past work of the same kind ("epoxy", "floor coating"; "skim coat", "skim"). Give them on every Subcontractor line, on every gap, and on any Labor line for a trade DB might subcontract (painting, flooring, drywall, tile, concrete). Leave the list empty on everything else. The terms are matched against past line names and descriptions, so use the words a rep would have typed, not sentences.
 12. contingency.rate is the contingency DB carries on this job, by its policy: 5 when everything stays in place (replace in kind, nothing moves), 8 for a remodel where anything moves (a fixture, a wall, an opening) or the finish is stripped to the substrate, 10 for an addition, structural work, or an older home where hidden conditions are likely. Say why in one sentence from the evidence. The code prices it; you do not.
 13. When the message carries the rep's direction after an earlier pass, it is a decision, not evidence to weigh: follow it even where the photos or notes point elsewhere, never turn it back into a question, and keep every line, quantity and option of the earlier pass that it does not touch. Say "per the rep's direction" in the basis of what it changed.
+14. Do the work one way. Do not keep a Subcontractor line and DB's own Labor or Materials line for the same work in the same place ("Insulation - Sub" with "Insulation - Batt" for the same walls; "Paint Labor - Sub" with "Paint Labor"): the sub's price covers the work, and usually its material. Pick the way the evidence or the team's note says, or what DB's past work shows; when it is genuinely open, keep one and put the other in questions. Keeping both is right only when they cover different parts of the job, and then each basis says which part.
+15. A line marked CATALOG CONFLICT is counted in one unit and priced per another in the catalog. Give its quantity in the line's own unit as usual, and add to its basis what the count is in the other unit too ("21 sheets = 672 SF"), so the rep can correct it whichever unit turns out right.
 
 Write for the rep: plain words, and line names exactly as listed. Reference lines by their id.`;
 
@@ -219,7 +221,7 @@ export function templateLinesText(t: Template): string {
       path = p;
       out.push(`\n## ${p}`);
     }
-    out.push(`- ${l.id} · ${l.name} · ${l.unit ?? 'no unit'} · ${l.costTypeName}`);
+    out.push(`- ${l.id} · ${l.name} · ${l.unit ?? 'no unit'} · ${l.costTypeName}${l.pricedUnit ? ` · CATALOG CONFLICT: its price is per ${l.pricedUnit}` : ''}`);
     if (l.description) {
       const d = l.description.replace(/\s+/g, ' ');
       out.push(`  ${d.length > MAX_DESCRIPTION ? `${d.slice(0, MAX_DESCRIPTION)}…` : d}`);

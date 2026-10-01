@@ -19,6 +19,40 @@ import { parseOption, type Draft, type DraftGap, type DraftLine, type FoundLine,
 import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
 import { changesText, reviseCommand } from './revise.ts';
 import type { HistoryFinding } from './prompt.ts';
+import { CHECKS_CSS, doubleCounts, flagsHtml, sortFlags, unitConflictFlag, type CheckLine, type ReviewFlag } from './checks.ts';
+
+/**
+ * Where a drafted line will sit on the job, the way the build names it: an
+ * option's choice group, the section a found line was placed in, or its own
+ * template section. Lines with the same place are side by side.
+ */
+function placeOf(l: DraftLine, found: Map<string, FoundLine>): string {
+  if (l.option) {
+    const { group, choice } = parseOption(l.option);
+    return ['CUSTOMER OPTIONS', group, choice ?? group].join(' › ');
+  }
+  const f = found.get(l.lineId);
+  if (f?.placeIn) return [f.placeIn.templateName, ...f.placeIn.groupPath].join(' › ');
+  return [l.templateName, ...l.groupPath].join(' › ');
+}
+
+/** The draft's own checks: the same work paid twice in one place, and lines counted in one unit and priced per another. */
+export function draftFlags(d: Draft): ReviewFlag[] {
+  const found = new Map(d.found.map((f) => [f.lineId, f]));
+  const lines: CheckLine[] = d.lines.map((l) => ({
+    where: placeOf(l, found),
+    name: l.name,
+    costType: l.costTypeName,
+    quantity: l.quantity,
+    unit: l.unit,
+    cost: l.priced ? toNumber(l.cost) : null,
+  }));
+  const flags = doubleCounts(lines);
+  for (const l of d.lines) {
+    if (l.pricedUnit) flags.push(unitConflictFlag(placeOf(l, found), l.name, l.unit, l.pricedUnit, l.quantity, l.priced ? toNumber(l.unitCost) : null));
+  }
+  return sortFlags(flags);
+}
 
 /** What the rep types into the Contingency Base parameter: plain dollars, no symbol or commas. */
 function parameterDollars(m: Money): string {
@@ -197,8 +231,9 @@ export function draftSteps(d: Draft): string {
     }
     if (c.options.length) {
       out.push(
-        `   Add the cost of each option the customer takes to ${CONTINGENCY_PARAMETERS.base}: ` +
-          c.options.map((o) => `${optionLabel(o)} ${parameterDollars(o.cost)} (+${formatMoney(o.amount)} contingency)`).join('; ') + '.',
+        `   Each option carries its own share, so the contingency follows what the customer picks: in each choice group add` +
+          ` "${CONTINGENCY_LINE}" (Lump Sum, $1.00 cost and price, no formula) with the quantity ` +
+          c.options.map((o) => `${optionLabel(o)} ${parameterDollars(o.amount)}`).join('; ') + '.',
       );
     }
     out.push('   Unused contingency is credited at closeout.');
@@ -410,6 +445,7 @@ export function draftJson(d: Draft): unknown {
       group: l.groupPath.join(' › '),
       quantity: l.quantity,
       unit: l.unit,
+      ...(l.pricedUnit ? { pricedUnit: l.pricedUnit } : {}),
       costType: l.costTypeName,
       unitCost: l.priced ? formatMoney(l.unitCost) : null,
       unitPrice: l.priced ? formatMoney(l.unitPrice) : null,
@@ -525,13 +561,15 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
   const open = openGaps(d);
   const flagged = open.length + d.rejected.length + d.rejectedPicks.length;
 
+  const flags = d.noFit ? [] : draftFlags(d);
+
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<style>${CSS}${EXTRA_CSS}</style>
+<style>${CSS}${EXTRA_CSS}${CHECKS_CSS}</style>
 </head>
 <body>
 <main>
@@ -564,6 +602,8 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
         d.totals.regionalForGaps.gaps ? ` &middot; a regional ballpark of ${d.totals.regionalForGaps.price === null ? formatMoney(d.totals.regionalForGaps.cost) + ' cost' : formatMoney(d.totals.regionalForGaps.price)} for ${d.totals.regionalForGaps.gaps === open.length ? 'them' : `${d.totals.regionalForGaps.gaps} of them`}, not DB pricing` : ''}${d.questions.length ? ` &middot; ${d.questions.length} question${d.questions.length === 1 ? '' : 's'} for the customer` : ''}${
         d.totals.base.unpriced ? ` &middot; ${d.totals.base.unpriced} line${d.totals.base.unpriced === 1 ? '' : 's'} to price by hand` : ''
       }</p>`}
+
+  ${flagsHtml(flags, esc, 'Check these before building')}
 
   ${d.revision ? `<section class="revision">
     <h2>Pass ${d.revision.pass} &middot; the rep's direction</h2>
@@ -654,8 +694,8 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
         ? `${esc([...d.contingency.line.group, CONTINGENCY_LINE].join(' › '))} in ${esc(d.contingency.line.templateName)}`
         : `not in the chosen templates yet: add "${esc(CONTINGENCY_GROUP)}" after Phase 4 with the catalog item "${esc(CONTINGENCY_LINE)}" and the quantity formula <code>${esc(CONTINGENCY_FORMULA)}</code>`}</td></tr>
       <tr><td>${esc(CONTINGENCY_PARAMETERS.rate)}</td><td>${d.contingency.rate}</td></tr>
-      <tr><td>${esc(CONTINGENCY_PARAMETERS.base)}</td><td>${esc(parameterDollars(d.contingency.base))}${d.contingency.options.length ? ', plus the cost of each option taken' : ''}</td></tr>
-      ${d.contingency.options.map((o) => `<tr><td>${esc(optionLabel(o))}</td><td>${esc(parameterDollars(o.cost))} more base, +${formatMoney(o.amount)} contingency</td></tr>`).join('\n      ')}
+      <tr><td>${esc(CONTINGENCY_PARAMETERS.base)}</td><td>${esc(parameterDollars(d.contingency.base))}${d.contingency.options.length ? ', the base scope only' : ''}</td></tr>
+      ${d.contingency.options.map((o) => `<tr><td>${esc(optionLabel(o))}</td><td>+${formatMoney(o.amount)} contingency, its own line inside the choice (${esc(parameterDollars(o.cost))} of cost)</td></tr>`).join('\n      ')}
     </table>
   </section>` : ''}
 
