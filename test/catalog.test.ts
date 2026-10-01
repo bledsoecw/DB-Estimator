@@ -332,7 +332,7 @@ test('a gap the price book already priced still goes to the model for the catalo
     history: { search: async (t) => { searches.push(t); return { terms: [] }; }, margins: MARGINS, learned: store },
     catalog: { search: async () => all },
   });
-  assert.deepEqual(searches, [['vapor barrier', 'poly', 'electrical', 'outlet']], 'the book answered insulation; the rest was searched');
+  assert.deepEqual(searches, [['vapor barrier', 'electrical', 'poly', 'outlet']], 'the book answered insulation; the rest was searched, each gap\'s first term first');
   assert.equal(call.calls.length, 2);
   const asked = call.calls[1]!.content.map((c) => (c.type === 'text' ? c.text : '')).join('\n');
   assert.match(asked, /- gap-0 · gap · Batt insulation[^\n]*\n  basis: [^\n]*\n  note: DB's past work was already read for this \(learned 2026-09-30\): match\. DB bought R15 wall batts[^\n]*It is priced from that history unless a catalog candidate is the same thing; if one is, match it and give the quantity in its unit\./);

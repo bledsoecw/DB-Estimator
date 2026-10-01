@@ -21,7 +21,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { StructuredArgs, StructuredCall } from '../src/draft/model.ts';
-import { attachHistory, draftEstimate, historyTargets, uniqueTerms, type DraftFixture } from '../src/draft/draft.ts';
+import { MAX_TERMS, attachHistory, draftEstimate, historyTargets, keyWord, searchedTargets, uniqueTerms, withKeyWord, type DraftFixture } from '../src/draft/draft.ts';
 import { historyTargetsText } from '../src/draft/prompt.ts';
 import { draftJson, draftSteps, renderDraft } from '../src/draft/render.ts';
 import { marginsOf, parseDraftArgs } from '../src/draft-cli.ts';
@@ -40,6 +40,8 @@ const MYERS = { id: 'jobM', name: '246466 Dennis Myers_Sunroom' };
 const CO = { id: 'docCO', type: 'customerOrder', status: 'approved', name: 'Change Order', issueDate: '2026-08-31', account: { name: 'Dennis Myers', type: 'customer' } };
 const WO = { id: 'docWO', type: 'vendorOrder', status: 'draft', name: 'Work Order', issueDate: null, account: { name: 'Rhino Concrete Coatings', type: 'vendor' } };
 const INV = { id: 'docINV', type: 'customerInvoice', status: 'approved', name: 'Invoice', issueDate: '2026-09-03', account: { name: 'Dennis Myers', type: 'customer' } };
+const SMITH = { id: 'jobS', name: '252511 Smith_Garage' };
+const SMITH_WO = { id: 'docSmithWO', type: 'vendorOrder', status: 'approved', name: 'Work Order', issueDate: '2025-11-02', account: { name: 'Rhino Concrete Coatings', type: 'vendor' } };
 
 function hit(over: Record<string, unknown>) {
   return {
@@ -57,7 +59,27 @@ function reader(): Reader & { queries: Record<string, unknown>[] } {
     async query<T>(q: Record<string, unknown>): Promise<T> {
       queries.push(q);
       if ('organization' in q) {
-        const where = (q['organization'] as { costItems: { $: { where: { and: unknown[] } } } }).costItems.$.where;
+        const org = q['organization'] as Record<string, unknown>;
+        if ('files' in org) {
+          // Every job's files named for the term: the Myers quotes again (a job already found by its lines),
+          // and for "floor coating" a quote on a job whose line is called something else.
+          const like = ((org['files'] as { $: { where: { and: { or: unknown[][] }[] } } }).$.where.and[0]!.or[0]![2] as string);
+          if (like === '%epoxy%') {
+            return { organization: { files: { nodes: [
+              { ...file('fQuote3', '6466 Dennis Myers_Epoxy Quote.pdf', 26513, 'Epoxy Quote'), job: MYERS, document: WO },
+              { ...file('fTest', 'epoxy test.pdf', 100, null), job: { id: 'jobT', name: 'Kay Oss_TEST epoxy' }, document: null },
+            ] } } } as T;
+          }
+          if (like === '%floor coating%') {
+            return { organization: { files: { nodes: [
+              { ...file('fGarage', '2511 Smith_Floor Coating Quote.pdf', 40000, 'Rhino quote, garage floor coating 480 sf'), job: SMITH, document: SMITH_WO },
+              { ...file('fGaragePhoto', 'garage floor coating.jpg', 300000, null, 'image/jpeg'), job: SMITH, document: null },
+              { ...file('fSelf', 'floor coating.pdf', 100, null), job: { id: '22PbLhMqY7tC', name: '261323 Haag_Remodel' }, document: null },
+            ] } } } as T;
+          }
+          return { organization: { files: { nodes: [] } } } as T;
+        }
+        const where = (org as { costItems: { $: { where: { and: unknown[] } } } }).costItems.$.where;
         const like = ((where.and[0] as { or: unknown[][] }).or[0]![2] as string);
         if (like === '%epoxy%') {
           return { organization: { costItems: { nodes: [
@@ -86,6 +108,12 @@ function reader(): Reader & { queries: Record<string, unknown>[] } {
         return { job: { description: 'Sun Room & Deck', customFieldValues: { nodes: [{ value: 'C-Miscellaneous', customField: { id: '22PC7idvhRzp' } }] } } } as T;
       }
       const id = (q['document'] as { $: { id: string } }).$.id;
+      if (id === 'docSmithWO') {
+        return { document: { costItems: { nodes: [
+          { id: 's1', name: 'Flooring - Sub', createdAt: '2025-11-02T10:00:00.000Z', quantity: 480, unitCost: 6.5, unitPrice: null, cost: 3120, price: 0, unit: { name: 'Square Foot' }, costType: { name: 'Subcontractor' } },
+          { id: 's2', name: 'Note to sub', createdAt: '2025-11-02T10:00:00.000Z', quantity: null, unitCost: 0, unitPrice: 0, cost: 0, price: 0, unit: null, costType: { name: 'Other' } },
+        ] } } } as T;
+      }
       const costItems = { nodes: [
         { id: 'inv', name: 'Epoxy Sub Pckg', quantity: 1, unit: { name: 'Lump Sum' } },
         { id: 'x', name: 'Crew Labor', quantity: 4, unit: { name: 'Hours' } },
@@ -250,7 +278,8 @@ test('targets are subcontracted lines, lines the model wanted looked up, and eve
     templateIds: [FIN, GR],
     history: { search: async (terms) => { searched.push(terms); return report(true); }, margins: MARGINS },
   });
-  assert.deepEqual(searched, [['paint sub', 'painting', 'epoxy', 'floor coating', 'skim coat', 'skim']]);
+  // Gaps first, then the sub line, then the labor line; every target's first term before any second.
+  assert.deepEqual(searched, [['skim coat', 'epoxy', 'paint sub', 'skim', 'floor coating', 'painting']]);
   assert.equal(call.calls.length, 2, 'draft, then history');
   assert.match(call.calls[1]!.system, /reading DB's own past work/);
 
@@ -258,7 +287,7 @@ test('targets are subcontracted lines, lines the model wanted looked up, and eve
   assert.deepEqual(targets.map((t) => t.id), ['22PLhtLxcz9S', '22PLhsr2Yx55', 'gap-0', 'gap-1'], 'the plain Paint line has no terms and is not a target');
   assert.equal(targets[1]!.templateUnitCost, 7.5, 'the template rate the model may compare against');
   assert.match(historyTargetsText('a job', targets), /- gap-0 · gap · Skim-coat the concrete walls · 24 Hours · Labor · no template price · terms: "skim coat", "skim"/);
-  assert.deepEqual(uniqueTerms(targets), ['paint sub', 'painting', 'epoxy', 'floor coating', 'skim coat', 'skim']);
+  assert.deepEqual(uniqueTerms(targets), ['skim coat', 'epoxy', 'paint sub', 'skim', 'floor coating', 'painting']);
 
   // A cited unit cost becomes Money and a price at the subcontractor margin.
   const epoxy = d.lines.find((l) => l.name === 'Flooring - Sub')!;
@@ -342,7 +371,7 @@ test('when nothing in history matches, the third call runs for the gaps alone an
   const steps = draftSteps(d);
   assert.match(steps, /^Regional ballpark \$1,963\.68 price \(\$1,080\.00 cost\) for 1 of the flagged items DB has no history for — NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out; not in the totals above$/m);
   assert.match(steps, /Skim-coat the concrete walls" \(Labor, 24 Hours\)[^\n]*\n     price to type: [^\n]*\n     history: No skim coat anywhere in DB history\. Regional ballpark: \$45\.00\/Hours cost \(\$81\.82 price\) × 24 = \$1,080\.00 cost, \$1,963\.68 price — NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out\. A finisher at about \$45\/hour loaded/);
-  assert.match(steps, /Past work was searched for "paint sub", "painting", "epoxy", "floor coating", "skim coat", "skim": no past DB work matched any search term\./);
+  assert.match(steps, /Past work was searched for "skim coat", "epoxy", "paint sub", "skim", "floor coating", "painting": no past DB work matched any search term\./);
   const html = renderDraft(fx.evidence, d);
   assert.match(html, /a regional ballpark of \$1,963\.68 for 1 of them, not DB pricing/);
   assert.match(html, /Create · regional ballpark, not DB pricing<\/div>\s*<h3>Skim-coat the concrete walls/);
@@ -621,3 +650,99 @@ test('the file budget is dealt out across the terms, quotes first, each file onc
   assert.equal(jobA.files[2]!.skipped, "the read's 4-file budget went to closer matches");
   assert.equal(jobA.files[1]!.skipped, null);
 });
+
+// ---- 25-0000, 2026-10-01: the Myers epoxy quote was not looked for -----------------------
+
+test('a quote filed under the trade\'s name is found on a job whose line is called something else', async () => {
+  const r = reader();
+  const report = await searchHistory(r, ['floor coating'], { excludeJobId: '22PbLhMqY7tC', download: null });
+  const t = report.terms[0]!;
+  assert.equal(t.raw, 0, 'no line anywhere is named for "floor coating"');
+  assert.deepEqual(t.jobs.map((j) => [j.jobName, j.foundBy]), [['252511 Smith_Garage', 'files']], 'found by its files; the job being drafted is not history');
+  const job = t.jobs[0]!;
+  // The lines on the work order the quote hangs on, whatever they are named; the $0 note is not evidence.
+  assert.deepEqual(job.lines.map((l) => [l.name, l.quantity, l.unit, l.cost, l.strength, l.where, l.vendor]), [
+    ['Flooring - Sub', 480, 'Square Foot', 3120, 'ordered', 'work order', 'Rhino Concrete Coatings'],
+  ]);
+  assert.deepEqual(job.files.map((f) => [f.name, f.foundOn, f.skipped]), [
+    ['2511 Smith_Floor Coating Quote.pdf', 'the work order, named for "floor coating"', null],
+    ['garage floor coating.jpg', 'the job\'s files, named for "floor coating"', null],
+  ]);
+  assert.equal(job.description, 'Sun Room & Deck', 'the job head is read (the fake answers every job alike)');
+  const text = historyText(report);
+  assert.match(text, /## "floor coating" — 0 matching lines, 1 shown on 1 job/);
+  assert.match(text, /### 252511 Smith_Garage[^\n]*\n  Found by a file named for "floor coating", not by a line: these are the lines on the document that file is attached to, whatever they are named\. Read the file for what they cover\.\n- \[ordered\] Flooring - Sub · 480 Square Foot · unit cost \$6\.50/);
+  assert.match(text, /Files from this job attached below: "2511 Smith_Floor Coating Quote\.pdf" \(Rhino quote, garage floor coating 480 sf\), from the work order, named for "floor coating"/);
+  // The organization's files were searched with the term, on jobs only.
+  const fileQuery = r.queries.find((q) => 'organization' in q && 'files' in (q['organization'] as object)) as { organization: { files: { $: { where: unknown } } } };
+  assert.deepEqual(fileQuery.organization.files.$.where, {
+    and: [{ or: [[['name'], 'like', '%floor coating%'], [['description'], 'like', '%floor coating%']] }, [['job', 'id'], '!=', null]],
+  });
+});
+
+test('a job found by its lines is not added again by its files, and the file search can be turned off', async () => {
+  const r = reader();
+  const report = await searchHistory(r, ['epoxy'], { excludeJobId: '22PbLhMqY7tC', download: null });
+  assert.deepEqual(report.terms[0]!.jobs.map((j) => [j.jobName, j.foundBy]), [['246466 Dennis Myers_Sunroom', 'lines']], 'the test job\'s file is not history either');
+  const off = reader();
+  await searchHistory(off, ['epoxy'], { excludeJobId: '22PbLhMqY7tC', download: null, files: false });
+  assert.ok(!off.queries.some((q) => 'organization' in q && 'files' in (q['organization'] as object)));
+});
+
+test('a phrase gets its key word first, so "epoxy floor coating" also searches "epoxy"', () => {
+  assert.equal(keyWord('epoxy floor coating'), 'epoxy');
+  assert.equal(keyWord('floor coating'), 'coating', 'floor alone would return every flooring line');
+  assert.equal(keyWord('false wall framing'), 'framing');
+  assert.equal(keyWord('mold resistant paint'), 'mold');
+  assert.equal(keyWord('floor wall'), null);
+  assert.deepEqual(withKeyWord(['epoxy floor coating', 'garage floor coating']), ['epoxy', 'epoxy floor coating', 'garage floor coating']);
+  assert.deepEqual(withKeyWord(['epoxy', 'floor coating']), ['epoxy', 'floor coating'], 'a single word is already there');
+  assert.deepEqual(withKeyWord(['Batt Insulation', 'batt']), ['Batt Insulation', 'batt']);
+  assert.deepEqual(withKeyWord([' ', '']), []);
+  assert.deepEqual(withKeyWord(['floor wall']), ['floor wall'], 'nothing specific to add');
+});
+
+test('terms are dealt out in rounds, gaps first, up to the cap; only searched targets count as searched', () => {
+  const target = (kind: 'line' | 'gap', id: string, costTypeName: string, lookBack: string[]) => ({
+    kind, id, name: id, quantity: 1, unit: 'Hours', costTypeName, basis: '', templateUnitCost: null, lookBack,
+  });
+  // Ten labor lines with three terms each, then a sub line, then the epoxy gap last: the order draft lines come in.
+  const labor = Array.from({ length: 10 }, (_, i) => target('line', `labor${i}`, 'Labor', [`trade${i}`, `trade${i} labor`, `trade${i} sub`]));
+  const targets = [...labor, target('line', 'sub', 'Subcontractor', ['insulation sub', 'insulation']), target('gap', 'gap-0', 'Subcontractor', ['epoxy', 'floor coating'])];
+  const terms = uniqueTerms(targets);
+  assert.equal(MAX_TERMS, 16);
+  assert.equal(terms.length, 16);
+  assert.deepEqual(terms.slice(0, 2), ['epoxy', 'insulation sub'], 'the gap and the sub line before any labor line');
+  assert.deepEqual(terms.slice(2, 12), labor.map((_, i) => `trade${i}`), 'every labor line\'s first term before any second');
+  assert.deepEqual(terms.slice(12), ['floor coating', 'insulation', 'trade0 labor', 'trade1 labor']);
+  const searched = searchedTargets(targets, terms).map((t) => t.id);
+  assert.equal(searched.length, 12, 'every target had a term searched');
+  // With a cap the old way would have hit, the last targets are not searched, and say so.
+  const many = Array.from({ length: 20 }, (_, i) => target('gap', `gap-${i}`, 'Labor', [`word${i}`]));
+  const t20 = uniqueTerms(many);
+  assert.equal(t20.length, 16);
+  assert.deepEqual(searchedTargets(many, t20).map((t) => t.id), many.slice(0, 16).map((t) => t.id));
+});
+
+test('a target whose terms were not searched is not remembered as "nothing found"', async () => {
+  // Seventeen gaps, each with its own term: the sixteenth search is the last; the seventeenth gap was never looked for.
+  const gaps = Array.from({ length: 17 }, (_, i) => ({
+    scope: `Gap ${i}`, why: 'no template line', unit: 'Hours', quantity: 1, costType: 'Labor', basis: 'guess', evidence: DRAFT.gaps[0]!.evidence,
+    lookBack: [`word${i}`], option: null,
+  }));
+  const store = new LearnedStore([], { now: () => T0 });
+  const searches: string[][] = [];
+  const call = fake([{ ...DRAFT, lines: DRAFT.lines.filter((l) => l.lookBack.length === 0), gaps }, REGIONAL_ONLY]);
+  await draftEstimate(fx.evidence, fx.index, load, call, {
+    templateIds: [FIN, GR],
+    history: { search: async (t) => { searches.push(t); return { terms: t.map((term) => ({ term, raw: 0, jobs: [] })) }; }, margins: MARGINS, learned: store },
+  });
+  assert.equal(searches[0]!.length, 16);
+  assert.ok(!searches[0]!.includes('word16'));
+  assert.equal(store.entries.get('word0')!.finding.match, 'none', 'searched and nothing found: remembered briefly');
+  assert.equal(store.entries.get('word16'), undefined, 'never searched: nothing to remember');
+  const asked = call.calls[1]!.content.map((c) => (c.type === 'text' ? c.text : '')).join('\n');
+  assert.match(asked, /- gap-16 · gap · Gap 16[^\n]*\n  basis: guess\n  note: Its terms were not searched this run \(at most 16 are\)/);
+  assert.doesNotMatch(asked, /- gap-15 · gap · Gap 15[^\n]*\n  basis: guess\n  note: Its terms were not searched/);
+});
+

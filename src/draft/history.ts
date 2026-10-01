@@ -16,6 +16,13 @@
  * are read too, and failing that the job's files whose name or description
  * carries the search term. A job with 1,156 migrated files is never scanned.
  *
+ * And the other way round: every job's files are searched by name and
+ * description for the term, because a sub's quote is often filed under the
+ * trade's name ("Epoxy Quote.pdf") on a job whose line is called something
+ * else ("Flooring - Sub"). A job found only by its files is read through the
+ * document the file hangs on: its lines, whatever they are named, are the
+ * evidence beside the quote.
+ *
  * This file only finds and describes. The model decides which past lines
  * apply and shows its arithmetic (prompt.ts); the code prices from the
  * number it cites (draft.ts). Read-only.
@@ -61,6 +68,8 @@ export interface HistoryLine {
 export interface HistoryJob {
   jobId: string;
   jobName: string;
+  /** "files" when no line matched and the job was found by a quote or file named for the term. */
+  foundBy?: 'lines' | 'files';
   description: string | null;
   projectType: string | null;
   lines: HistoryLine[];
@@ -102,6 +111,8 @@ export interface HistoryOptions {
   maxJobsPerTerm?: number;
   /** Fetch the other lines on each top job's strongest document. On by default. */
   context?: boolean;
+  /** Search every job's files for the term too. On by default. */
+  files?: boolean;
   /** How to fetch a file. null lists files without downloading; undefined downloads over HTTP. */
   download?: Downloader | null;
 }
@@ -120,6 +131,11 @@ const QUOTE_LIKE = /quote|bid|proposal|estimate|invoice|statement|contract/i;
 const PAGE = 50;
 const MAX_JOBS = 5;
 const CONTEXT_JOBS = 3;
+/** Jobs a term may add that no line matched, found by their files alone. */
+const MAX_FILE_JOBS = 2;
+const FILE_PAGE = 20;
+/** Lines read from the document a found file hangs on. */
+const FILE_DOC_LINES = 25;
 const PROJECT_TYPE_FIELD = '22PC7idvhRzp';
 
 interface RawHit {
@@ -159,6 +175,11 @@ export async function searchHistory(
     const jobs = groupByJob(hits, opts.excludeJobId).slice(0, maxJobs);
     if (opts.context !== false) {
       for (const job of jobs.slice(0, CONTEXT_JOBS)) await addContext(client, job, term);
+    }
+    if (opts.files !== false) {
+      const known = new Set(jobs.map((j) => j.jobId));
+      const byJob = groupFilesByJob(await searchFiles(client, term), opts.excludeJobId).filter((g) => !known.has(g.jobId));
+      for (const g of byJob.slice(0, MAX_FILE_JOBS)) jobs.push(await fileJob(client, g, term));
     }
     out.push({ term, raw: hits.length, jobs });
   }
@@ -278,6 +299,105 @@ async function searchTerm(client: Reader, term: string): Promise<RawHit[]> {
   return res.organization.costItems.nodes;
 }
 
+interface RawDoc {
+  id: string; type: string; status: string; name: string; issueDate: string | null;
+  account: { name: string; type: string } | null;
+}
+
+export interface RawFileHit {
+  id: string; name: string; type: string; size: number; createdAt: string; url: string; description: string | null;
+  job: { id: string; name: string } | null;
+  document: RawDoc | null;
+}
+
+const DOC_FIELDS = { id: {}, type: {}, status: {}, name: {}, issueDate: {}, account: { name: {}, type: {} } } as const;
+
+/** Every job's files whose name or description carries the term: quotes, bids and invoices filed under the trade's name. */
+async function searchFiles(client: Reader, term: string): Promise<RawFileHit[]> {
+  const like = `%${term}%`;
+  const res = await client.query<{ organization: { files: { nodes: RawFileHit[] } } }>({
+    organization: {
+      $: { id: client.organizationId },
+      files: {
+        $: {
+          size: FILE_PAGE,
+          where: { and: [{ or: [[['name'], 'like', like], [['description'], 'like', like]] }, [['job', 'id'], '!=', null]] },
+          sortBy: [{ field: 'createdAt', order: 'desc' }],
+        },
+        nodes: { id: {}, name: {}, type: {}, size: {}, createdAt: {}, url: {}, description: {}, job: { id: {}, name: {} }, document: DOC_FIELDS },
+      },
+    },
+  });
+  return res.organization.files.nodes;
+}
+
+/** Found files by job, the job with a quote-like file first, then the newest; never a test job or the job itself. Pure. */
+export function groupFilesByJob(hits: RawFileHit[], excludeJobId?: string): { jobId: string; jobName: string; files: RawFileHit[] }[] {
+  const byJob = new Map<string, { jobId: string; jobName: string; files: RawFileHit[] }>();
+  for (const f of hits) {
+    if (!f.job || f.job.id === excludeJobId || isTestJob(f.job.name)) continue;
+    const g = byJob.get(f.job.id) ?? { jobId: f.job.id, jobName: f.job.name, files: [] };
+    g.files.push(f);
+    byJob.set(f.job.id, g);
+  }
+  const quoted = (g: { files: RawFileHit[] }): number =>
+    g.files.some((f) => QUOTE_LIKE.test(f.name) || QUOTE_LIKE.test(f.description ?? '')) ? 0 : 1;
+  return [...byJob.values()].sort((a, b) => quoted(a) - quoted(b));
+}
+
+/**
+ * A job found by its files alone: its description, the lines on the
+ * documents the files hang on (the change order or work order the quote was
+ * attached to), and the files themselves.
+ */
+async function fileJob(client: Reader, g: { jobId: string; jobName: string; files: RawFileHit[] }, term: string): Promise<HistoryJob> {
+  const job: HistoryJob = {
+    jobId: g.jobId, jobName: g.jobName, foundBy: 'files', description: null, projectType: null, lines: [], context: [], files: [],
+  };
+  await readJobHead(client, job);
+  const docs = [...new Map(g.files.filter((f) => f.document).map((f) => [f.document!.id, f.document!])).values()].slice(0, 2);
+  for (const doc of docs) {
+    const res = await client.query<{ document: { costItems: { nodes: Omit<RawHit, 'job' | 'document'>[] } } | null }>({
+      document: {
+        $: { id: doc.id },
+        costItems: {
+          $: { size: FILE_DOC_LINES, sortBy: [{ field: 'position' }] },
+          nodes: { id: {}, name: {}, createdAt: {}, quantity: {}, unitCost: {}, unitPrice: {}, cost: {}, price: {}, unit: { name: {} }, costType: { name: {} } },
+        },
+      },
+    });
+    for (const n of res.document?.costItems.nodes ?? []) {
+      const hit: RawHit = { ...n, job: { id: g.jobId, name: g.jobName }, document: doc };
+      if (isEvidence(hit)) job.lines.push(toLine(hit));
+    }
+  }
+  job.lines.sort((a, b) => STRENGTH_ORDER[a.strength] - STRENGTH_ORDER[b.strength] || b.when.localeCompare(a.when));
+  job.files = selectHistoryFiles(g.files.map((f) => ({
+    file: f,
+    foundOn: f.document ? `the ${whereOf(f.document)}, named for "${term}"` : `the job's files, named for "${term}"`,
+  })));
+  return job;
+}
+
+/** The job's description and project type. */
+async function readJobHead(client: Reader, job: HistoryJob): Promise<void> {
+  const res = await client.query<{
+    job: {
+      description: string | null;
+      customFieldValues: { nodes: { value: unknown; customField: { id: string } }[] };
+    } | null;
+  }>({
+    job: {
+      $: { id: job.jobId },
+      description: {},
+      customFieldValues: { $: { size: 20, where: [['customField', 'id'], '=', PROJECT_TYPE_FIELD] }, nodes: { value: {}, customField: { id: {} } } },
+    },
+  });
+  job.description = res.job?.description?.trim() || null;
+  const pt = res.job?.customFieldValues.nodes.find((n) => typeof n.value === 'string');
+  job.projectType = pt ? (pt.value as string) : null;
+}
+
 /** Placeholders, credits, time tracking, test jobs and the job itself are not history. */
 export function isEvidence(hit: RawHit, excludeJobId?: string): boolean {
   if (!hit.job) return false;
@@ -340,8 +460,8 @@ export function groupByJob(hits: RawHit[], excludeJobId?: string): HistoryJob[] 
   const byJob = new Map<string, HistoryJob>();
   for (const h of hits) {
     if (!isEvidence(h, excludeJobId)) continue;
-    const job = byJob.get(h.job!.id) ?? {
-      jobId: h.job!.id, jobName: h.job!.name, description: null, projectType: null, lines: [], context: [], files: [],
+    const job: HistoryJob = byJob.get(h.job!.id) ?? {
+      jobId: h.job!.id, jobName: h.job!.name, foundBy: 'lines', description: null, projectType: null, lines: [], context: [], files: [],
     };
     job.lines.push(toLine(h));
     byJob.set(job.jobId, job);
@@ -367,21 +487,7 @@ interface RawFile {
  * the term.
  */
 async function addContext(client: Reader, job: HistoryJob, term: string): Promise<void> {
-  const res = await client.query<{
-    job: {
-      description: string | null;
-      customFieldValues: { nodes: { value: unknown; customField: { id: string } }[] };
-    } | null;
-  }>({
-    job: {
-      $: { id: job.jobId },
-      description: {},
-      customFieldValues: { $: { size: 20, where: [['customField', 'id'], '=', PROJECT_TYPE_FIELD] }, nodes: { value: {}, customField: { id: {} } } },
-    },
-  });
-  job.description = res.job?.description?.trim() || null;
-  const pt = res.job?.customFieldValues.nodes.find((n) => typeof n.value === 'string');
-  job.projectType = pt ? (pt.value as string) : null;
+  await readJobHead(client, job);
 
   const found: { file: RawFile; foundOn: string }[] = [];
   const docIds = [...new Set(job.lines.slice(0, 3).map((l) => l.documentId).filter((d): d is string => !!d))];
@@ -480,6 +586,11 @@ export function historyText(report: HistoryReport): string {
     if (t.jobs.length === 0) out.push('(nothing usable: no past DB work matches this term)');
     for (const j of t.jobs) {
       out.push(`\n### ${j.jobName}${j.projectType ? ` (${j.projectType})` : ''}${j.description ? ` — ${j.description.replace(/\s+/g, ' ').slice(0, 160)}` : ''}`);
+      if (j.foundBy === 'files') {
+        out.push(j.lines.length
+          ? `  Found by a file named for "${t.term}", not by a line: these are the lines on the document that file is attached to, whatever they are named. Read the file for what they cover.`
+          : `  Found by a file named for "${t.term}", not by a line; the file is not on a document with priced lines. Read it for the price.`);
+      }
       for (const l of j.lines) {
         out.push(
           `- [${l.strength}] ${l.name} · ${qty(l.quantity, l.unit)} · unit cost ${money(l.unitCost)}` +

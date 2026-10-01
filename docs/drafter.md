@@ -102,7 +102,12 @@ So the draft has a third, short call:
 
 1. In the draft call the model gives one to three search terms (`lookBack`)
    on every Subcontractor line, every gap, and any labor line for a trade DB
-   might sub: "epoxy", "floor coating"; "skim coat", "skim".
+   might sub, the trade's own single word first: "epoxy", "floor coating";
+   "skim", "skim coat". A term is matched as written, so when every term of
+   a target is a phrase the code puts its key word in front ("epoxy floor
+   coating" also searches "epoxy"). Up to sixteen terms a run are searched,
+   dealt out in rounds: gaps first, then subcontracted lines, then labor
+   lines, and every target's first term before any target's second.
 2. The code searches JobTread once per term, name and description, on real
    jobs only. Test jobs, the job being drafted, $0 placeholders, credits and
    time-tracking lines are dropped. Lines are grouped by job and tagged by
@@ -117,7 +122,13 @@ So the draft has a third, short call:
    PDFs before photos, one copy of a file uploaded twice, three files a job,
    twelve a read, dealt out one per search term per round so the first term
    searched cannot take them all; a job with a thousand migrated files is
-   never scanned.
+   never scanned. Every job's **files** are searched for the term too, by
+   name and description: DB files a sub's quote on the work order or
+   purchase order as "Momper Insulation Quote", "Quote for concrete",
+   "Epoxy Quote", often on a job whose line is called something else
+   ("Flooring - Sub"). Up to two jobs a term are added that way, read
+   through the document the file hangs on, so the lines beside the quote are
+   evidence whatever they are named.
 3. The model reads the matches and the attached files and, per target, says
    whether DB has done this before, cites the lines and files it relies on,
    and gives a unit cost only when the arithmetic is shown. A size written
@@ -140,7 +151,19 @@ and invoiced in August and September 2026, with no square footage on the
 change order — but "6466 Dennis Myers_Epoxy Quote.pdf" is attached to the
 work order and the change order, and the quote carries the measurements.
 Carl pointed that out after the first version read lines only; the files
-step exists because of it. Skim coat: nothing, by name or description; the nearest thing
+step exists because of it.
+
+On 25-0000, 2026-10-01, the same quote was missed. Three reasons, all fixed
+the same day: the search took the first ten terms in the order the lines
+came, and the paint, drywall and flooring lines used them up before the
+epoxy gap's first term; a phrase like "epoxy floor coating" does not match
+"Epoxy Sub Pckg"; and the price book then learned "nothing found" for the
+epoxy terms that were never searched, which would have hidden Myers for a
+month. Now the terms are dealt out gaps first, up to sixteen, a phrase gets
+its key word, every job's files are searched for the term, and only a target
+whose terms were searched is remembered. A run made before the fix may have
+left that "nothing" in `.db-estimator/learned-prices.json`; one run with
+`--relearn` replaces it. Skim coat: nothing, by name or description; the nearest thing
 is a drywall sub. Painting: DB subs it often, mostly as lump sums from Jeff
 Southworth's Drywall & Painting, and 261257 Reynolds carries a
 "Seal/Prime & Paint Ceiling" line at $3.95 a square foot. When there is no

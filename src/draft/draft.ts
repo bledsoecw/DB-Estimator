@@ -254,7 +254,7 @@ export interface DraftOptions {
 const PICK_MAX_TOKENS = 8_000;
 const DRAFT_MAX_TOKENS = 32_000;
 const HISTORY_MAX_TOKENS = 16_000;
-const MAX_TERMS = 10;
+export const MAX_TERMS = 16;
 
 const NO_PROPOSALS: GapProposals = { cost: ZERO, price: ZERO, gaps: 0 };
 
@@ -422,7 +422,11 @@ export async function draftEstimate(
     if (terms.length > 0) report = await opts.history!.search(terms);
     const matched = report.terms.some((t) => t.jobs.length > 0);
     let skipped: string | null = terms.length > 0 && !matched ? 'no past DB work matched any search term' : null;
-    if (!matched) rememberNone(store, toSearch, evidence.jobName);
+    // A target whose terms did not make the cut was not searched: what the model says about it is not
+    // history, and the price book must not learn "nothing" for terms nobody looked for.
+    const searchedOnes = searchedTargets(toSearch, terms);
+    const notSearched = new Set(toSearch.filter((t) => t.lookBack.length > 0 && !searchedOnes.includes(t)).map((t) => t.id));
+    if (!matched) rememberNone(store, searchedOnes, evidence.jobName);
 
     // Who goes to the model: every searched target when something was found;
     // every gap still without a number, for a catalog match, a regional
@@ -431,7 +435,10 @@ export async function draftEstimate(
     // can say whether a catalog line is the same thing, and a catalog line
     // beats a history price (pass 3 of 261323 flagged batt insulation as
     // nowhere in the catalog because the book had priced it).
-    const forModel: HistoryTarget[] = matched ? [...toSearch] : toSearch.filter((t) => t.kind === 'gap');
+    const forModel: HistoryTarget[] = (matched ? [...toSearch] : toSearch.filter((t) => t.kind === 'gap')).map((t) =>
+      notSearched.has(t.id)
+        ? { ...t, note: `Its terms were not searched this run (at most ${MAX_TERMS} are); say match "none" and that it was not searched, and give no past work for it.` }
+        : t);
     gaps.forEach((g, i) => {
       const id = `gap-${i}`;
       const hasCandidates = (candidatesByGap.get(i)?.length ?? 0) > 0;
@@ -477,7 +484,7 @@ export async function draftEstimate(
       });
       attachHistory(lines, gaps, searched, margins);
       findings = searched.length;
-      remember(store, toSearch, searched, evidence.jobName);
+      remember(store, searchedOnes, searched, evidence.jobName);
       placeGaps(gaps, searched, templates);
       found.push(...resolveGaps(gaps, searched, candidatesByGap, margins));
       if (catalog) catalog.found = found.length;
@@ -693,32 +700,79 @@ export function historyTargets(lines: DraftLine[], gaps: DraftGap[]): HistoryTar
       kind: 'line', id: l.lineId, name: l.name, quantity: l.quantity, unit: l.unit,
       costTypeName: l.costTypeName, basis: l.basis,
       templateUnitCost: l.priced ? Number(l.unitCost) / 10_000 : null,
-      lookBack: l.lookBack,
+      lookBack: withKeyWord(l.lookBack),
     });
   }
   gaps.forEach((g, i) => {
     out.push({
       kind: 'gap', id: `gap-${i}`, name: g.scope, quantity: g.quantity, unit: g.unit,
-      costTypeName: g.costType, basis: g.basis, templateUnitCost: null, lookBack: g.lookBack,
+      costTypeName: g.costType, basis: g.basis, templateUnitCost: null, lookBack: withKeyWord(g.lookBack),
     });
   });
   return out;
 }
 
-/** Lower-cased, deduplicated, and capped; the search costs a query a term. */
+/**
+ * Words that say nothing about the trade, so they never stand alone as a
+ * search: "floor" would return every flooring line DB ever sold.
+ */
+const GENERIC_WORDS = new Set([
+  'floor', 'floors', 'flooring', 'wall', 'walls', 'ceiling', 'ceilings', 'labor', 'install', 'installed', 'installation',
+  'subs', 'subcontract', 'subcontractor', 'material', 'materials', 'basement', 'room', 'house', 'home', 'work', 'repair',
+  'repairs', 'replace', 'replacement', 'system', 'package', 'pckg', 'coat', 'coats', 'finish', 'false', 'resistant',
+  'interior', 'exterior', 'custom', 'standard', 'premium', 'with', 'from', 'over', 'under', 'into', 'onto', 'each',
+]);
+
+/** The word of a phrase that names the trade: the first of four letters or more that is not generic. "epoxy floor coating" → "epoxy". */
+export function keyWord(term: string): string | null {
+  const words = term.toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 4 && !GENERIC_WORDS.has(w));
+  return words[0] ?? null;
+}
+
+/**
+ * A target's terms with its key word first when every term is a phrase. The
+ * search matches the term as written, so "epoxy floor coating" misses the
+ * Myers line, "Epoxy Sub Pckg", that "epoxy" finds.
+ */
+export function withKeyWord(lookBack: string[]): string[] {
+  const terms = lookBack.map((t) => t.trim()).filter(Boolean);
+  if (terms.length === 0 || terms.some((t) => !/\s/.test(t))) return terms;
+  const key = keyWord(terms[0]!);
+  if (!key || terms.some((t) => t.toLowerCase() === key)) return terms;
+  return [key, ...terms];
+}
+
+/**
+ * The terms to search: lower-cased, deduplicated and capped, since the
+ * search costs a few queries a term. Dealt out in rounds, every target's
+ * first term before any target's second, and gaps first, then subcontracted
+ * lines, then labor lines: 25-0000 (2026-10-01) filled a cap of ten with the
+ * paint, drywall and flooring lines' terms before the epoxy gap's first term
+ * was reached, and the Myers epoxy quote was never looked for.
+ */
 export function uniqueTerms(targets: HistoryTarget[]): string[] {
+  const rank = (t: HistoryTarget): number => (t.kind === 'gap' ? 0 : t.costTypeName === 'Subcontractor' ? 1 : 2);
+  const lists = [...targets]
+    .sort((a, b) => rank(a) - rank(b))
+    .map((t) => t.lookBack.map((x) => x.trim().toLowerCase()).filter(Boolean));
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const t of targets) {
-    for (const raw of t.lookBack) {
-      const term = raw.trim().toLowerCase();
-      if (!term || seen.has(term)) continue;
+  for (let round = 0; lists.some((l) => round < l.length); round++) {
+    for (const l of lists) {
+      const term = l[round];
+      if (term === undefined || seen.has(term)) continue;
       seen.add(term);
       out.push(term);
       if (out.length >= MAX_TERMS) return out;
     }
   }
   return out;
+}
+
+/** The targets at least one of whose terms was searched. Only their findings are history; only they are remembered. */
+export function searchedTargets(targets: HistoryTarget[], terms: string[]): HistoryTarget[] {
+  const set = new Set(terms);
+  return targets.filter((t) => t.lookBack.some((x) => set.has(x.trim().toLowerCase())));
 }
 
 /**
