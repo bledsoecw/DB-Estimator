@@ -100,19 +100,27 @@ The drafter and the build flag any line counted in one unit and priced per
 another (`src/draft/checks.ts`). The sweep below covers the rest of the
 templates.
 
-## Found 2026-10-01: every template line counted in one unit and priced per another
+## Changed 2026-10-01: every construction template line now in its price's unit
 
 A sweep of all 1,977 template lines (every catalog line inside a template
 group; each one points at a priced item). For each of the organization's 28
 units, JobTread was asked for the lines in that unit whose price item is in a
 different one, plus the lines with no unit whose item has one and the reverse.
-96 lines disagree, on 31 price items. Nothing below has been changed yet.
+96 lines disagreed, on 31 price items.
+
+At Carl's request the same day, groups 1 to 4 below were applied through
+`updateCostItem` (`unitId` only; no price changed): 73 lines set to their
+price's unit, and two items, Bulk Excavation and Electrical Sub, set to the
+unit their lines and formulas use. The shutters are priced per pair (the item
+reads "One set of vinyl shutters"), so their lines went to Set. Group 5, the
+roofing templates, was left alone. The sweep was then run again: the only
+mismatches left are the 19 roofing lines in group 5.
 
 JobTread prices a line as its quantity times the item's price, whatever the
 line's unit says. So a mismatch matters exactly when a rep, or the drafter,
 counts in the line's unit and the price is per something else.
 
-### 1. Wrong dollars when counted as the line says: the line's unit should be the price's (45 lines)
+### 1. Wrong dollars when counted as the line says: each line set to its price's unit (45 lines, applied)
 
 | Item, price (cost / price) | Line says | Price is per | Lines | Templates (line ids) |
 |---|---|---|---|---|
@@ -131,14 +139,14 @@ What it costs when counted as the line says: 120 SF of bathroom plumbing at
 $55 is $6,600; eight hours of a fireplace sub at $2,500 is $20,000; five
 squares of soffit at $4 is $20 instead of $2,000 for 500 SF.
 
-### 2. The item's unit looks wrong, not the lines' (7 lines, 2 items)
+### 2. The item's unit was wrong, not the lines' (applied: Bulk Excavation to Cubic Yard; Electrical Sub and its 3 lines to Hours)
 
-| Item, price | Item says | Lines say | Lines | Why the item | Templates (line ids) |
+| Item, price | Item said | Lines say | Lines | Why the item | Templates (line ids) |
 |---|---|---|---|---|---|
 | Bulk Excavation `22PCCDhfeApu`, $29.63 / $53.87, Labor | Hours | Cubic Yard | 4 | every line's formula is `({Area}*{Depth})/27`, cubic yards | X-Division 02 `22PF3nUfgGv6`; X-Division 03 `22PFHFwr6WFD`; Addition/House Build `22PLm9zvBKbU`; Covered Porch `22PLxKt8KKdm` |
 | Electrical Sub `22PLiTAjtd8Y`, $55 / $79.75 | Lump Sum | Each | 3 | the same $55 as Drywall Sub, which Carl set to Hours; item and lines would go to Hours | X-Division 16 `22PLiTV8MfcE`; Bathroom Remodel `22PLm7f9eikY`; Addition/House Build `22PLwktUit8b` |
 
-### 3. Labels only: the dollars come out right either way (21 lines)
+### 3. Labels only: the dollars come out right either way (21 lines, applied)
 
 A package counted as 1 Each or 1 Lump Sum costs the same; a line with no unit
 leaves the rep to guess what to count. Aligning the line to its price's unit
@@ -157,13 +165,13 @@ changes no dollars.
 | 3CC0300 - Fndtn- Abv Grnd Stem → `22PCCDhsTyPP`, $21 | no unit | Square Foot | 1 | X-Division 03 `22PFGvmC9eVx` |
 | 3CC0600 - Concrete Cookie → `22PCCDhuX2Ra`, $10 | Bag | Each | 1 | X-Division 03 `22PF3pw9AxhD` |
 
-### 4. Needs a decision (4 lines)
+### 4. Shutters (4 lines, applied: priced per pair, lines set to Set)
 
-| Item, price | Line says | Price is per | Lines | The question | Templates (line ids) |
+| Item, price | Line said | Price is per | Lines | Decision | Templates (line ids) |
 |---|---|---|---|---|---|
-| Shutters `22PL8kngwMvL`, $91.16 / $132.18, Materials | Each | Set | 4 | Is $91.16 a pair? Counted per shutter it doubles. | X-Division 07 `22PL9Cz5xTVg`; Siding `22PLkvvLassQ`; Addition/House Build `22PLwk8fHWxW`; Door/Window Installation `22PSSgVruC4g` |
+| Shutters `22PL8kngwMvL`, $91.16 / $132.18, Materials | Each | Set | 4 | Carl: priced per pair; a rep counts pairs | X-Division 07 `22PL9Cz5xTVg`; Siding `22PLkvvLassQ`; Addition/House Build `22PLwk8fHWxW`; Door/Window Installation `22PSSgVruC4g` |
 
-### 5. Roofing templates (19 lines): for Shawn
+### 5. Roofing templates (19 lines): left for Shawn, unchanged
 
 Roofing is priced from Shawn's templates, so these are listed for him, not
 proposed here.
@@ -180,6 +188,10 @@ proposed here.
 | Aluminum Trim Coil - Color `22PdWbexnWH4`, $2.79 | no unit | Linear Feet | 1 | *Roofing - DB Duration Shingle Roofing `22PdWbhip8KC` |
 | Platinum Metals 40 Warranty `22PHfSBPyCTr`, DB 10 YR Wrkmnshp Warranty `22PHfRuTnaxF`, no price | Square | no unit | 3 | *Roofing - Exposed Fastener `22PHfSDSvNgJ`; *Roofing - Standing Seam `22PTSS9tH6kY` `22PTSS9tH6kZ` |
 | Permit `22PEjZMRaX6W`, $0 | no unit | Lump Sum | 4 | *Roofing - Exposed Fastener `22PHefqheW5y`; X-Division 07 › Roofing `22PL9HJLLZGM`; Addition/House Build › Roofing `22PLwk8fHA3b`; *Roofing - DB Duration Shingle Roofing `22PQQzg4pRLb` |
+
+Job budgets are not touched by any of this: a job keeps its own copy of
+every line it was built with. Budgets built after today get the corrected
+units.
 
 How the sweep was run, so it can be run again: for each unit id `U`, template
 lines with `unit.id = U` and `organizationCostItem.unit.id != U` (the `!=`
