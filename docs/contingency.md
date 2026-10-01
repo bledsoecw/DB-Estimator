@@ -130,3 +130,16 @@ page says what the base is with contingency. Options carry their own share:
 The line itself is never the model's to keep or drop. `scopeLines` leaves it
 out of what the model sees and out of what the rep is told to delete, and a
 model that names its id gets it rejected with the reason.
+
+## On a job, through the API — VERIFIED 2026-10-01
+
+The formula is stored on a job line but not evaluated by the API: a line
+created with `quantityFormula` alone on job 25-0000 kept `quantity: null`
+after both parameters were set, and a null quantity bills one unit, so the
+line read $1.00. `npm run build-budget` therefore sends the quantity in
+dollars with the formula (both are stored; the line then costs what the
+quantity says), and sets the two job parameters first with `updateJob`,
+merged with the job's existing parameters because the list replaces. The
+rep who types the parameters in JobTread's own UI sees the line follow the
+formula; the point of sending the quantity is that the budget is right the
+moment it is built, before anyone opens it.

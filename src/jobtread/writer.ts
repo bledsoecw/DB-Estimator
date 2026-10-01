@@ -5,7 +5,8 @@
  * (client.ts, `assertReadOnly`). That guard stays. This file is the deliberate
  * exception the guard's comment asked for: a second client, under a second
  * grant key, that issues only the mutations named in `ALLOWED_MUTATIONS` and
- * nothing else. Adding a mutation means adding it to that list in a commit.
+ * nothing else — and `updateJob` only with the inputs `ALLOWED_INPUTS` names.
+ * Adding a mutation means adding it to that list in a commit.
  *
  * Rules:
  *   - The key comes from JOBTREAD_WRITE_GRANT_KEY, never from the read key, so
@@ -22,7 +23,16 @@ import { JobTreadError } from './client.ts';
 const DEFAULT_URL = 'https://api.jobtread.com/pave';
 
 /** The mutations this project is allowed to issue. Anything else is refused before it is sent. */
-export const ALLOWED_MUTATIONS: ReadonlySet<string> = new Set(['createCostItem', 'createCostGroup', 'deleteCostGroup']);
+export const ALLOWED_MUTATIONS: ReadonlySet<string> = new Set(['createCostItem', 'createCostGroup', 'deleteCostGroup', 'updateJob']);
+
+/**
+ * Mutations allowed only with these input keys. `updateJob` could rename a
+ * job or replace its whole budget (`lineItems`); here it may only set the
+ * job parameters the contingency formula reads.
+ */
+export const ALLOWED_INPUTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['updateJob', new Set(['id', 'parameters'])],
+]);
 
 export interface WriterOptions {
   grantKey: string;
@@ -93,6 +103,18 @@ export function assertAllowed(query: Record<string, unknown>): void {
       throw new Error(
         `Refusing to issue "${key}": only ${[...ALLOWED_MUTATIONS].join(', ')} are allowed (src/jobtread/writer.ts).`,
       );
+    }
+    const allowed = ALLOWED_INPUTS.get(key);
+    if (allowed) {
+      const node = query[key];
+      const input = node && typeof node === 'object' ? (node as Record<string, unknown>)['$'] : undefined;
+      const inputKeys = input && typeof input === 'object' ? Object.keys(input as Record<string, unknown>) : [];
+      const extra = inputKeys.filter((k) => !allowed.has(k));
+      if (extra.length) {
+        throw new Error(
+          `Refusing "${key}" with ${extra.map((k) => `"${k}"`).join(', ')}: only ${[...allowed].join(', ')} may be set (src/jobtread/writer.ts).`,
+        );
+      }
     }
   }
 }

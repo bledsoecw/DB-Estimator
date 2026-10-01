@@ -1113,7 +1113,8 @@ The first mutations this project issued, for the contingency line
   `[{ Area: 1000 }, { Depth }]` where only `Area` was filled: the `Depth`
   entry exists because a template formula names it, which is the evidence
   that JobTread creates a parameter a formula refers to when the template is
-  added. REPORTED from that one job; not yet watched happening.
+  added. REPORTED from that one job; not yet watched happening. Setting
+  them through the API is VERIFIED below (*Writing a job budget*).
 - Live formulas in the catalog are `round({Area}/8.5)`, `ceil(({Area} *
   {Depth}) / 27)` and the like: parameters in braces, `round`/`ceil`,
   arithmetic. JobTread's marketing says formulas may also reference other
@@ -1151,3 +1152,54 @@ running; forty items with the same chain go through, and so do a hundred with
 a three-level chain (probed 2026-09-30 after a live run died on it). So the
 catalog search pages at forty and retries a refused page at twenty, then ten,
 and a failed search is a note on the draft page rather than a lost run.
+
+## Writing a job budget — VERIFIED 2026-10-01
+
+Probed on test job 25-0000 (`22PDZbwDdZfq`), then the drafter's first build
+there (`src/draft/build.ts`; the plan and the read-back are in
+`test/fixtures/build-sample.json`). Everything below was observed, not read.
+
+- **One `createCostGroup` with `jobId` builds a whole tree.** Nested
+  `lineItems` take `{ "_type": "costGroup", … }` and `{ "_type": "costItem", … }`
+  exactly as in the catalog write above; the root of the mutation carries no
+  `_type`. Selection groups go in the same call: `minSelectionsRequired`,
+  `maxSelectionsAllowed`, `showChildDeltas` on the group, `isSelected` on a
+  choice group under it, and all four read back as sent (`Flooring` 1/1/true;
+  `LVP` selected; an add-on at 0/1). Fifteen groups and nineteen lines went in
+  four calls; the result selection `createdCostGroup { id, name,
+  descendentCostItems { count } }` reports what was made.
+- **A job line needs `costCodeId`.** The first probe without one was refused:
+  *"A costCodeId is required"* — even with `organizationCostItemId`. `unitId`
+  may be null (the `Permit` line has no unit) and `costTypeId` was always sent.
+- **The catalog item's price is NOT copied.** A job line created with only
+  `organizationCostItemId` reads `unitCost: null, unitPrice: null`. The build
+  sends both from the item it read, so a job line prices the way JobTread
+  prices a template line the day it is built.
+- **A null quantity bills one unit.** 4,388 job lines in the organization have
+  `quantity: null`, and each costs exactly its `unitCost` (`Hauling &
+  Disposal` 250 → cost 250). So a line whose count is not known yet is
+  created at `quantity: 0`, never null.
+- **`quantityFormula` is stored, not evaluated.** A line with
+  `{Contingency Base} * {Contingency Rate} / 100` kept `quantity: null` after
+  both parameters were set, and a re-save did not change that; a formula on a
+  parameter with no space in its name (`{Rate} * 20`) did not evaluate either.
+  Job 25-0003's template-built lines do carry computed quantities
+  (`round({Area}/8.5)` → 118), so the UI evaluates; the API does not. Sending
+  `quantity` and `quantityFormula` together stores both and the line costs
+  what the quantity says.
+- **`updateJob.$.parameters` takes `{ name, value }` pairs and REPLACES the
+  list.** A `_type` is refused (*"The value "number" was found at
+  …parameters.0._type but no value is ever expected there"*); the result
+  selection `updatedJob` does not exist, so the call returns `{}` and the job
+  is read again. Sending one parameter dropped the other, so the build sends
+  the job's existing parameters back with its own.
+- **`deleteCostGroup.$ { id }`** on a job group removes it and everything
+  under it, result `{}`; `deleteCostItem` and `updateCostItem` exist and were
+  used only to probe (they are not in the writer's allowlist).
+- **Reading a budget back** the way `fetchBudget` does — `job.costGroups` and
+  `job.costItems` with `[["document","id"],"=",null]` — returns the new groups
+  with `parentCostGroup` and the new lines with `costGroup`, `cost` and
+  `price`, which is how `verifyBuild` counts the lines under each top-level
+  group. `costItem { $: { id } }` is a root field; a template line's
+  `organizationCostItem` gives the item it prices from, so one aliased query
+  prices a batch of found lines.

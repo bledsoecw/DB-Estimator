@@ -379,8 +379,14 @@ template (dry run by default; `--apply` needs a separate
 The page is written as the steps the rep takes in JobTread — add this
 template, keep these lines, delete those, set these quantities, put these in
 a selection group, write this in General Description — with a Copy button.
-A JSON copy of the draft sits beside it; it is the payload the write path will
-push one day. Today the rep follows the steps, and Kristen still reviews.
+A JSON copy of the draft sits beside it, and `npm run build-budget -- <job>`
+builds it onto the job's Budget tab: the template's scope group with the kept
+lines in their sections, the General Description, the options as selection
+groups, the open items tagged `(DRAFT - Carl confirms)`, the contingency line
+and its parameters. Dry run by default; `--apply` writes under the separate
+`JOBTREAD_WRITE_GRANT_KEY`, and only a test job is built until `--live`. First
+built on test job 25-0000 on 2026-10-01 (`docs/drafter.md`, *Build it in
+JobTread*). Kristen still reviews.
 
 What it reads, what it costs (about $0.50 to $1.50 a job), what leaves the
 building, the gate before anyone trusts it, and what is not built yet are in

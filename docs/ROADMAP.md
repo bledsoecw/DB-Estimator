@@ -692,6 +692,13 @@ ULID over UUID because a hyphenated UUID is 36 chars and an unhyphenated one lea
 
 ### 7.3 The write path
 
+> Status 2026-10-01: the first write path in this repository is `npm run build-budget`
+> (`src/build-cli.ts`, `src/draft/build.ts`), which builds a drafted **job budget**, not a
+> document, as one `createCostGroup` per top-level group under a separate write grant, dry run
+> by default and gated to test jobs until `--live`. The document write below is still the
+> design for the estimate itself. What the job-budget write verified is in
+> `docs/jobtread-api-field-notes.md`, *Writing a job budget*.
+
 One atomic `createDocument` builds the entire nested tree. VERIFIED: the `lineItems` cap is **1500 declared independently at each level**, so it is a **per-level cap, not a document-wide node budget.** The largest real DB estimate is 100 nodes. No partial-tree state is ever observable — the best reliability property in the integration, and the design leans on it completely: we never build an estimate incrementally with `createCostGroup`/`createCostItem`.
 
 **The discriminator is the entity type, not the variant key.** VERIFIED: `createDocument.$.lineItems._on_newCostItem._type` is the constant **`"costItem"`**, and `_on_newCostGroup._type` is **`"costGroup"`**. New-versus-existing is discriminated by the **presence of `id`**. A payload using `"newCostItem"` as the `_type` string is rejected by validation — and this block is the artifact Phase 2b codes against.

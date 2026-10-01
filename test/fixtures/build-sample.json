@@ -1,0 +1,2421 @@
+{
+  "capturedAt": "2026-10-01T18:00:00.000Z",
+  "note": "A build of a hand-written pass-2 draft (the Haag basement shape: paint-or-frame the walls, LVP-or-epoxy floor, ceiling paint add-on, four gaps) onto test job 25-0000. Templates are the two X-Division templates from haag-basement.json; names, catalog items and ids are real, read 2026-10-01.",
+  "job": {
+    "id": "22PDZbwDdZfq",
+    "name": "25-0000 Kay Oss_Test Job 1",
+    "parameters": []
+  },
+  "draft": {
+    "job": {
+      "id": "22PDZbwDdZfq",
+      "name": "25-0000 Kay Oss_Test Job 1"
+    },
+    "model": "fixture",
+    "summary": "A basement refresh: paint the block walls or frame false walls in front of them, new floor, maybe the ceiling.",
+    "noFit": null,
+    "scopeOfWork": "Refresh the finished basement: prepare and paint the walls (or frame, insulate, drywall and paint false walls in front of the block), new flooring throughout, ceiling paint if the customer wants it. Existing fixtures stay. Customer clears the room before work starts.",
+    "templates": [
+      {
+        "id": "22PLCZU3cbqS",
+        "name": "X-Division 09 Finishes",
+        "role": "primary",
+        "why": "paint, drywall and flooring live here",
+        "keep": [
+          "22PLCchBuFMZ",
+          "22PLCchBuFMa",
+          "22PLhtLxcz9S",
+          "22PLCchBuFMU",
+          "22PLCchBuFMV",
+          "22PLCchBuFMQ",
+          "22PLhsr2Yx56",
+          "22PLhsr2Yx55",
+          "22PLhtLxcz9T"
+        ],
+        "delete": [],
+        "structuralLines": 0
+      },
+      {
+        "id": "22PF3gnGCuiB",
+        "name": "X-Division 01 General Requirements",
+        "role": "supplement",
+        "why": "project management and the permit",
+        "keep": [
+          "22PF3i5ZiGxs",
+          "22PF3i5ZiGxk"
+        ],
+        "delete": [],
+        "structuralLines": 0
+      }
+    ],
+    "lines": [
+      {
+        "lineId": "22PLCchBuFMZ",
+        "name": "Primer",
+        "template": "X-Division 09 Finishes",
+        "quantity": 4,
+        "unit": "Gallons",
+        "option": null,
+        "tracking": false,
+        "basis": "909 SF of wall at 250 SF a gallon, one coat"
+      },
+      {
+        "lineId": "22PLCchBuFMa",
+        "name": "Paint",
+        "template": "X-Division 09 Finishes",
+        "quantity": 6,
+        "unit": "Gallons",
+        "option": null,
+        "tracking": false,
+        "basis": "two coats on 909 SF"
+      },
+      {
+        "lineId": "22PLhtLxcz9S",
+        "name": "Paint Labor",
+        "template": "X-Division 09 Finishes",
+        "quantity": 24,
+        "unit": "Hours",
+        "option": null,
+        "tracking": false,
+        "basis": "three days, one painter"
+      },
+      {
+        "lineId": "22PLCchBuFMU",
+        "name": "Drywall Brd- Mat",
+        "template": "X-Division 09 Finishes",
+        "quantity": 30,
+        "unit": "Each",
+        "option": "Walls — Framed false walls",
+        "tracking": false,
+        "basis": "909 SF of false wall at 32 SF a sheet"
+      },
+      {
+        "lineId": "22PLCchBuFMV",
+        "name": "Drywall Brd- Labor",
+        "template": "X-Division 09 Finishes",
+        "quantity": 16,
+        "unit": "Hours",
+        "option": "Walls — Framed false walls",
+        "tracking": false,
+        "basis": "hang 30 sheets"
+      },
+      {
+        "lineId": "22PLCchBuFMQ",
+        "name": "Flooring",
+        "template": "X-Division 09 Finishes",
+        "quantity": 650,
+        "unit": "Square Foot",
+        "option": "Flooring — LVP",
+        "tracking": false,
+        "basis": "650 SF floor"
+      },
+      {
+        "lineId": "22PLhsr2Yx56",
+        "name": "Flooring Labor",
+        "template": "X-Division 09 Finishes",
+        "quantity": 20,
+        "unit": "Hours",
+        "option": "Flooring — LVP",
+        "tracking": false,
+        "basis": "two and a half days"
+      },
+      {
+        "lineId": "22PLhsr2Yx55",
+        "name": "Flooring - Sub",
+        "template": "X-Division 09 Finishes",
+        "quantity": 650,
+        "unit": "Square Foot",
+        "option": "Flooring — Epoxy",
+        "tracking": false,
+        "basis": "650 SF floor, sub-applied epoxy"
+      },
+      {
+        "lineId": "22PLhtLxcz9T",
+        "name": "Paint Labor - Sub",
+        "template": "X-Division 09 Finishes",
+        "quantity": 650,
+        "unit": "Square Foot",
+        "option": "Ceiling paint",
+        "tracking": false,
+        "basis": "spray the exposed joists if the customer wants it"
+      },
+      {
+        "lineId": "22PF3i5ZiGxs",
+        "name": "Project Management",
+        "template": "X-Division 01 General Requirements",
+        "quantity": 8,
+        "unit": "Hours",
+        "option": null,
+        "tracking": false,
+        "basis": "one hour a day for the job"
+      },
+      {
+        "lineId": "22PF3i5ZiGxk",
+        "name": "Permit",
+        "template": "X-Division 01 General Requirements",
+        "quantity": 1,
+        "unit": null,
+        "option": null,
+        "tracking": false,
+        "basis": "the city wants a permit for the electrical"
+      },
+      {
+        "lineId": "22PCCDhzbeZ9",
+        "name": "Vapor Barrier 4 mil",
+        "template": "catalog",
+        "quantity": 5,
+        "unit": "Each",
+        "option": "Walls — Framed false walls",
+        "tracking": false,
+        "basis": "909 SF of wall at 250 SF a roll, plus laps"
+      },
+      {
+        "lineId": "22PWbattLine",
+        "name": "Insulation - Batt",
+        "template": "Addition/House Build",
+        "quantity": 909,
+        "unit": "Square Foot",
+        "option": "Walls — Framed false walls",
+        "tracking": false,
+        "basis": "the false walls, floor to joist"
+      },
+      {
+        "lineId": "22PCCDhb8Dff",
+        "name": "Crew Labor",
+        "template": "catalog",
+        "quantity": 6,
+        "unit": "Hours",
+        "option": null,
+        "tracking": false,
+        "basis": "protect the floor and move the customer's shelving"
+      }
+    ],
+    "found": [
+      {
+        "lineId": "22PCCDhzbeZ9",
+        "name": "Vapor Barrier 4 mil",
+        "forGap": 2,
+        "source": {
+          "kind": "catalogItem",
+          "template": "catalog",
+          "group": "",
+          "alsoIn": [],
+          "pricedItemId": "22PCCDhzbeZ9"
+        },
+        "placeIn": {
+          "template": "X-Division 09 Finishes",
+          "group": "FINISHES › Drywall/Plaster",
+          "groupId": "22PLCchBuFMT"
+        },
+        "quantity": 5,
+        "unit": "Each",
+        "option": "Walls — Framed false walls",
+        "basis": "909 SF of wall at 250 SF a roll, plus laps"
+      },
+      {
+        "lineId": "22PWbattLine",
+        "name": "Insulation - Batt",
+        "forGap": 3,
+        "source": {
+          "kind": "templateLine",
+          "template": "Addition/House Build",
+          "group": "New Home Build › Phase 2 - Rough-In › Insulation",
+          "alsoIn": [],
+          "pricedItemId": "22PL8kUmtfhn"
+        },
+        "placeIn": {
+          "template": "X-Division 09 Finishes",
+          "group": "FINISHES › Drywall/Plaster",
+          "groupId": "22PLCchBuFMT"
+        },
+        "quantity": 909,
+        "unit": "Square Foot",
+        "option": "Walls — Framed false walls",
+        "basis": "the false walls, floor to joist"
+      },
+      {
+        "lineId": "22PCCDhb8Dff",
+        "name": "Crew Labor",
+        "forGap": 4,
+        "source": {
+          "kind": "catalogItem",
+          "template": "catalog",
+          "group": "",
+          "alsoIn": [],
+          "pricedItemId": "22PCCDhb8Dff"
+        },
+        "placeIn": null,
+        "quantity": 6,
+        "unit": "Hours",
+        "option": null,
+        "basis": "protect the floor and move the customer's shelving"
+      }
+    ],
+    "gaps": [
+      {
+        "scope": "Mold-resistant concrete paint",
+        "why": "No template or catalog line for a masonry waterproofing paint; the rep asked for it instead of the skim coat.",
+        "unit": "Square Foot",
+        "quantity": 909,
+        "costType": "Materials",
+        "option": "Walls — Paint the block",
+        "basis": "909 SF of block wall",
+        "resolved": null,
+        "catalogMatch": null,
+        "placeIn": {
+          "template": "X-Division 09 Finishes",
+          "group": "FINISHES › Paint",
+          "groupId": "22PLCchBuFMY"
+        },
+        "proposed": {
+          "source": "regional",
+          "unitCost": "$0.45",
+          "unitPrice": "$0.6525",
+          "cost": "$409.05",
+          "price": "$593.12"
+        },
+        "regionalUnitCost": "$0.45",
+        "regionalUnitPrice": "$0.6525",
+        "history": {
+          "regionalBasis": "Regional ballpark for masonry waterproofing paint, material only, two coats."
+        }
+      },
+      {
+        "scope": "Extend or relocate outlets and boxes",
+        "why": "The false walls move the outlets off the block; the electrician's hours are not known until the walls are laid out.",
+        "unit": "Hours",
+        "quantity": null,
+        "costType": "Labor",
+        "option": "Walls — Framed false walls",
+        "basis": "",
+        "resolved": null,
+        "catalogMatch": {
+          "lineId": "22PLiT7FjgXV",
+          "name": "Electrical Labor",
+          "kind": "catalogItem",
+          "unit": "Hours"
+        },
+        "placeIn": null,
+        "proposed": null,
+        "regionalUnitCost": null,
+        "regionalUnitPrice": null,
+        "history": null
+      },
+      {
+        "scope": "Plastic vapor barrier behind the false walls",
+        "why": "Covered from the catalog.",
+        "unit": "Each",
+        "quantity": 5,
+        "costType": "Materials",
+        "option": "Walls — Framed false walls",
+        "basis": "",
+        "resolved": {
+          "lineId": "22PCCDhzbeZ9",
+          "name": "Vapor Barrier 4 mil",
+          "kind": "catalogItem",
+          "template": "catalog",
+          "quantity": 5,
+          "unit": "Each",
+          "basis": "909 SF at 250 SF a roll"
+        },
+        "catalogMatch": null,
+        "placeIn": null,
+        "proposed": null,
+        "regionalUnitCost": null,
+        "regionalUnitPrice": null,
+        "history": null
+      },
+      {
+        "scope": "Batt insulation in the false walls",
+        "why": "Covered from another template.",
+        "unit": "Square Foot",
+        "quantity": 909,
+        "costType": "Materials",
+        "option": "Walls — Framed false walls",
+        "basis": "",
+        "resolved": {
+          "lineId": "22PWbattLine",
+          "name": "Insulation - Batt",
+          "kind": "templateLine",
+          "template": "Addition/House Build",
+          "quantity": 909,
+          "unit": "Square Foot",
+          "basis": "the false walls"
+        },
+        "catalogMatch": null,
+        "placeIn": null,
+        "proposed": null,
+        "regionalUnitCost": null,
+        "regionalUnitPrice": null,
+        "history": null
+      },
+      {
+        "scope": "Protect the floor and move the shelving",
+        "why": "Covered by Crew Labor.",
+        "unit": "Hours",
+        "quantity": 6,
+        "costType": "Labor",
+        "option": null,
+        "basis": "",
+        "resolved": {
+          "lineId": "22PCCDhb8Dff",
+          "name": "Crew Labor",
+          "kind": "catalogItem",
+          "template": "catalog",
+          "quantity": 6,
+          "unit": "Hours",
+          "basis": "a morning"
+        },
+        "catalogMatch": null,
+        "placeIn": null,
+        "proposed": null,
+        "regionalUnitCost": null,
+        "regionalUnitPrice": null,
+        "history": null
+      },
+      {
+        "scope": "Framing lumber for the false walls",
+        "why": "No framing line in the chosen templates; past work prices it.",
+        "unit": "Linear Feet",
+        "quantity": 120,
+        "costType": "Materials",
+        "option": "Walls — Framed false walls",
+        "basis": "120 LF of wall, 2x4 plates and studs at 16 inches",
+        "resolved": null,
+        "catalogMatch": null,
+        "placeIn": {
+          "template": "X-Division 09 Finishes",
+          "group": "FINISHES › Drywall/Plaster",
+          "groupId": "22PLCchBuFMT"
+        },
+        "proposed": {
+          "source": "history",
+          "unitCost": "$3.55",
+          "unitPrice": "$5.92",
+          "cost": "$426.00",
+          "price": "$710.40"
+        },
+        "regionalUnitCost": null,
+        "regionalUnitPrice": null,
+        "history": {
+          "suggestionBasis": "25-0003 Vorst Addition, Framing Wall at $3.55 a linear foot"
+        }
+      }
+    ],
+    "contingency": {
+      "rate": 8,
+      "why": "a remodel where the walls may move",
+      "base": "$2,380.00",
+      "amount": "$190.40",
+      "options": [],
+      "parameters": {
+        "Contingency Rate": 8,
+        "Contingency Base": 2380
+      },
+      "line": null
+    },
+    "revision": {
+      "pass": 2,
+      "directions": [
+        "forget the skim coat; mold-resistant paint, or an option to frame false walls"
+      ],
+      "changes": null
+    },
+    "questions": [],
+    "rejected": [],
+    "rejectedPicks": []
+  },
+  "templates": [
+    {
+      "id": "22PLCZU3cbqS",
+      "name": "X-Division 09 Finishes",
+      "description": "Typical elements from 09FN/Finishes division of a Construction Project",
+      "groups": [
+        {
+          "id": "22PTA4gWzNE2",
+          "name": "FINISHES",
+          "position": "n",
+          "parentId": "22PLCZU3cbqS",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMP",
+          "name": "Flooring",
+          "position": "k",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMS",
+          "name": "Casing",
+          "position": "l",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMT",
+          "name": "Drywall/Plaster",
+          "position": "m",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMY",
+          "name": "Paint",
+          "position": "n",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMb",
+          "name": "Tile",
+          "position": "o",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        },
+        {
+          "id": "22PLCchBuFMd",
+          "name": "Acoustical",
+          "position": "p",
+          "parentId": "22PTA4gWzNE2",
+          "isSelection": false
+        }
+      ],
+      "lines": [
+        {
+          "id": "22PLht84FDJ6",
+          "name": "Trim - Crown Molding",
+          "description": "Prefinished poplar 3 1/4\" Colonial style crown molding trim; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "j",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8WCF5zb2",
+            "name": "Trim - Crown Molding",
+            "unitCost": 60,
+            "unitPrice": 87,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLht84FDJ7",
+          "name": "Trim - Casing",
+          "description": "Prefinished poplar 2 1/4\" Colonial door & window casing; 16' lengths",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "k",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDkQUYjD",
+            "name": "Trim - Casing",
+            "unitCost": 37.11,
+            "unitPrice": 53.80949999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMQ",
+          "name": "Flooring",
+          "description": "Flooring materials allowance for selection from our offered stock of Luxury Vinyl Plank flooring for client, up to $5/sf and allowing 10% for overages.\n\nAdditional flooring options are available at an upcharge per square foot",
+          "unit": "Square Foot",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMP",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2qynkQ",
+            "name": "Flooring",
+            "unitCost": 5,
+            "unitPrice": 7.249999999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMU",
+          "name": "Drywall Brd- Mat",
+          "description": "Materials necessary to hang drywall, installed generally as follows:\n- 5/8\" drywall board for all ceiling areas, except bathroom(s)\n- 1/2\" drywall board for all wall areas including garage, except bathroom(s)\n- 1/2\" green board for all ceiling and wall areas of bathroom(s)",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMT",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2cGYqw",
+            "name": "Drywall Board - Mat",
+            "unitCost": 1.02,
+            "unitPrice": 1.4789999999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMZ",
+          "name": "Primer",
+          "description": "Primer material for newly installed drywall.",
+          "unit": "Gallons",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMY",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2t6Uci",
+            "name": "Primer",
+            "unitCost": 30,
+            "unitPrice": 43.5,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLht84FDJ8",
+          "name": "Trim - Chair Rail",
+          "description": "Prefinished poplar 2 5/8\" chair rail molding; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8WecAJcW",
+            "name": "Trim - Chair Rail",
+            "unitCost": 58.62,
+            "unitPrice": 84.999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMR",
+          "name": "Flooring - Miscellaneous MAT",
+          "description": "Allowance for additional materials necessary for flooring installation, such as underlayment, transition(s), etc.",
+          "unit": "Square Foot",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMP",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PHGY7DE6sK",
+            "name": "Flooring - Misc. Material",
+            "unitCost": 0.75,
+            "unitPrice": 1.0875,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMV",
+          "name": "Drywall Brd- Labor",
+          "description": "Hanging of drywall board",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMT",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2cyGTZ",
+            "name": "Drywall Board Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLCchBuFMa",
+          "name": "Paint",
+          "description": "Includes good quality paint: two coats to walls, 1 coat to ceiling.  Does not include primer.\n\nPaint estimate affords client allowance for up to 2 color choices. Additional colors can be applied at an additional charge of $100/color change.",
+          "unit": "Gallons",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMY",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2xvbRA",
+            "name": "Paint",
+            "unitCost": 85,
+            "unitPrice": 123.24999999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMc",
+          "name": "Tile Package - Kitchen",
+          "description": "Allowance for tile materials and labor for installation of custom tiling in KITCHEN (Backsplash) between countertop and wall cabinet bottoms and area above stove/cook top and/or sink. Client should note that this is simply a place holder, estimated from a final AVERAGE cost per sqft as seen in previous clients' projects.",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMb",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2pZPGS",
+            "name": "Tile",
+            "unitCost": 20,
+            "unitPrice": 28.999999999999996,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLht84FDJ9",
+          "name": "Trim - Baseboard",
+          "description": "Prefinished poplar 3 1/4\" Colonial style baseboard trim; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDkUK5gW",
+            "name": "Trim - Baseboard",
+            "unitCost": 45.49,
+            "unitPrice": 65.9605,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLhvMncrwS",
+          "name": "Acoustic Ceiling Tile",
+          "description": "Acoustic ceiling tile materials",
+          "unit": "Square Foot",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMd",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhv2myhvk",
+            "name": "Acoustic Ceiling Tile",
+            "unitCost": 2,
+            "unitPrice": 2.9,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLCchBuFMW",
+          "name": "Drywall Mud Mat",
+          "description": "Materials necessary to mud, tape and sand drywall.",
+          "unit": "Square Foot",
+          "costTypeName": "Materials",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMT",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2kbSB2",
+            "name": "Drywall Mud - Mat",
+            "unitCost": 1.31,
+            "unitPrice": 1.8995,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLhsr2Yx55",
+          "name": "Flooring - Sub",
+          "description": "Materials and/or labor for flooring installation",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMP",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLN8SFdxqy",
+            "name": "Flooring Sub",
+            "unitCost": 7.5,
+            "unitPrice": 10.875,
+            "costTypeName": "Subcontractor"
+          }
+        },
+        {
+          "id": "22PLht84FDJA",
+          "name": "Trim - Interior Jamb Extension",
+          "description": "Primed poplar 1 x 6 interior jamb; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8X9QRzL9",
+            "name": "Trim - Interior Jamb Extension",
+            "unitCost": 50,
+            "unitPrice": 72.5,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLhtLxcz9S",
+          "name": "Paint Labor",
+          "description": "Crew Labor for painting and/or priming",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMY",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLN6iLdCtV",
+            "name": "Paint Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLhuAQSEVj",
+          "name": "Tile Labor",
+          "description": "Cost per square foot to install tile materials.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMb",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhtg427Qv",
+            "name": "Tile Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLhvMncrwT",
+          "name": "Acoustic Ceiling Tile Labor",
+          "description": "Crew labor to install acoustic ceiling tile materials",
+          "unit": "Square Foot",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMd",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhv3SDtZ2",
+            "name": "Acoustic Ceiling Tile Labor",
+            "unitCost": 3.5,
+            "unitPrice": 6.363636,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLCchBuFMX",
+          "name": "Drywall Mud Labor",
+          "description": "Labor which includes mudding, taping and sanding walls, including flat finish on wall and knockdown finish on ceilings.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMT",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCE2mJ4yV",
+            "name": "Drywall Mud Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLhsr2Yx56",
+          "name": "Flooring Labor",
+          "description": "Labor for crew to install flooring materials.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMP",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhscfQUQU",
+            "name": "Flooring Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PLht84FDJB",
+          "name": "Trim - Jamb Extension",
+          "description": "3\" jamb extension; 16' length",
+          "unit": "Each",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8X2XRdfQ",
+            "name": "Trim - Jamb Extension",
+            "unitCost": 42.08,
+            "unitPrice": 61.01599999999999,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLhtLxcz9T",
+          "name": "Paint Labor - Sub",
+          "description": "Subcontractor for painting and/or priming",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMY",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLN6y6kK5V",
+            "name": "Paint Labor - Sub",
+            "unitCost": 3.95,
+            "unitPrice": 5.7275,
+            "costTypeName": "Subcontractor"
+          }
+        },
+        {
+          "id": "22PLhuAQSEVk",
+          "name": "Tile Sub",
+          "description": "Cost for labor and materials for sub to install tile.",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMb",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhttXnjb8",
+            "name": "Tile Sub",
+            "unitCost": 50,
+            "unitPrice": 72.5,
+            "costTypeName": "Subcontractor"
+          }
+        },
+        {
+          "id": "22PLhvUt4NxF",
+          "name": "Acoustic Ceiling Tile Sub",
+          "description": "Crew labor to install acoustic ceiling tile materials",
+          "unit": "Square Foot",
+          "costTypeName": "Subcontractor",
+          "costCodeName": "Finishes",
+          "groupId": "22PLCchBuFMd",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLhvP6WfCF",
+            "name": "Acoustic Ceiling Tile Sub",
+            "unitCost": 6,
+            "unitPrice": 8.7,
+            "costTypeName": "Subcontractor"
+          }
+        },
+        {
+          "id": "22PLht84FDJC",
+          "name": "Trim - Stair Rail",
+          "description": "Stairwell handrail Material; figured by the linear foot.",
+          "unit": "Linear Feet",
+          "costTypeName": "Materials",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "p",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PL8XGScyGe",
+            "name": "Trim - Stair Rail",
+            "unitCost": 3.1,
+            "unitPrice": 4.495,
+            "costTypeName": "Materials"
+          }
+        },
+        {
+          "id": "22PLht84FDJD",
+          "name": "Trim Labor",
+          "description": "Crew labor to install interior finish trim.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Woods & Plastics",
+          "groupId": "22PLCchBuFMS",
+          "position": "q",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLefx3GeQF",
+            "name": "Trim Labor",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "22PF3gnGCuiB",
+      "name": "X-Division 01 General Requirements",
+      "description": "Typical elements from 01GR/General Requirements division of a Construction Project",
+      "groups": [
+        {
+          "id": "22PTA3VXfn5u",
+          "name": "GENERAL REQUIREMENTS",
+          "position": "n",
+          "parentId": "22PF3gnGCuiB",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3ikEm3Fr",
+          "name": "Permits",
+          "position": "l",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3ikEm3Fs",
+          "name": "Measurements",
+          "position": "m",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3ikEm3Ft",
+          "name": "Design",
+          "position": "n",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3jeyxCey",
+          "name": "Project/Site Management",
+          "position": "o",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        },
+        {
+          "id": "22PF3jeyxCez",
+          "name": "Rentals",
+          "position": "p",
+          "parentId": "22PTA3VXfn5u",
+          "isSelection": false
+        }
+      ],
+      "lines": [
+        {
+          "id": "22PF3jeyxCf2",
+          "name": "Rental - Buggy/Dumpster",
+          "description": "Buggy and/or Dumpster Rental",
+          "unit": "Hours",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "h",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDasAkQZ",
+            "name": "Rental - Buggy/Dumpster",
+            "unitCost": 6,
+            "unitPrice": 8.7,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf3",
+          "name": "Rental - Concrete Chain Saw",
+          "description": "1 day rental of Concrete Chain Saw from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "i",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaxp2pQ",
+            "name": "Rental - Concrete Chain Saw",
+            "unitCost": 160,
+            "unitPrice": 231.99999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf4",
+          "name": "Rental - 14\" Concrete Saw",
+          "description": "1 day rental of 14\" Concrete Saw from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "j",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDax7Qcx",
+            "name": "Rental - 14\" Concrete Saw",
+            "unitCost": 50,
+            "unitPrice": 72.5,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf5",
+          "name": "Rental - Grappler",
+          "description": "1 day rental of Grappler from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "k",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDauw2zs",
+            "name": "Rental - Grappler",
+            "unitCost": 165,
+            "unitPrice": 239.24999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxt",
+          "name": "HOVER Complete - Simple",
+          "description": "Entire Exterior, with 1 - 4 facets - 3D Report that captures exterior dimensions of a structure.",
+          "unit": "Each",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fs",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaj5SpL",
+            "name": "HOVER Complete - Simple",
+            "unitCost": 112.61,
+            "unitPrice": 112.61,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3ikEm3Fu",
+          "name": "Designer/CAD Design",
+          "description": "Hourly rate for design work. Billable at $125/hr",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Ft",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaeE4Jv",
+            "name": "Designer/CAD Design",
+            "unitCost": 100,
+            "unitPrice": 125,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf6",
+          "name": "Rental - Hydraulic Impactor",
+          "description": "1 day rental of Hydraulic Impactor from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "l",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDawP9nU",
+            "name": "Rental - Hydraulic Impactor",
+            "unitCost": 110,
+            "unitPrice": 159.5,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxp",
+          "name": "Designer Schematic",
+          "description": "The Schematic Design Phase: client meeting, site inspection, photo report, 2-D preliminary plans, one revision, and a preliminary ballpark estimate. Revision work beyond the allocated hours billed at $125/hr.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Ft",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDafayH8",
+            "name": "Designer - Schematic",
+            "unitCost": 100,
+            "unitPrice": 125,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxs",
+          "name": "Project Management",
+          "description": "General allowance for project management including securing materials, scheduling production team, inspection and consulting with owners and other necessary parties.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCey",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDadVavs",
+            "name": "Project Management (C)",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxu",
+          "name": "HOVER Complete - Average",
+          "description": "Entire Exterior, with 5 - 10 facets - 3D Report that captures exterior dimensions of a structure.",
+          "unit": "Each",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fs",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDajjnmG",
+            "name": "HOVER Complete - Average",
+            "unitCost": 112.61,
+            "unitPrice": 112.61,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf7",
+          "name": "Rental - Mini Excavator",
+          "description": "1 day rental of Mini Excavator from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "m",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDavcJdb",
+            "name": "Rental - Mini Excavator",
+            "unitCost": 195,
+            "unitPrice": 282.75,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxk",
+          "name": "Permit",
+          "description": "General line item for Permitting fees, not constrained by location",
+          "unit": null,
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fr",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PEjZMRaX6W",
+            "name": "Permit",
+            "unitCost": 0,
+            "unitPrice": null,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxq",
+          "name": "Designer - Developmental",
+          "description": "The Developmental Design Phase: materials selection meetings, refined 2-D plans with MEP fixture siting and finishes, one revision, and a finalized estimate. Revision work beyond the allocated hours billed at $125/hr.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Ft",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PDa443H59U",
+            "name": "Designer - Developmental",
+            "unitCost": 100,
+            "unitPrice": 125,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxv",
+          "name": "HOVER Complete - Complex",
+          "description": "Entire Exterior, with 11+ facets - 3D Report that captures exterior dimensions of a structure.",
+          "unit": "Each",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fs",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDakRr4h",
+            "name": "HOVER Complete - Complex",
+            "unitCost": 112.61,
+            "unitPrice": 112.61,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf8",
+          "name": "Rental - Post Hole Digger",
+          "description": "1 day rental of post hole digger from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDayZvT6",
+            "name": "Rental - Post Hole Digger",
+            "unitCost": 150,
+            "unitPrice": 217.49999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PPpWUpAJaL",
+          "name": "Sales On-Site Support",
+          "description": "Non-monetized line item to track Sales Team time assisting production team with the execution of the project.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "Sales On-Site Support",
+          "groupId": "22PF3jeyxCey",
+          "position": "n",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PNJmzSy4PK",
+            "name": "Sales On-Site Support",
+            "unitCost": 0,
+            "unitPrice": 0,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3i5ZiGxr",
+          "name": "Designer - Con Docs",
+          "description": "The Construction Document Phase: fully dimensioned plans, sections, elevations and details with materials, window and door schedules, compiled into a construction document set; one final printed set.",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Ft",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaewQ5n",
+            "name": "Designer - Con Docs",
+            "unitCost": 100,
+            "unitPrice": 125,
+            "costTypeName": "Labor"
+          }
+        },
+        {
+          "id": "22PF3j8eypW4",
+          "name": "CANVAS Report",
+          "description": "Interior Measurements Report for remodels and renovations: a dimensioned 2D plan, quantities and dimensions of walls, doors, openings, windows and counters, square footage of floors, walls and countertops, plus a 3D SketchUp model. Cost is per square foot.",
+          "unit": "Square Foot",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3ikEm3Fs",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PF3iwpMgeA",
+            "name": "CANVAS Report",
+            "unitCost": 0.4,
+            "unitPrice": 0.58,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCf9",
+          "name": "Rental - Skid Loader",
+          "description": "1 day rental of a Skid Loader from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "o",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDatWiw6",
+            "name": "Rental - Skid Loader",
+            "unitCost": 150,
+            "unitPrice": 217.49999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCfA",
+          "name": "Rental - Trencher (ride)",
+          "description": "1 day rental of a Ride On Trencher from ACE",
+          "unit": "Day",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "p",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDauFNQT",
+            "name": "Rental - Trencher (ride)",
+            "unitCost": 200,
+            "unitPrice": 290,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PF3jeyxCfB",
+          "name": "Rental - Excavator (Full Size-Week)",
+          "description": "1 WEEK rental of a full sized excavator",
+          "unit": "Week",
+          "costTypeName": "Other",
+          "costCodeName": "Site Construction",
+          "groupId": "22PF3jeyxCez",
+          "position": "q",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PDa8PzsGUc",
+            "name": "Rental - Excavator (Full Size-Week)",
+            "unitCost": 3750,
+            "unitPrice": 5437.5,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PFHFgZd6i3",
+          "name": "P-Pod",
+          "description": "On-site crew port-a-john",
+          "unit": "Week",
+          "costTypeName": "Other",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "r",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PCCDaspwrV",
+            "name": "P-Pod",
+            "unitCost": 150,
+            "unitPrice": 217.49999999999997,
+            "costTypeName": "Other"
+          }
+        },
+        {
+          "id": "22PLiTmtAZzg",
+          "name": "Equipment Operation",
+          "description": "Crew labor necessary to run/operate rental equipment/tools",
+          "unit": "Hours",
+          "costTypeName": "Labor",
+          "costCodeName": "General Requirements",
+          "groupId": "22PF3jeyxCez",
+          "position": "s",
+          "isSpecification": false,
+          "quantity": null,
+          "quantityFormula": null,
+          "priced": {
+            "id": "22PLiTbpuyiY",
+            "name": "Equipment Operation",
+            "unitCost": 55,
+            "unitPrice": 100,
+            "costTypeName": "Labor"
+          }
+        }
+      ]
+    }
+  ],
+  "names": {
+    "units": {
+      "Gallons": "22PBAjfWNQqN",
+      "Hours": "22PBAjfWNQqP",
+      "Linear Feet": "22PBAjfWNQqQ",
+      "Lump Sum": "22PBAjfWNQqR",
+      "Pounds": "22PBAjfWNQqS",
+      "Panel": "22PBzcDrZ5iQ",
+      "Board": "22PBzcHJ5S5A",
+      "Bundle": "22PCC8miMXWg",
+      "Bag": "22PCC8rFijPG",
+      "Box": "22PCC8sWMVry",
+      "Cubic Yard": "22PCC8tdwwkG",
+      "Day": "22PCC8uHnTn5",
+      "Each": "22PCC8v89B9v",
+      "Roll": "22PCC8zEgYN8",
+      "Square Foot": "22PCC8zqEiwK",
+      "Square": "22PCC923mrKC",
+      "Tub": "22PCC92HA9pg",
+      "Ton": "22PCC92RWpGq",
+      "Piece": "22PCC97J5hG6",
+      "Pack": "22PCC9AcavHW",
+      "Set": "22PCC9B2iMqW",
+      "Quart": "22PCC9Ezjtqh",
+      "Room": "22PCC9zwLhAX",
+      "Feet": "22PCCA2ZMkyM",
+      "Week": "22PCCA4mps5R",
+      "Can": "22PCCAP5cFt5",
+      "Carton": "22PCCASRR2Bq",
+      "Sheet": "22PCCAvxqdSx"
+    },
+    "costTypes": {
+      "Labor": "22PBAjfWNQr6",
+      "Materials": "22PBAjfWNQr7",
+      "Subcontractor": "22PBAjfWNQr8",
+      "Other": "22PBAjfWNQr9",
+      "Clock In": "22PaTg5HNX8w"
+    },
+    "costCodes": {
+      "Uncategorized": "22PBAjfWNQqW",
+      "Siding": "22PBAjfWNQqf",
+      "Windows": "22PBAjfWNQqh",
+      "General Requirements": "22PC7gTFGFbd",
+      "Site Construction": "22PC7gW5iKgj",
+      "Concrete": "22PC7ga6JqAz",
+      "Masonry": "22PC7gdyD5MZ",
+      "Metals": "22PC7gfAcA28",
+      "Woods & Plastics": "22PC7ghRmdTA",
+      "Roofing": "22PC7gkAeZk2",
+      "Finishes": "22PC7gqjU8Am",
+      "Specialites": "22PC7gsw5E3i",
+      "Appliances": "22PC7guT9FQN",
+      "Cabinetry": "22PC7gx844Zp",
+      "Special Construction": "22PC7gz39At3",
+      "Conveying/Lifts": "22PC7h2FLKAL",
+      "Mechanical (Plumbing & HVAC)": "22PC7h578Epe",
+      "Electrical": "22PC7h9DyNTW",
+      "Doors": "22PCC7yHifAA",
+      "Thermal & Moisture": "22PMtgZjcVKr",
+      "Project Management": "22PMwCzxYZ5J",
+      "Design": "22PMwD7vNXmf",
+      "Demolition": "22PMwLcyPZBN",
+      "Framing/Sheeting": "22PMwgcccXiC",
+      "Drywall": "22PMwiZTcHsS",
+      "Painting": "22PMwibbYXh9",
+      "Flooring": "22PMwidpE9Jb",
+      "Sales On-Site Support": "22PNJn5ZYvzq",
+      "Permits": "22Pa8aUwtfG3"
+    },
+    "generalDescriptionItemId": "22PCCDaYUajG",
+    "contingencyItemId": "22PfSjaGc6sB"
+  },
+  "priced": {
+    "22PCCDhzbeZ9": {
+      "id": "22PCCDhzbeZ9",
+      "name": "Vapor Barrier 4 mil",
+      "unit": "Each",
+      "costTypeName": "Materials",
+      "costCodeName": "Concrete",
+      "unitCost": 18.49,
+      "unitPrice": 26.8105,
+      "description": "Plastic Sheeting 4 mil T X 10 ft. W X 25 ft. L Polyethylene Clear"
+    },
+    "22PL8kUmtfhn": {
+      "id": "22PL8kUmtfhn",
+      "name": "Insulation - Batt",
+      "unit": "Square Foot",
+      "costTypeName": "Materials",
+      "costCodeName": "Siding",
+      "unitCost": 1.3,
+      "unitPrice": 1.885,
+      "description": "Batt insulation for installation in wall"
+    },
+    "22PCCDhb8Dff": {
+      "id": "22PCCDhb8Dff",
+      "name": "Crew Labor",
+      "unit": "Hours",
+      "costTypeName": "Labor",
+      "costCodeName": "General Requirements",
+      "unitCost": 55,
+      "unitPrice": 100,
+      "description": "Crew labor, billable per hour. General labor for construction and roofing related tasks."
+    },
+    "22PLiT7FjgXV": {
+      "id": "22PLiT7FjgXV",
+      "name": "Electrical Labor",
+      "unit": "Hours",
+      "costTypeName": "Labor",
+      "costCodeName": "Electrical",
+      "unitCost": 55,
+      "unitPrice": 100.001,
+      "description": "Electrical labor"
+    },
+    "22PWbattLine": {
+      "id": "22PL8kUmtfhn",
+      "name": "Insulation - Batt",
+      "unit": "Square Foot",
+      "costTypeName": "Materials",
+      "costCodeName": "Siding",
+      "unitCost": 1.3,
+      "unitPrice": 1.885,
+      "description": "Batt insulation for installation in wall"
+    }
+  },
+  "budget": {
+    "jobId": "22PDZbwDdZfq",
+    "costItems": {
+      "count": 0,
+      "nodes": []
+    },
+    "costGroups": {
+      "count": 0,
+      "nodes": []
+    }
+  },
+  "built": {
+    "note": "What JobTread held after the plan above was applied to 25-0000 on 2026-10-01: one updateJob for the parameters, then the four createCostGroup mutations, by hand through the API. Read back the way fetchBudget reads a budget, plus the selection flags on the groups.",
+    "builtAt": "2026-10-01T19:10:00.000Z",
+    "parameters": [
+      {
+        "name": "Contingency Rate",
+        "value": 8
+      },
+      {
+        "name": "Contingency Base",
+        "value": 2380
+      }
+    ],
+    "groupIds": [
+      "22PfU5RMxC5V",
+      "22PfU5RwKSsz",
+      "22PfU5UmxvJ9",
+      "22PfU5VFX8tL"
+    ],
+    "selection": [
+      {
+        "id": "22PfU5Un7PFs",
+        "name": "Flooring",
+        "minSelectionsRequired": 1,
+        "maxSelectionsAllowed": 1,
+        "showChildDeltas": true,
+        "isSelected": false
+      },
+      {
+        "id": "22PfU5Un7PFt",
+        "name": "LVP",
+        "minSelectionsRequired": null,
+        "maxSelectionsAllowed": null,
+        "showChildDeltas": false,
+        "isSelected": true
+      },
+      {
+        "id": "22PfU5Un7PFy",
+        "name": "Walls",
+        "minSelectionsRequired": 1,
+        "maxSelectionsAllowed": 1,
+        "showChildDeltas": true,
+        "isSelected": false
+      },
+      {
+        "id": "22PfU5Un7PFz",
+        "name": "Framed false walls",
+        "minSelectionsRequired": null,
+        "maxSelectionsAllowed": null,
+        "showChildDeltas": false,
+        "isSelected": true
+      },
+      {
+        "id": "22PfU5Un7PGA",
+        "name": "Ceiling paint",
+        "minSelectionsRequired": 0,
+        "maxSelectionsAllowed": 1,
+        "showChildDeltas": true,
+        "isSelected": false
+      }
+    ],
+    "contingency": {
+      "id": "22PfU5VFdUAD",
+      "name": "Project Contingency",
+      "quantity": 190.4,
+      "quantityFormula": "{Contingency Base} * {Contingency Rate} / 100",
+      "unitCost": 1,
+      "unitPrice": 1,
+      "cost": 190.4,
+      "price": 190.4,
+      "isSpecification": false,
+      "position": "n",
+      "costType": {
+        "id": "22PBAjfWNQr9",
+        "name": "Other"
+      },
+      "costCode": {
+        "id": "22PC7gTFGFbd",
+        "name": "General Requirements"
+      },
+      "unit": {
+        "name": "Lump Sum"
+      },
+      "costGroup": {
+        "id": "22PfU5VFX8tL",
+        "name": "Phase 5 - Contingency"
+      },
+      "organizationCostItem": {
+        "id": "22PfSjaGc6sB"
+      },
+      "documentCostItems": {
+        "count": 0
+      }
+    },
+    "budget": {
+      "jobId": "22PDZbwDdZfq",
+      "costItems": {
+        "count": 19,
+        "nodes": [
+          {
+            "id": "22PfU5Un7PG2",
+            "name": "Drywall Brd- Mat",
+            "quantity": 30,
+            "unitCost": 1.02,
+            "unitPrice": 1.4789999999999999,
+            "cost": 30.6,
+            "price": 44.37,
+            "isSpecification": false,
+            "position": "k",
+            "costType": {
+              "id": "22PBAjfWNQr7",
+              "name": "Materials"
+            },
+            "costCode": {
+              "id": "22PC7gqjU8Am",
+              "name": "Finishes"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PFz",
+              "name": "Framed false walls"
+            },
+            "organizationCostItem": {
+              "id": "22PCCE2cGYqw"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PG3",
+            "name": "Drywall Brd- Labor",
+            "quantity": 16,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 880,
+            "price": 1600,
+            "isSpecification": false,
+            "position": "l",
+            "costType": {
+              "id": "22PBAjfWNQr6",
+              "name": "Labor"
+            },
+            "costCode": {
+              "id": "22PC7gqjU8Am",
+              "name": "Finishes"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PFz",
+              "name": "Framed false walls"
+            },
+            "organizationCostItem": {
+              "id": "22PCCE2cyGTZ"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5RN5uEe",
+            "name": "General Description",
+            "quantity": null,
+            "unitCost": 0,
+            "unitPrice": 0,
+            "cost": 0,
+            "price": 0,
+            "isSpecification": false,
+            "position": "m",
+            "costType": {
+              "id": "22PBAjfWNQr9",
+              "name": "Other"
+            },
+            "costCode": {
+              "id": "22PC7gTFGFbd",
+              "name": "General Requirements"
+            },
+            "costGroup": {
+              "id": "22PfU5RMxC5V",
+              "name": "FINISHES"
+            },
+            "organizationCostItem": {
+              "id": "22PCCDaYUajG"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5RN5uEg",
+            "name": "Primer",
+            "quantity": 4,
+            "unitCost": 30,
+            "unitPrice": 43.5,
+            "cost": 120,
+            "price": 174,
+            "isSpecification": false,
+            "position": "m",
+            "costType": {
+              "id": "22PBAjfWNQr7",
+              "name": "Materials"
+            },
+            "costCode": {
+              "id": "22PC7gqjU8Am",
+              "name": "Finishes"
+            },
+            "costGroup": {
+              "id": "22PfU5RN5uEf",
+              "name": "Paint"
+            },
+            "organizationCostItem": {
+              "id": "22PCCE2t6Uci"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PFu",
+            "name": "Flooring",
+            "quantity": 650,
+            "unitCost": 5,
+            "unitPrice": 7.249999999999999,
+            "cost": 3250,
+            "price": 4712.5,
+            "isSpecification": false,
+            "position": "m",
+            "costType": {
+              "id": "22PBAjfWNQr7",
+              "name": "Materials"
+            },
+            "costCode": {
+              "id": "22PC7gqjU8Am",
+              "name": "Finishes"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PFt",
+              "name": "LVP"
+            },
+            "organizationCostItem": {
+              "id": "22PCCE2qynkQ"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PG4",
+            "name": "Vapor Barrier 4 mil",
+            "quantity": 5,
+            "unitCost": 18.49,
+            "unitPrice": 26.8105,
+            "cost": 92.45,
+            "price": 134.05,
+            "isSpecification": false,
+            "position": "m",
+            "costType": {
+              "id": "22PBAjfWNQr7",
+              "name": "Materials"
+            },
+            "costCode": {
+              "id": "22PC7ga6JqAz",
+              "name": "Concrete"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PFz",
+              "name": "Framed false walls"
+            },
+            "organizationCostItem": {
+              "id": "22PCCDhzbeZ9"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5RN5uEh",
+            "name": "Paint",
+            "quantity": 6,
+            "unitCost": 85,
+            "unitPrice": 123.24999999999999,
+            "cost": 510,
+            "price": 739.5,
+            "isSpecification": false,
+            "position": "n",
+            "costType": {
+              "id": "22PBAjfWNQr7",
+              "name": "Materials"
+            },
+            "costCode": {
+              "id": "22PC7gqjU8Am",
+              "name": "Finishes"
+            },
+            "costGroup": {
+              "id": "22PfU5RN5uEf",
+              "name": "Paint"
+            },
+            "organizationCostItem": {
+              "id": "22PCCE2xvbRA"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5RwSXwT",
+            "name": "Permit",
+            "quantity": 1,
+            "unitCost": 0,
+            "unitPrice": null,
+            "cost": 0,
+            "price": 0,
+            "isSpecification": false,
+            "position": "n",
+            "costType": {
+              "id": "22PBAjfWNQr9",
+              "name": "Other"
+            },
+            "costCode": {
+              "id": "22PC7gTFGFbd",
+              "name": "General Requirements"
+            },
+            "costGroup": {
+              "id": "22PfU5RwSXwS",
+              "name": "Permits"
+            },
+            "organizationCostItem": {
+              "id": "22PEjZMRaX6W"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5RwSXwV",
+            "name": "Project Management",
+            "quantity": 8,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 440,
+            "price": 800,
+            "isSpecification": false,
+            "position": "n",
+            "costType": {
+              "id": "22PBAjfWNQr6",
+              "name": "Labor"
+            },
+            "costCode": {
+              "id": "22PC7gTFGFbd",
+              "name": "General Requirements"
+            },
+            "costGroup": {
+              "id": "22PfU5RwSXwU",
+              "name": "Project/Site Management"
+            },
+            "organizationCostItem": {
+              "id": "22PCCDadVavs"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PFv",
+            "name": "Flooring Labor",
+            "quantity": 20,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 1100,
+            "price": 2000,
+            "isSpecification": false,
+            "position": "n",
+            "costType": {
+              "id": "22PBAjfWNQr6",
+              "name": "Labor"
+            },
+            "costCode": {
+              "id": "22PC7gqjU8Am",
+              "name": "Finishes"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PFt",
+              "name": "LVP"
+            },
+            "organizationCostItem": {
+              "id": "22PLhscfQUQU"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PFx",
+            "name": "Flooring - Sub",
+            "quantity": 650,
+            "unitCost": 7.5,
+            "unitPrice": 10.875,
+            "cost": 4875,
+            "price": 7068.75,
+            "isSpecification": false,
+            "position": "n",
+            "costType": {
+              "id": "22PBAjfWNQr8",
+              "name": "Subcontractor"
+            },
+            "costCode": {
+              "id": "22PC7gqjU8Am",
+              "name": "Finishes"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PFw",
+              "name": "Epoxy"
+            },
+            "organizationCostItem": {
+              "id": "22PLN8SFdxqy"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PG5",
+            "name": "Insulation - Batt",
+            "quantity": 909,
+            "unitCost": 1.3,
+            "unitPrice": 1.885,
+            "cost": 1181.7,
+            "price": 1713.47,
+            "isSpecification": false,
+            "position": "n",
+            "costType": {
+              "id": "22PBAjfWNQr7",
+              "name": "Materials"
+            },
+            "costCode": {
+              "id": "22PBAjfWNQqf",
+              "name": "Siding"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PFz",
+              "name": "Framed false walls"
+            },
+            "organizationCostItem": {
+              "id": "22PL8kUmtfhn"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PG9",
+            "name": "Mold-resistant concrete paint (DRAFT - Carl confirms)",
+            "quantity": 909,
+            "unitCost": 0.45,
+            "unitPrice": 0.6525,
+            "cost": 409.05,
+            "price": 593.12,
+            "isSpecification": false,
+            "position": "n",
+            "costType": {
+              "id": "22PBAjfWNQr7",
+              "name": "Materials"
+            },
+            "costCode": {
+              "id": "22PC7gTFGFbd",
+              "name": "General Requirements"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PG8",
+              "name": "Paint the block"
+            },
+            "organizationCostItem": null,
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PGC",
+            "name": "Paint Labor - Sub",
+            "quantity": 650,
+            "unitCost": 3.95,
+            "unitPrice": 5.7275,
+            "cost": 2567.5,
+            "price": 3722.88,
+            "isSpecification": false,
+            "position": "n",
+            "costType": {
+              "id": "22PBAjfWNQr8",
+              "name": "Subcontractor"
+            },
+            "costCode": {
+              "id": "22PC7gqjU8Am",
+              "name": "Finishes"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PGB",
+              "name": "Ceiling paint"
+            },
+            "organizationCostItem": {
+              "id": "22PLN6y6kK5V"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5VFdUAD",
+            "name": "Project Contingency",
+            "quantity": 190.4,
+            "unitCost": 1,
+            "unitPrice": 1,
+            "cost": 190.4,
+            "price": 190.4,
+            "isSpecification": false,
+            "position": "n",
+            "costType": {
+              "id": "22PBAjfWNQr9",
+              "name": "Other"
+            },
+            "costCode": {
+              "id": "22PC7gTFGFbd",
+              "name": "General Requirements"
+            },
+            "costGroup": {
+              "id": "22PfU5VFX8tL",
+              "name": "Phase 5 - Contingency"
+            },
+            "organizationCostItem": {
+              "id": "22PfSjaGc6sB"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5RN5uEi",
+            "name": "Paint Labor",
+            "quantity": 24,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 1320,
+            "price": 2400,
+            "isSpecification": false,
+            "position": "o",
+            "costType": {
+              "id": "22PBAjfWNQr6",
+              "name": "Labor"
+            },
+            "costCode": {
+              "id": "22PC7gqjU8Am",
+              "name": "Finishes"
+            },
+            "costGroup": {
+              "id": "22PfU5RN5uEf",
+              "name": "Paint"
+            },
+            "organizationCostItem": {
+              "id": "22PLN6iLdCtV"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5RN5uEj",
+            "name": "Crew Labor",
+            "quantity": 6,
+            "unitCost": 55,
+            "unitPrice": 100,
+            "cost": 330,
+            "price": 600,
+            "isSpecification": false,
+            "position": "o",
+            "costType": {
+              "id": "22PBAjfWNQr6",
+              "name": "Labor"
+            },
+            "costCode": {
+              "id": "22PC7gTFGFbd",
+              "name": "General Requirements"
+            },
+            "costGroup": {
+              "id": "22PfU5RMxC5V",
+              "name": "FINISHES"
+            },
+            "organizationCostItem": {
+              "id": "22PCCDhb8Dff"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PG6",
+            "name": "Electrical Labor (DRAFT - Carl confirms)",
+            "quantity": 0,
+            "unitCost": 55,
+            "unitPrice": 100.001,
+            "cost": 0,
+            "price": 0,
+            "isSpecification": false,
+            "position": "o",
+            "costType": {
+              "id": "22PBAjfWNQr6",
+              "name": "Labor"
+            },
+            "costCode": {
+              "id": "22PC7h9DyNTW",
+              "name": "Electrical"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PFz",
+              "name": "Framed false walls"
+            },
+            "organizationCostItem": {
+              "id": "22PLiT7FjgXV"
+            },
+            "documentCostItems": {
+              "count": 0
+            }
+          },
+          {
+            "id": "22PfU5Un7PG7",
+            "name": "Framing lumber for the false walls (DRAFT - Carl confirms)",
+            "quantity": 120,
+            "unitCost": 3.55,
+            "unitPrice": 5.92,
+            "cost": 426,
+            "price": 710.4,
+            "isSpecification": false,
+            "position": "p",
+            "costType": {
+              "id": "22PBAjfWNQr7",
+              "name": "Materials"
+            },
+            "costCode": {
+              "id": "22PC7gTFGFbd",
+              "name": "General Requirements"
+            },
+            "costGroup": {
+              "id": "22PfU5Un7PFz",
+              "name": "Framed false walls"
+            },
+            "organizationCostItem": null,
+            "documentCostItems": {
+              "count": 0
+            }
+          }
+        ]
+      },
+      "costGroups": {
+        "count": 15,
+        "nodes": [
+          {
+            "id": "22PfU5RMxC5V",
+            "name": "FINISHES",
+            "position": "n",
+            "parentCostGroup": null
+          },
+          {
+            "id": "22PfU5RN5uEf",
+            "name": "Paint",
+            "position": "n",
+            "parentCostGroup": {
+              "id": "22PfU5RMxC5V"
+            }
+          },
+          {
+            "id": "22PfU5RwKSsz",
+            "name": "GENERAL REQUIREMENTS",
+            "position": "o",
+            "parentCostGroup": null
+          },
+          {
+            "id": "22PfU5RwSXwS",
+            "name": "Permits",
+            "position": "m",
+            "parentCostGroup": {
+              "id": "22PfU5RwKSsz"
+            }
+          },
+          {
+            "id": "22PfU5RwSXwU",
+            "name": "Project/Site Management",
+            "position": "n",
+            "parentCostGroup": {
+              "id": "22PfU5RwKSsz"
+            }
+          },
+          {
+            "id": "22PfU5UmxvJ9",
+            "name": "CUSTOMER OPTIONS",
+            "position": "p",
+            "parentCostGroup": null
+          },
+          {
+            "id": "22PfU5Un7PFs",
+            "name": "Flooring",
+            "position": "m",
+            "parentCostGroup": {
+              "id": "22PfU5UmxvJ9"
+            }
+          },
+          {
+            "id": "22PfU5Un7PFt",
+            "name": "LVP",
+            "position": "m",
+            "parentCostGroup": {
+              "id": "22PfU5Un7PFs"
+            }
+          },
+          {
+            "id": "22PfU5Un7PFw",
+            "name": "Epoxy",
+            "position": "n",
+            "parentCostGroup": {
+              "id": "22PfU5Un7PFs"
+            }
+          },
+          {
+            "id": "22PfU5Un7PFy",
+            "name": "Walls",
+            "position": "n",
+            "parentCostGroup": {
+              "id": "22PfU5UmxvJ9"
+            }
+          },
+          {
+            "id": "22PfU5Un7PFz",
+            "name": "Framed false walls",
+            "position": "m",
+            "parentCostGroup": {
+              "id": "22PfU5Un7PFy"
+            }
+          },
+          {
+            "id": "22PfU5Un7PG8",
+            "name": "Paint the block",
+            "position": "n",
+            "parentCostGroup": {
+              "id": "22PfU5Un7PFy"
+            }
+          },
+          {
+            "id": "22PfU5Un7PGA",
+            "name": "Ceiling paint",
+            "position": "o",
+            "parentCostGroup": {
+              "id": "22PfU5UmxvJ9"
+            }
+          },
+          {
+            "id": "22PfU5Un7PGB",
+            "name": "Ceiling paint",
+            "position": "n",
+            "parentCostGroup": {
+              "id": "22PfU5Un7PGA"
+            }
+          },
+          {
+            "id": "22PfU5VFX8tL",
+            "name": "Phase 5 - Contingency",
+            "position": "q",
+            "parentCostGroup": null
+          }
+        ]
+      }
+    }
+  }
+}

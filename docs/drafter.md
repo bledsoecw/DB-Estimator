@@ -8,9 +8,12 @@ budget. It produces the budget the way a rep does, and nothing else.
 
 Status: built and tested offline on 2026-09-30 against job 261323
 Haag_Remodel, then run live three times the same day (notes below). The
-drafter writes nothing to JobTread. The one write this project has made is
-the contingency group in the construction templates, recorded in
-`docs/contingency.md`.
+drafter itself writes nothing to JobTread. Two things do, both through
+`src/jobtread/writer.ts` under a separate grant: `npm run contingency` put
+the contingency group in the construction templates (`docs/contingency.md`),
+and `npm run build-budget` builds a finished draft into a job's budget
+(**Build it in JobTread**, below; first done on test job 25-0000 on
+2026-10-01).
 
 ## How DB builds an estimate today, and what the drafter reproduces
 
@@ -180,9 +183,9 @@ that was read, so a replay from the fixture is offline.
 - the General Description text;
 - **Build it in JobTread**: the numbered steps, with a Copy button.
 
-`review/<jobId>-draft.json` holds the same draft as data. It is the payload
-the write path (roadmap §7) will one day push as a job budget; today a
-person follows the steps.
+`review/<jobId>-draft.json` holds the same draft as data. It is what
+`npm run build-budget` reads to build the budget on the job (**Build it in
+JobTread**, below); the steps on the page are the same work done by hand.
 
 ## Why not JobTread's own AI
 
@@ -211,7 +214,7 @@ The prompt, for the record:
 > template has, list it separately for Carl instead of adding it.
 
 Decision: the drafter runs on the Anthropic API with a capped key. The write
-path, when it comes, is roadmap §7 against the Pave API directly, not a chat
+path (`build-budget`) goes against the Pave API directly, not through a chat
 panel asked to type.
 
 ## The first live run — 261323, 2026-09-30
@@ -410,6 +413,76 @@ rerun command.
 There is no UI beyond that page yet. When there is one, this is the call it
 makes.
 
+## Build it in JobTread
+
+`npm run build-budget -- <job>` does the page's "Build it in JobTread" steps
+on the job's Budget tab. It reads the last draft's JSON (`review/<jobId>-draft.json`,
+or `--draft path`), reads the chosen templates and the catalog items the draft
+prices from again, and creates the budget as the rep would have:
+
+- **one group per chosen template**, named for the template's scope group
+  (`FINISHES`, `BATHROOM REMODEL`), with the kept lines in their template
+  sections in template order, each a job line pointing at its catalog item
+  and priced at today's price of record. The primary's group starts with the
+  **General Description** line carrying the scope text;
+- **found lines** in the section the model named (or the primary's group when
+  it named none), priced from the catalog item they came from;
+- **open items** created on the job as lines tagged `(DRAFT - Carl confirms)`:
+  a catalog match at quantity 0 with the description saying the rep sets the
+  count, otherwise a new line priced from DB history or the regional ballpark
+  with the basis and the warning in its description, under General
+  Requirements;
+- **CUSTOMER OPTIONS**, one selection group per option group: two or more
+  choices make a required pick (`min 1 / max 1`) with the first choice
+  pre-selected, one choice is an add-on (`min 0 / max 1`) nobody has picked;
+- **Phase 5 - Contingency** with the Project Contingency line: the formula
+  and, because the API stores a formula without evaluating it, the quantity
+  in dollars too. The two job parameters are set first, merged with whatever
+  parameters the job already has (`updateJob.parameters` replaces the list).
+
+The job's structural groups (CLOCK IN ITEMS, BURDEN, GENERAL AND
+ADMINISTRATIVE, CHANGE ORDER) are not touched, and no catalog template is
+ever modified: everything is created on the job's copy.
+
+Without `--apply` it is a dry run: it prints the tree with quantities and
+prices, writes the exact mutations to `review/<jobId>-build-plan.json`, and
+changes nothing. With `--apply` it needs `JOBTREAD_WRITE_GRANT_KEY`, issues
+one `createCostGroup` per top-level group, records what it created in
+`review/<jobId>-built.json` after every write (so a run that dies mid-way
+leaves a record of what exists), then reads the budget back and says whether
+each group is there with as many lines as planned, the contingency line has
+its quantity, and the parameters are set.
+
+Three gates, in `gateBuild`:
+
+- only a **test job** (a name with "test", the Kay Oss customer, or
+  "template") is built unless `--live` is given;
+- another job's draft goes only onto a test job, which is how the first
+  build was done;
+- the budget must be **empty apart from the structural groups**. `--replace`
+  takes down exactly the top-level groups the last record says this tool
+  built and refuses if anything else is on the budget — a group a rep added
+  by hand is never deleted. Clear the budget in JobTread, or rerun with
+  `--replace`, and the draft goes on again (after a `--revise` pass, say).
+
+The first build was job 25-0000 on 2026-10-01: a hand-written pass-2 draft in
+the Haag basement's shape (paint the block or frame false walls, LVP or epoxy
+floor, a ceiling-paint add-on, four open items) against the two X-Division
+templates. Four groups, nineteen lines, selection groups and the pre-selected
+choices as sent, the contingency line at $190.40 — `test/fixtures/build-sample.json`
+holds the draft, the plan and what JobTread held afterwards, and
+`test/build.test.ts` checks the plan against both. What JobTread taught along
+the way (a job line needs its cost code; prices are not copied from the
+catalog item; a null quantity bills one unit; the parameter list replaces;
+formulas are not evaluated) is in `docs/jobtread-api-field-notes.md` under
+*Writing a job budget*.
+
+After the build the rep opens the Budget tab: the DRAFT-tagged lines are
+theirs to confirm with Carl and to give counts to, the options are the
+customer's to pick on the estimate, and Kristen still reviews before anything
+goes out. Building the estimate document from the budget is JobTread's own
+step, as today.
+
 ## Running it
 
 ```
@@ -419,6 +492,11 @@ npm run draft -- 261323 --out review              # needs ANTHROPIC_API_KEY in .
 npm run draft -- 261323 --templates 22PLCZU3cbqS,22PF3gnGCuiB   # skip the picker
 npm run draft -- 261323 --capture test/fixtures/haag-live.json  # save the job and templates
 npm run draft -- --fixture test/fixtures/haag-basement.json     # replay offline (still calls the model)
+npm run build-budget -- 25-0000                   # dry run: the tree and review/<jobId>-build-plan.json
+npm run build-budget -- 25-0000 --apply           # writes; needs JOBTREAD_WRITE_GRANT_KEY; test jobs only
+npm run build-budget -- 261323 --apply --live     # a real job; the budget must be empty of scope
+npm run build-budget -- 25-0000 --apply --replace # take down this tool's last build there, build the new draft
+npm run build-budget -- --fixture test/fixtures/build-sample.json   # the plan from a saved fixture, offline
 ```
 
 The job is the six-digit number that starts its name, the hyphenated number
@@ -445,9 +523,10 @@ figure. Twenty drafts a month is on the order of $10 to $30.
 
 Nothing, until a key is set. With one, the job's description, comments,
 photos and files, and the chosen templates' line names, units and
-descriptions go to Anthropic's API under its commercial terms. No prices go,
-and nothing is written back to JobTread. The rendered page and JSON stay
-local like the other reports.
+descriptions go to Anthropic's API under its commercial terms. No prices go.
+The drafter writes nothing back to JobTread; `build-budget --apply` does,
+under the separate write key, and only what the dry run printed. The
+rendered page and JSON stay local like the other reports.
 
 ## Gate
 
@@ -462,11 +541,16 @@ he trusts.
 
 ## Not built yet
 
-- **The write path for budgets.** The JSON is the payload; pushing it as a
-  job budget is roadmap §7, still off. The steps on the page are what the
-  rep does by hand today. The only write so far is the template change in
-  `docs/contingency.md`, through `src/jobtread/writer.ts` under a separate
-  grant with three allowed mutations.
+- **Rebuilding by section.** `build-budget` builds the whole draft onto an
+  empty budget, or takes down its own last build first (`--replace`) and
+  builds the new pass. Adding one found line to a budget a rep has already
+  worked on, or changing one quantity after a `--revise` pass, is still the
+  rep's click. The writer allows four mutations (`createCostItem`,
+  `createCostGroup`, `deleteCostGroup`, and `updateJob` for the parameters
+  only); anything else is refused before it is sent.
+- **A real job.** The first build went onto test job 25-0000. The first
+  `--live` build on a job a customer will see is the gate below, not a
+  version number.
 - **Adding a found line by itself.** The page says "add just this line"
   for a line found in another template. Whether JobTread's catalog picker
   lets the rep check one line inside a template group, or the rep must add

@@ -175,8 +175,8 @@ test('the CLI reads only the templates with a Phase 4, or the ones named', () =>
   assert.throws(() => parseContingencyArgs(['--dry-run']), /unknown argument/);
 });
 
-test('the writer refuses anything but the three allowed mutations, and a key shared with the read client', () => {
-  assert.deepEqual([...ALLOWED_MUTATIONS], ['createCostItem', 'createCostGroup', 'deleteCostGroup']);
+test('the writer refuses anything but the four allowed mutations, and a key shared with the read client', () => {
+  assert.deepEqual([...ALLOWED_MUTATIONS], ['createCostItem', 'createCostGroup', 'deleteCostGroup', 'updateJob']);
   assert.throws(() => assertAllowed({ updateCostType: {} }), /Refusing to issue "updateCostType"/);
   assert.throws(() => assertAllowed({ organization: {} }), /Refusing to issue "organization"/);
   assert.throws(() => assertAllowed({}), /empty write/);
