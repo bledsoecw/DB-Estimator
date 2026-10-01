@@ -310,6 +310,7 @@ npm run draft -- 261323 --out review       # needs ANTHROPIC_API_KEY in .env
 npm run draft -- 261323 --templates 22PLCZU3cbqS,22PF3gnGCuiB   # you pick the templates
 npm run draft -- 261323 --no-history                             # skip the past-work step
 npm run draft -- 261323 --relearn                                # ignore the learned price book this once
+npm run draft -- 261323 --reread                                 # read the past quotes again
 npm run draft -- 261323 --revise "forget the skim coat; use a mold-resistant concrete paint"   # the rep's second pass
 ```
 
@@ -339,12 +340,15 @@ subcontracted line, every gap, and any labor line for a trade DB might sub,
 the model names search terms, the code finds the matching lines on past jobs
 in JobTread (estimates, change orders, work orders, vendor bills, invoices,
 each tagged by how much it proves and by the sub who did it), and a third
-short call says what DB did last time and what it cost, reading the sub's
-quote where one is attached to the past work order. A cost it cites is
+short call says what DB did last time and what it cost. **Every sub's or
+vendor's quote found on that past work is read on its own first**, the one on
+the work order before DB's own change order, for every size, line and total
+written on it, so a lump sum can be put per square foot. A cost it cites is
 priced at the subcontractor margin and shown as a **proposal** beside the
 template rate or on the gap; proposals never enter the totals. What it finds
 is kept in a local **learned price book** (`.db-estimator/`, git-ignored) and
-reused for a year before that trade is searched again.
+reused for a year, unless a new sub quote for that trade comes in first; what
+each quote said is kept for good, so a quote is read once.
 
 **A gap is checked against the whole catalog before it is flagged.** When
 the chosen templates lack a line, every other template's lines and the

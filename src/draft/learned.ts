@@ -13,11 +13,22 @@
  *
  * The store is one JSON file, readable and editable by hand. It holds DB's
  * pricing, so it stays on the machine that runs the drafter and out of git.
+ *
+ * It also keeps what each past quote said once it has been read. Carl,
+ * 2026-10-01: the Myers epoxy quote gives the square footage, and a second
+ * run still said "the square footage isn't in what was shown". The quote had
+ * lost its turn to a change-order scan. So each file is read once, on its own,
+ * and its reading is kept by file id. A file does not change, so a reading
+ * never goes stale and --relearn leaves it alone; --reread ignores readings.
+ *
+ * A finding that matched past work but could not put it per unit is not served
+ * from the book. It is searched again, so a quote read since can price it.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { HistoryFinding } from './prompt.ts';
+import type { FileReading } from './readings.ts';
 
 export interface LearnedEntry {
   term: string;
@@ -30,9 +41,22 @@ export interface LearnedEntry {
   finding: HistoryFinding;
 }
 
+/** What one past file said, read once and kept. */
+export interface ReadFile {
+  fileId: string;
+  name: string;
+  size: number;
+  jobName: string;
+  /** ISO datetime. */
+  readAt: string;
+  reading: FileReading;
+}
+
 export interface LearnedFile {
   version: 1;
   entries: Record<string, LearnedEntry>;
+  /** By file id. */
+  files?: Record<string, ReadFile>;
 }
 
 export interface LearnedOptions {
@@ -40,8 +64,10 @@ export interface LearnedOptions {
   relearnAfterDays?: number;
   /** How long "nothing found" stays fresh. Shorter: the next job may be the first of its kind. */
   relearnNoneAfterDays?: number;
-  /** Ignore what is stored for this run; still remember what is found. */
+  /** Ignore what is stored for this run; still remember what is found. File readings are kept. */
   ignore?: boolean;
+  /** Ignore stored file readings for this run and read the files again. */
+  reread?: boolean;
   now?: () => Date;
 }
 
@@ -51,19 +77,30 @@ const DAY = 24 * 60 * 60 * 1000;
 
 export const normalizeTerm = (t: string): string => t.trim().toLowerCase();
 
+/**
+ * Past work was found but not put per unit: "$5,712 lump sum; the square
+ * footage isn't in what was shown". Kept on record, never used in place of
+ * a search, because the next search may read the quote that settles it.
+ */
+export const unpriced = (e: LearnedEntry): boolean => e.finding.match !== 'none' && e.finding.suggestedUnitCost === null;
+
 /** The store, in memory. `load`/`save` move it to and from disk. */
 export class LearnedStore {
   readonly entries: Map<string, LearnedEntry>;
+  readonly files: Map<string, ReadFile>;
   readonly relearnAfterDays: number;
   readonly relearnNoneAfterDays: number;
   readonly ignore: boolean;
+  readonly reread: boolean;
   readonly #now: () => Date;
 
-  constructor(entries: LearnedEntry[] = [], opts: LearnedOptions = {}) {
+  constructor(entries: LearnedEntry[] = [], opts: LearnedOptions = {}, files: ReadFile[] = []) {
     this.entries = new Map(entries.map((e) => [normalizeTerm(e.term), e]));
+    this.files = new Map(files.map((f) => [f.fileId, f]));
     this.relearnAfterDays = opts.relearnAfterDays ?? DEFAULT_RELEARN_DAYS;
     this.relearnNoneAfterDays = opts.relearnNoneAfterDays ?? DEFAULT_RELEARN_NONE_DAYS;
     this.ignore = opts.ignore ?? false;
+    this.reread = opts.reread ?? false;
     this.#now = opts.now ?? (() => new Date());
   }
 
@@ -71,14 +108,36 @@ export class LearnedStore {
     if (!existsSync(path)) return new LearnedStore([], opts);
     const raw = JSON.parse(readFileSync(path, 'utf8')) as Partial<LearnedFile>;
     const entries = raw.entries ? Object.values(raw.entries) : [];
-    return new LearnedStore(entries, opts);
+    const files = raw.files ? Object.values(raw.files) : [];
+    return new LearnedStore(entries, opts, files);
   }
 
   save(path: string): void {
     mkdirSync(dirname(path), { recursive: true });
-    const file: LearnedFile = { version: 1, entries: {} };
+    const file: LearnedFile = { version: 1, entries: {}, files: {} };
     for (const [k, v] of [...this.entries.entries()].sort(([a], [b]) => a.localeCompare(b))) file.entries[k] = v;
+    for (const [k, v] of [...this.files.entries()].sort(([a], [b]) => a.localeCompare(b))) file.files![k] = v;
     writeFileSync(path, JSON.stringify(file, null, 2) + '\n');
+  }
+
+  /**
+   * What a file said when it was read before, by its id or, for the same
+   * upload under another id, by its name and size. Null when it was never
+   * read or the run rereads.
+   */
+  readingOf(file: { id: string; name: string; size: number }): ReadFile | null {
+    if (this.reread) return null;
+    const byId = this.files.get(file.id);
+    if (byId) return byId;
+    const name = file.name.toLowerCase();
+    for (const f of this.files.values()) if (f.size === file.size && f.name.toLowerCase() === name) return f;
+    return null;
+  }
+
+  rememberFile(file: { id: string; name: string; size: number }, jobName: string, reading: FileReading): void {
+    this.files.set(file.id, {
+      fileId: file.id, name: file.name, size: file.size, jobName, readAt: this.#now().toISOString(), reading,
+    });
   }
 
   /** When an entry stops being fresh, by what it found. */
@@ -91,12 +150,15 @@ export class LearnedStore {
     return this.expiresAt(e).getTime() > this.#now().getTime();
   }
 
-  /** The first fresh entry among the terms, in the order given. Null when the run ignores the store. */
+  /**
+   * The first fresh entry among the terms, in the order given, that can be
+   * used without a search. Null when the run ignores the store.
+   */
   lookup(terms: string[]): LearnedEntry | null {
     if (this.ignore) return null;
     for (const t of terms) {
       const e = this.entries.get(normalizeTerm(t));
-      if (e && this.isFresh(e)) return e;
+      if (e && this.isFresh(e) && !unpriced(e)) return e;
     }
     return null;
   }

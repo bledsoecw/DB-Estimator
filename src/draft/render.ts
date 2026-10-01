@@ -20,6 +20,7 @@ import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_P
 import { changesText, reviseCommand } from './revise.ts';
 import type { HistoryFinding } from './prompt.ts';
 import { CHECKS_CSS, doubleCounts, flagsHtml, sortFlags, unitConflictFlag, type CheckLine, type ReviewFlag } from './checks.ts';
+import { readingText } from './readings.ts';
 
 /**
  * Where a drafted line will sit on the job, the way the build names it: an
@@ -515,7 +516,12 @@ export function draftJson(d: Draft): unknown {
         }
       : null,
     history: d.history
-      ? { terms: d.history.terms, findings: d.history.findings, learned: d.history.learned, regional: d.history.regional, skipped: d.history.skipped, searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName), files: t.jobs.flatMap((j) => j.files.filter((f) => !f.skipped).map((f) => f.name)) })) }
+      ? {
+          terms: d.history.terms, findings: d.history.findings, learned: d.history.learned, regional: d.history.regional, skipped: d.history.skipped,
+          files: d.history.files, renewed: d.history.renewed,
+          searched: d.history.report.terms.map((t) => ({ term: t.term, matching: t.raw, jobs: t.jobs.map((j) => j.jobName), files: t.jobs.flatMap((j) => j.files.filter((f) => !f.skipped).map((f) => f.name)) })),
+          quotesRead: pastQuotes(d),
+        }
       : null,
     catalog: d.catalog ? { terms: d.catalog.terms, candidates: d.catalog.candidates.length, found: d.catalog.found, error: d.catalog.error } : null,
     /** Which pass this is and what the rep said; the next pass reads this back. */
@@ -553,6 +559,29 @@ export function draftJson(d: Draft): unknown {
 
 export interface RenderOptions {
   footnote?: string;
+}
+
+/** Each past quote read for this draft, once, with what it said: so the rep can check the reading. */
+export function pastQuotes(d: Draft): { file: string; job: string; text: string; when: string }[] {
+  const out: { file: string; job: string; text: string; when: string }[] = [];
+  const seen = new Set<string>();
+  for (const t of d.history?.report.terms ?? []) {
+    for (const j of t.jobs) {
+      for (const f of j.files) {
+        if (!f.reading) continue;
+        const key = `${f.name.toLowerCase()}|${f.size}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({
+          file: f.name,
+          job: j.jobName,
+          text: readingText(f.reading),
+          when: `on ${f.foundOn}${f.onDocument?.vendor ? ` from ${f.onDocument.vendor}` : ''}; ${f.reading.readBefore ? `read ${f.reading.readBefore.slice(0, 10)}` : 'read this run'}`,
+        });
+      }
+    }
+  }
+  return out;
 }
 
 export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}): string {
@@ -678,10 +707,13 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
   ${(() => {
     const subbed = d.lines.filter((l) => l.costTypeName === 'Labor' && l.history?.typicallySubbed === true);
     if (!subbed.length && !d.history) return '';
+    const read = pastQuotes(d);
     return `<section class="findings">
-    <div class="bar"><h2>What history says</h2>${d.history ? `<p class="tally">${d.history.terms.length ? `searched ${d.history.terms.map((t) => `"${esc(t)}"`).join(', ')}` : 'nothing searched'}${d.history.learned ? ` &middot; ${d.history.learned} from the learned price book` : ''}</p>` : ''}</div>
+    <div class="bar"><h2>What history says</h2>${d.history ? `<p class="tally">${d.history.terms.length ? `searched ${d.history.terms.map((t) => `"${esc(t)}"`).join(', ')}` : 'nothing searched'}${d.history.learned ? ` &middot; ${d.history.learned} from the learned price book` : ''}${read.length ? ` &middot; ${read.length} past quote${read.length === 1 ? '' : 's'} read` : ''}</p>` : ''}</div>
     ${d.history?.skipped ? `<p class="detail">${esc(d.history.skipped)}.</p>` : ''}
+    ${(d.history?.renewed ?? []).map((r) => `<p class="detail">Searched again, though the price book had it: new sub paper came in for ${esc(r.target)} (${esc(r.what)}).</p>`).join('\n')}
     ${subbed.map((l) => `<article class="card sev-info"><div class="chip">Usually subcontracted</div><h3>${esc(l.name)}</h3><p class="detail">${esc(l.history!.summary)}${l.history!.usualVendor ? ` Usual sub: ${esc(l.history!.usualVendor)}.` : ''} Drafted here as crew labor.</p></article>`).join('\n')}
+    ${read.map((q) => `<article class="card sev-info"><div class="chip">Past quote read</div><h3>${esc(q.file)} <span class="fine">${esc(q.job)}</span></h3><p class="detail">${esc(q.text)}</p><p class="fine">${esc(q.when)}</p></article>`).join('\n')}
   </section>`;
   })()}
 

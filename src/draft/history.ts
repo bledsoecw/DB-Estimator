@@ -23,6 +23,15 @@
  * document the file hangs on: its lines, whatever they are named, are the
  * evidence beside the quote.
  *
+ * The sub's own paper goes first. On 25-0000 (2026-10-01) the epoxy term
+ * had one file's turn, and it went to DB's 491 KB change-order scan, not to
+ * Rhino's 26 KB quote on the work order, which is where the square footage
+ * is. So a file on a work order, purchase order, vendor bill or bid request
+ * ranks above anything else, then a PDF named for a quote or bid, then DB's
+ * own change orders and invoices; plain photos are not read. Each chosen
+ * file is read on its own before the history call (readings.ts), and a file
+ * read on an earlier run is not downloaded again.
+ *
  * This file only finds and describes. The model decides which past lines
  * apply and shows its arithmetic (prompt.ts); the code prices from the
  * number it cites (draft.ts). Read-only.
@@ -31,6 +40,7 @@
 import type { Reader } from '../jobtread/queries.ts';
 import { isTestJob } from '../jobtread/queries.ts';
 import { httpDownload, type Downloader, type ScopeFile } from '../scope/packet.ts';
+import { readingText, type FileReading } from './readings.ts';
 
 export type Where =
   | 'estimate' | 'change order' | 'invoice' | 'work order' | 'purchase order'
@@ -82,8 +92,20 @@ export interface HistoryJob {
 export interface HistoryFile extends ScopeFile {
   /** Where it was found: on the matched line's document, or by searching the job's files for the term. */
   foundOn: string;
+  /** The document the file hangs on, when it hangs on one. A file on a work order is the sub's own paper. */
+  onDocument?: FileDocument | null;
   /** Why it was left out, when it was. Null when it went to the model. */
   skipped: string | null;
+  /** What it says, read on its own (readings.ts). readBefore is when, if it was read on an earlier run. */
+  reading?: FileReading & { readBefore: string | null };
+}
+
+export interface FileDocument {
+  /** JobTread's document type: vendorOrder, vendorBill, bidRequest, customerOrder, customerInvoice. */
+  type: string;
+  name: string;
+  /** The sub or supplier on a vendor document. */
+  vendor: string | null;
 }
 
 export interface HistoryAttachment {
@@ -115,22 +137,61 @@ export interface HistoryOptions {
   files?: boolean;
   /** How to fetch a file. null lists files without downloading; undefined downloads over HTTP. */
   download?: Downloader | null;
+  /** What a file said when it was read on an earlier run; such a file is not downloaded again. */
+  readingOf?: (file: HistoryFile) => { reading: FileReading; readAt: string } | null;
 }
 
 export const FILE_LIMITS = {
   perJob: 3,
-  /** Shared across the search terms in turns, so the first term searched cannot take them all. */
-  total: 12,
+  /**
+   * Files newly read in one run, dealt out across the search terms in turns
+   * so the first term searched cannot take them all. Files read on an
+   * earlier run do not count: their readings are kept.
+   */
+  total: 20,
   maxFileBytes: 8 * 1024 * 1024,
   maxTotalBytes: 24 * 1024 * 1024,
 };
 
-/** A quote is what turns a lump sum into a rate; it goes first. */
+/** A quote is what turns a lump sum into a rate. */
 const QUOTE_LIKE = /quote|bid|proposal|estimate|invoice|statement|contract/i;
+const QUOTE_NAME = /quote|bid|proposal|estimate/i;
+/** DB's own paper to the customer: it carries DB's price, rarely the sub's size. */
+const CUSTOMER_PAPER = /change order|invoice|statement/i;
+const VENDOR_DOCS = new Set(['vendorOrder', 'vendorBill', 'bidRequest']);
+
+/**
+ * The order files are read in, lower first. 0: a PDF on a work order,
+ * purchase order, vendor bill or bid request, the sub's or supplier's own
+ * paper. 1: a PDF named for a quote, bid or proposal. 2: DB's own change
+ * order or invoice. 3: any other PDF. 4: a photo of a quote. Pure.
+ */
+export function fileRank(f: { name: string; description: string | null; type: string; onDocument?: FileDocument | null }): number {
+  const text = `${f.name} ${f.description ?? ''}`;
+  const onVendorDoc = !!f.onDocument && VENDOR_DOCS.has(f.onDocument.type);
+  if (f.type !== 'application/pdf') return 4;
+  if (onVendorDoc) return 0;
+  if ((f.onDocument && !onVendorDoc) || CUSTOMER_PAPER.test(text)) return 2;
+  return QUOTE_NAME.test(text) ? 1 : 3;
+}
+
+/** A photo is read only when it is of a quote: named for one, or on a vendor's document. */
+function isPlainPhoto(f: { name: string; description: string | null; type: string; onDocument?: FileDocument | null }): boolean {
+  if (f.type === 'application/pdf') return false;
+  if (f.onDocument && VENDOR_DOCS.has(f.onDocument.type)) return false;
+  return !QUOTE_LIKE.test(`${f.name} ${f.description ?? ''}`);
+}
+
+export function fileDocument(doc: { type: string; name: string; account: { name: string; type: string } | null } | null | undefined): FileDocument | null {
+  if (!doc) return null;
+  return { type: doc.type, name: doc.name, vendor: doc.account?.type === 'vendor' ? doc.account.name : null };
+}
 
 const PAGE = 50;
 const MAX_JOBS = 5;
 const CONTEXT_JOBS = 3;
+/** Documents per job whose files are read: the strongest line's, then vendor documents, where the sub's quote hangs. */
+const FILE_DOCS = 4;
 /** Jobs a term may add that no line matched, found by their files alone. */
 const MAX_FILE_JOBS = 2;
 const FILE_PAGE = 20;
@@ -184,7 +245,20 @@ export async function searchHistory(
     out.push({ term, raw: hits.length, jobs });
   }
 
-  // 2. Decide which files go, fairly across the terms; 3. fetch them.
+  // 2. Files read on an earlier run keep their reading and are not fetched again.
+  if (opts.readingOf) {
+    for (const t of out) {
+      for (const j of t.jobs) {
+        for (const f of j.files) {
+          if (f.skipped !== null) continue;
+          const known = opts.readingOf(f);
+          if (known) f.reading = { ...known.reading, readBefore: known.readAt };
+        }
+      }
+    }
+  }
+
+  // 3. Decide which of the rest are read, fairly across the terms; 4. fetch them.
   const chosen = chooseAttachments(out);
   const attachments: HistoryAttachment[] = [];
   const download = opts.download === undefined ? httpDownload : opts.download;
@@ -205,36 +279,31 @@ export async function searchHistory(
 }
 
 /**
- * Which listed files are read, in download order.
+ * Which listed files are read this run, in download order.
  *
  * The first live run searched the painting terms before "epoxy", and the
  * painting jobs' files took the whole budget: the two Rhino quotes were
  * listed as "found but not attached", and the epoxy lump sum stayed a lump
  * sum. So the budget is dealt out in turns, one file per term per round,
- * quotes before other PDFs before photos, the best job's first. A file that
- * appears under two terms is attached once. Everything not chosen is marked
+ * in fileRank order (the sub's own quote first), the best job's first. A
+ * file that appears under two terms is read once; a file read on an earlier
+ * run is not read again and costs no turn. Everything not chosen is marked
  * with why. Pure.
  */
 export function chooseAttachments(
   hits: HistoryHits[],
   limits: { total: number } = FILE_LIMITS,
 ): { job: HistoryJob; file: HistoryFile }[] {
-  const rank = (f: HistoryFile): number => {
-    const quote = QUOTE_LIKE.test(f.name) || QUOTE_LIKE.test(f.description ?? '');
-    if (f.type === 'application/pdf') return quote ? 0 : 1;
-    return quote ? 2 : 3;
-  };
-  // Per term, its candidates in the order it would like them read: a quote
-  // from any of its top jobs before a plain PDF, before a photo; the best
-  // job first among equals.
+  // Per term, its candidates in the order it would like them read: the sub's
+  // own quote from any of its top jobs first; the best job first among equals.
   const queues = hits.map((h) =>
     h.jobs
       .flatMap((job, jobIndex) =>
         job.files
-          .filter((f) => f.skipped === null)
+          .filter((f) => f.skipped === null && !f.reading)
           .map((file) => ({ term: h.term, job, jobIndex, file })),
       )
-      .sort((a, b) => rank(a.file) - rank(b.file) || a.jobIndex - b.jobIndex),
+      .sort((a, b) => fileRank(a.file) - fileRank(b.file) || a.jobIndex - b.jobIndex),
   );
   const chosen: { job: HistoryJob; file: HistoryFile }[] = [];
   const attachedAs = new Map<string, string>(); // name|size -> the term it went in under
@@ -244,10 +313,10 @@ export function chooseAttachments(
     progressed = false;
     for (const q of queues) {
       if (chosen.length >= limits.total) break;
-      // A file already attached under another term does not cost this term its turn.
+      // A file already read under another term does not cost this term its turn.
       let next = q.shift();
       while (next && attachedAs.has(keyOf(next.file))) {
-        next.file.skipped = `the same file is attached under "${attachedAs.get(keyOf(next.file))}"`;
+        next.file.skipped = `the same file is read under "${attachedAs.get(keyOf(next.file))}"`;
         next = q.shift();
       }
       if (!next) continue;
@@ -260,8 +329,8 @@ export function chooseAttachments(
     for (const left of q) {
       const under = attachedAs.get(keyOf(left.file));
       left.file.skipped = under
-        ? `the same file is attached under "${under}"`
-        : `the read's ${limits.total}-file budget went to closer matches`;
+        ? `the same file is read under "${under}"`
+        : `this run's ${limits.total}-file reading budget went to closer matches`;
     }
   }
   return chosen;
@@ -311,6 +380,53 @@ export interface RawFileHit {
 }
 
 const DOC_FIELDS = { id: {}, type: {}, status: {}, name: {}, issueDate: {}, account: { name: {}, type: {} } } as const;
+
+/**
+ * Has new sub paper come in for any of these terms since the price book
+ * learned them? Carl, 2026-10-01: "what when a new quote comes in after you
+ * cache?" A line on a work order, purchase order, vendor bill or bid
+ * request, or a file named for the term, created since then on a real job
+ * other than this one. Returns what came in, or null. One query per term.
+ */
+export async function newSince(client: Reader, terms: string[], since: string, excludeJobId?: string): Promise<string | null> {
+  for (const raw of terms) {
+    const term = raw.trim().toLowerCase();
+    if (!term) continue;
+    const like = `%${term}%`;
+    const named = { or: [[['name'], 'like', like], [['description'], 'like', like]] };
+    const recent = [['createdAt'], '>', since];
+    const onJob = [['job', 'id'], '!=', null];
+    const res = await client.query<{
+      organization: {
+        costItems: { nodes: { name: string; createdAt: string; job: { id: string; name: string } | null; document: { name: string } | null }[] };
+        files: { nodes: { name: string; createdAt: string; job: { id: string; name: string } | null }[] };
+      };
+    }>({
+      organization: {
+        $: { id: client.organizationId },
+        costItems: {
+          $: {
+            size: 10,
+            where: { and: [named, onJob, recent, { or: [...VENDOR_DOCS].map((t) => [['document', 'type'], '=', t]) }] },
+            sortBy: [{ field: 'createdAt', order: 'desc' }],
+          },
+          nodes: { name: {}, createdAt: {}, job: { id: {}, name: {} }, document: { name: {} } },
+        },
+        files: {
+          $: { size: 10, where: { and: [named, onJob, recent] }, sortBy: [{ field: 'createdAt', order: 'desc' }] },
+          nodes: { name: {}, createdAt: {}, job: { id: {}, name: {} } },
+        },
+      },
+    });
+    const real = (j: { id: string; name: string } | null): j is { id: string; name: string } =>
+      !!j && j.id !== excludeJobId && !isTestJob(j.name);
+    const line = res.organization.costItems.nodes.find((n) => real(n.job));
+    if (line) return `"${line.name}" on a ${line.document?.name ?? 'vendor document'} for ${line.job!.name}, ${line.createdAt.slice(0, 10)}`;
+    const file = res.organization.files.nodes.find((n) => real(n.job));
+    if (file) return `"${file.name}" on ${file.job!.name}, ${file.createdAt.slice(0, 10)}`;
+  }
+  return null;
+}
 
 /** Every job's files whose name or description carries the term: quotes, bids and invoices filed under the trade's name. */
 async function searchFiles(client: Reader, term: string): Promise<RawFileHit[]> {
@@ -474,23 +590,40 @@ export function groupByJob(hits: RawHit[], excludeJobId?: string): HistoryJob[] 
   return jobs;
 }
 
-const FILE_FIELDS = { id: {}, name: {}, type: {}, size: {}, createdAt: {}, url: {}, description: {} } as const;
+const FILE_FIELDS = { id: {}, name: {}, type: {}, size: {}, createdAt: {}, url: {}, description: {}, document: DOC_FIELDS } as const;
 
 interface RawFile {
   id: string; name: string; type: string; size: number; createdAt: string; url: string; description: string | null;
+  /** The document the file hangs on. Absent in older fixtures. */
+  document?: RawDoc | null;
 }
 
 /**
  * The job's description and project type, the other lines beside its
- * strongest match, and the files: on the top lines' documents first (the
- * sub's quote is attached to the work order), then any job file named for
- * the term.
+ * strongest match, and the files: on the matched lines' documents (the
+ * strongest line's, then the work orders and vendor bills, where the sub's
+ * quote is attached), then any job file named for the term.
  */
+/**
+ * Which documents' files are read, in order: the strongest line's (its
+ * other lines are the context), then the vendor documents, then the rest.
+ * On Myers the epoxy line sat on a change order, an invoice and the work
+ * order; only the work order carries Rhino's quote. Pure.
+ */
+export function fileDocIds(lines: HistoryLine[]): string[] {
+  const ids = [...new Set(lines.map((l) => l.documentId).filter((d): d is string => !!d))];
+  if (ids.length === 0) return [];
+  const vendorish = new Set<Where>(['work order', 'purchase order', 'vendor bill', 'bid request']);
+  const isVendor = (id: string): boolean => lines.some((l) => l.documentId === id && vendorish.has(l.where));
+  const [first, ...rest] = ids;
+  return [first!, ...rest.filter(isVendor), ...rest.filter((id) => !isVendor(id))].slice(0, FILE_DOCS);
+}
+
 async function addContext(client: Reader, job: HistoryJob, term: string): Promise<void> {
   await readJobHead(client, job);
 
   const found: { file: RawFile; foundOn: string }[] = [];
-  const docIds = [...new Set(job.lines.slice(0, 3).map((l) => l.documentId).filter((d): d is string => !!d))];
+  const docIds = fileDocIds(job.lines);
   for (const [i, docId] of docIds.entries()) {
     const line = job.lines.find((l) => l.documentId === docId)!;
     const doc = await client.query<{
@@ -532,26 +665,34 @@ async function addContext(client: Reader, job: HistoryJob, term: string): Promis
 const READABLE = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
 /**
- * Which found files go to the model, and why the rest do not. Pure. PDFs
- * first (a quote is a PDF), one copy of a file uploaded twice, at most
- * FILE_LIMITS.perJob a job.
+ * Which found files go to the model, and why the rest do not. Pure. In
+ * fileRank order (the sub's own quote first), one copy of a file uploaded
+ * twice (the copy on a document wins), at most FILE_LIMITS.perJob a job.
+ * A photo is read only when it is of a quote.
  */
 export function selectHistoryFiles(found: { file: RawFile; foundOn: string }[]): HistoryFile[] {
   const out: HistoryFile[] = [];
   const seen = new Set<string>();
-  const ordered = [
-    ...found.filter((f) => f.file.type === 'application/pdf'),
-    ...found.filter((f) => f.file.type !== 'application/pdf'),
-  ];
+  const ordered = found
+    .map(({ file, foundOn }) => {
+      const hf: HistoryFile = {
+        id: file.id, name: file.name, type: file.type, size: file.size, createdAt: file.createdAt, url: file.url,
+        description: file.description?.trim() || null, foundOn, onDocument: fileDocument(file.document), skipped: null,
+      };
+      return hf;
+    })
+    .map((hf, i) => ({ hf, i }))
+    .sort((a, b) => fileRank(a.hf) - fileRank(b.hf) || Number(!!b.hf.onDocument) - Number(!!a.hf.onDocument) || a.i - b.i)
+    .map(({ hf }) => hf);
   let kept = 0;
-  for (const { file, foundOn } of ordered) {
-    const key = `${file.name.toLowerCase()}|${file.size}`;
-    const hf: HistoryFile = { ...file, description: file.description?.trim() || null, foundOn, skipped: null };
+  for (const hf of ordered) {
+    const key = `${hf.name.toLowerCase()}|${hf.size}`;
     if (seen.has(key)) continue; // the same upload twice: not even worth listing
     seen.add(key);
-    if (!READABLE.has(file.type)) hf.skipped = `not a PDF or photo (${file.type})`;
-    else if (/companycam_report/i.test(file.name)) hf.skipped = 'a photo report';
-    else if (file.size > FILE_LIMITS.maxFileBytes) hf.skipped = `larger than ${Math.round(FILE_LIMITS.maxFileBytes / 1024 / 1024)} MB`;
+    if (!READABLE.has(hf.type)) hf.skipped = `not a PDF or photo (${hf.type})`;
+    else if (/companycam_report/i.test(hf.name)) hf.skipped = 'a photo report';
+    else if (isPlainPhoto(hf)) hf.skipped = 'a photo, not a quote; quotes and other papers are read';
+    else if (hf.size > FILE_LIMITS.maxFileBytes) hf.skipped = `larger than ${Math.round(FILE_LIMITS.maxFileBytes / 1024 / 1024)} MB`;
     else if (kept >= FILE_LIMITS.perJob) hf.skipped = `more than ${FILE_LIMITS.perJob} files on this job; the first were sent`;
     else kept++;
     out.push(hf);
@@ -574,6 +715,7 @@ function qty(n: number | null, unit: string | null): string {
 /** Deterministic, so a dry run and a test show exactly what the model sees. */
 export function historyText(report: HistoryReport): string {
   const out: string[] = [];
+  const shownUnder = new Map<string, string>(); // name|size -> the term its reading was shown under
   out.push('# Past DB work matching the search terms');
   out.push(
     'Each line is a real cost item on a real job. [billed] is a vendor bill DB paid; [sold] is on an approved ' +
@@ -602,13 +744,26 @@ export function historyText(report: HistoryReport): string {
       if (j.context.length) {
         out.push(`  Also on that document: ${j.context.map((c) => `${c.name} ${qty(c.quantity, c.unit)}`).join('; ')}`);
       }
-      const sent = j.files.filter((f) => !f.skipped);
+      for (const f of j.files.filter((x) => x.reading)) {
+        const key = `${f.name.toLowerCase()}|${f.size}`;
+        const under = shownUnder.get(key);
+        if (under !== undefined) {
+          out.push(`  Read from "${f.name}": shown above under "${under}".`);
+          continue;
+        }
+        shownUnder.set(key, t.term);
+        out.push(
+          `  Read from "${f.name}"${f.description ? ` (${f.description})` : ''}, on ${f.foundOn}` +
+            `${f.onDocument?.vendor ? ` from ${f.onDocument.vendor}` : ''}, uploaded ${f.createdAt.slice(0, 10)}: ${readingText(f.reading!)}`,
+        );
+      }
+      const sent = j.files.filter((f) => !f.skipped && !f.reading);
       const left = j.files.filter((f) => f.skipped);
       if (sent.length) {
-        out.push(`  Files from this job attached below: ${sent.map((f) => `"${f.name}"${f.description ? ` (${f.description})` : ''}, from ${f.foundOn}, ${f.createdAt.slice(0, 10)}`).join('; ')}`);
+        out.push(`  Files on this job not read this run: ${sent.map((f) => `"${f.name}"${f.description ? ` (${f.description})` : ''}, from ${f.foundOn}, ${f.createdAt.slice(0, 10)}`).join('; ')}`);
       }
       if (left.length) {
-        out.push(`  Files found but not attached: ${left.map((f) => `"${f.name}": ${f.skipped}`).join('; ')}`);
+        out.push(`  Files found but not read: ${left.map((f) => `"${f.name}": ${f.skipped}`).join('; ')}`);
       }
     }
   }

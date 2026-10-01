@@ -29,8 +29,9 @@ import {
   buildDraftContent, buildHistoryContent, buildPickContent,
   type DraftReply, type DraftReplyGap, type DraftReplyQuestion, type HistoryFinding, type HistoryTarget, type PickReply,
 } from './prompt.ts';
-import type { HistoryReport } from './history.ts';
+import type { HistoryFile, HistoryReport } from './history.ts';
 import type { LearnedStore } from './learned.ts';
+import { readFiles } from './readings.ts';
 import { chooseRate, contingencyAmount, contingencyLine, type ContingencyStep } from './contingency.ts';
 import { candidatesFor, gapTerms, type CatalogCandidate, type CatalogSource } from './catalog.ts';
 import { diffDrafts, revisionText, type Direction, type DraftChanges, type Revision } from './revise.ts';
@@ -222,6 +223,10 @@ export interface Draft {
     learned: number;
     /** Gaps that got a regional ballpark because history had nothing. */
     regional: number;
+    /** Past quotes and papers: read this run, read on an earlier run, could not be read on their own. */
+    files: { read: number; readBefore: number; failed: number };
+    /** Price book answers searched again because new sub paper came in since they were learned. */
+    renewed: { target: string; what: string }[];
   } | null;
   usage: Usage;
   cost: number | null;
@@ -237,6 +242,12 @@ export interface HistorySource {
   margins: Record<string, number>;
   /** What earlier runs learned. Absent means search everything every time. */
   learned?: LearnedStore;
+  /**
+   * New sub paper for these terms since a date, or null. A price book answer
+   * is searched again when something came in since it was learned. Absent
+   * means the book's answer stands until it expires.
+   */
+  newSince?: (terms: string[], since: string) => Promise<string | null>;
 }
 
 export interface DraftOptions {
@@ -404,9 +415,13 @@ export async function draftEstimate(
     // What the price book already knows is applied first and not searched again.
     const learnedFindings: AttachedFinding[] = [];
     const toSearch: HistoryTarget[] = [];
+    const renewed: { target: string; what: string }[] = [];
     for (const t of allTargets) {
       const e = opts.history ? (store?.lookup(t.lookBack) ?? null) : null;
       if (!e) { toSearch.push(t); continue; }
+      // A quote that came in since the book learned this is read, not missed for a year.
+      const since = opts.history?.newSince ? await opts.history.newSince(t.lookBack, e.learnedAt) : null;
+      if (since) { renewed.push({ target: t.name, what: since }); toSearch.push(t); continue; }
       const unitMismatch =
         e.finding.suggestedUnitCost !== null && e.unit !== null && t.unit !== null && e.unit !== t.unit
           ? `learned per ${e.unit}; this is in ${t.unit}, so the unit cost is not carried over`
@@ -427,6 +442,19 @@ export async function draftEstimate(
     let report: HistoryReport = { terms: [] };
     if (terms.length > 0) report = await opts.history!.search(terms);
     const matched = report.terms.some((t) => t.jobs.length > 0);
+
+    // Every past quote found is read on its own before the history is read:
+    // the size that turns a sub's lump sum into a rate is on the quote.
+    const files = { read: 0, readBefore: 0, failed: 0 };
+    for (const t of report.terms) for (const j of t.jobs) for (const f of j.files) if (f.reading?.readBefore) files.readBefore++;
+    if (report.attachments?.length) {
+      const termsOf = (f: HistoryFile): string[] => report.terms.filter((t) => t.jobs.some((j) => j.files.includes(f))).map((t) => t.term);
+      const r = await readFiles(report.attachments, termsOf, call, model, (a, reading) => store?.rememberFile(a.file, a.jobName, reading));
+      usage = addUsage(usage, r.usage);
+      addCost(r.cost);
+      files.read = r.read;
+      files.failed = r.failed;
+    }
     let skipped: string | null = terms.length > 0 && !matched ? 'no past DB work matched any search term' : null;
     // A target whose terms did not make the cut was not searched: what the model says about it is not
     // history, and the price book must not learn "nothing" for terms nobody looked for.
@@ -499,7 +527,7 @@ export async function draftEstimate(
     }
     if (opts.history && allTargets.length > 0) {
       const regional = gaps.filter((g) => g.regionalUnitCost !== null).length;
-      history = { terms, report, findings, skipped, learned: learnedFindings.length, regional };
+      history = { terms, report, findings, skipped, learned: learnedFindings.length, regional, files, renewed };
     }
   }
   // A found line is a kept line: it prices, it totals, it belongs to its option.

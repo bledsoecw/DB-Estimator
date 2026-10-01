@@ -118,9 +118,12 @@ So the draft has a third, short call:
    the matched lines' documents**: the sub's quote is attached to the work
    order or change order it priced, and that is where the square footage a
    lump-sum line does not carry is written. Failing that, the job's files
-   whose name or description carries the search term. Quotes before other
-   PDFs before photos, one copy of a file uploaded twice, three files a job,
-   twelve a read, dealt out one per search term per round so the first term
+   whose name or description carries the search term. The sub's own paper
+   first (a PDF on a work order, purchase order, vendor bill or bid
+   request), then a PDF named for a quote or bid, then DB's own change
+   orders and invoices, then other PDFs; a photo only when it is of a quote.
+   One copy of a file uploaded twice, three files a job, twenty newly read
+   a run, dealt out one per search term per round so the first term
    searched cannot take them all; a job with a thousand migrated files is
    never scanned. Every job's **files** are searched for the term too, by
    name and description: DB files a sub's quote on the work order or
@@ -129,12 +132,18 @@ So the draft has a third, short call:
    ("Flooring - Sub"). Up to two jobs a term are added that way, read
    through the document the file hangs on, so the lines beside the quote are
    evidence whatever they are named.
-3. The model reads the matches and the attached files and, per target, says
-   whether DB has done this before, cites the lines and files it relies on,
-   and gives a unit cost only when the arithmetic is shown. A size written
-   on a sub's quote is written evidence. A lump sum with no size anywhere
-   stays a lump sum and the model says what would settle it. For a labor
-   line it says whether DB usually subs that trade, and to whom.
+3. **Every file chosen is read on its own** (`src/draft/readings.ts`), one
+   short call a file with one job: write down who wrote it, every size,
+   area, length and count written anywhere on it, each priced line and the
+   total, exactly as written. See "Reading the subs' quotes" below.
+4. The model reads the matches and the quotes' readings and, per target,
+   says whether DB has done this before, cites the lines and files it
+   relies on, and gives a unit cost only when the arithmetic is shown. A
+   size written on a sub's quote is written evidence, and the model may not
+   say a size is missing without checking every reading under that job. A
+   lump sum with no size anywhere stays a lump sum and the model says what
+   would settle it. For a labor line it says whether DB usually subs that
+   trade, and to whom.
 
 The code then prices what history proposes at the margin JobTread applies to
 that line's cost type (a sub's rate at the Subcontractor margin, a crew rate
@@ -169,6 +178,55 @@ Southworth's Drywall & Painting, and 261257 Reynolds carries a
 "Seal/Prime & Paint Ceiling" line at $3.95 a square foot. When there is no
 match at all the third call is skipped and the page says what was searched.
 
+### Reading the subs' quotes
+
+On 25-0000, 2026-10-01, the second run still said of the Myers epoxy line
+"the square footage isn't in what was shown". Rhino's 26 KB quote on the
+work order gives it. Two things went wrong. The epoxy term got one file's
+turn in a twelve-file budget shared by sixteen terms, and the turn went to
+DB's 491 KB change-order scan, which sorted first. And every file went into
+one call with sixteen targets to answer, where a quote is easy to skim past.
+
+Carl asked for a habit, not a fact: "learn to read the quote files loaded
+when attempting to find historical costing, and apply that moving forward."
+So reading is its own step, for every trade on every job:
+
+- The sub's own paper is ranked first (above). A file that hangs on a work
+  order, purchase order, vendor bill or bid request is what the sub asked
+  to be paid; DB's change order and invoice carry DB's price.
+- Each chosen file is read alone, by a call whose only job is to write down
+  what the file says that prices work: who wrote it and when, the work, every
+  size written on it ("Garage floor 24' x 24'", "approx. 576 sq ft"), each
+  priced line, and the total. Figures are copied, never worked out.
+- The history call gets those readings as text under the job they belong
+  to, beside the lump sum they divide: `Read from "6466 Dennis Myers_Epoxy
+  Quote.pdf", on the work order from Rhino Concrete Coatings: ...`. The files
+  themselves are not sent again.
+- A file that cannot be read (the API refuses it, or the reply is cut off)
+  is listed with the reason. It is not sent whole: a file the API refuses
+  would sink the history call too.
+- The draft page lists every past quote read and what it said, under "What
+  history says", so a rep can check the reading against the file.
+
+What each file said is kept in the learned store by file id. A file does
+not change, so a reading never goes stale, `--relearn` leaves it alone, and
+the next job that finds the same quote uses the reading without downloading
+or paying for the file again. `--reread` reads them all again, for when a
+reading was wrong.
+
+**New quotes.** Carl, the same day: "what when a new quote comes in after
+you cache?" A trade the price book already priced is not searched for a
+year, so a new quote would wait a year to be read. Instead, before a book
+answer is used, JobTread is asked whether anything came in for its terms
+since the day it was learned: a line on a work order, purchase order,
+vendor bill or bid request, or a file named for the term, on a real job
+other than this one. If something did, the trade is searched again, its new
+quote is read, and the new finding replaces the old. The page and the log
+say which trade was searched again and why. And a finding that matched past
+work but could not put it per unit ("$5,712 lump sum, no size shown") is
+never served from the book; it is searched every time, so a quote read
+since can price it.
+
 ### The learned price book
 
 Carl's second rule, the same day: once a past price has been found for a
@@ -185,9 +243,12 @@ job may be the first of its kind.
 
 The file is plain JSON, readable and editable by hand: delete an entry to
 forget it. It holds DB's pricing, so it is git-ignored and lives on the
-machine that runs the drafter. `--relearn` ignores the book for one run and
-overwrites what it finds; `--relearn-after 180` shortens the year;
-`--learned path` moves the file.
+machine that runs the drafter. `--relearn` ignores the book's prices for one
+run and overwrites what it finds (the quotes' readings stay); `--reread`
+reads the quotes again; `--relearn-after 180` shortens the year; `--learned
+path` moves the file. Each computer keeps its own book: a work computer and
+a laptop learn separately unless both point `--learned` at the same file in
+a folder they share.
 
 `--no-history` turns the whole step off. A `--capture` saves the history
 that was read, so a replay from the fixture is offline.

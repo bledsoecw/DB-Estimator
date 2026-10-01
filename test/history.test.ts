@@ -15,8 +15,9 @@ import { readFileSync } from 'node:fs';
 
 import { formatMoney, moneyFromApi } from '../src/money.ts';
 import type { Reader } from '../src/jobtread/queries.ts';
-import { chooseAttachments, historyText, searchHistory, selectHistoryFiles, strengthOf, whereOf, type HistoryHits, type HistoryReport } from '../src/draft/history.ts';
+import { chooseAttachments, fileDocIds, fileRank, historyText, newSince, searchHistory, selectHistoryFiles, strengthOf, whereOf, type HistoryHits, type HistoryReport } from '../src/draft/history.ts';
 import { LearnedStore } from '../src/draft/learned.ts';
+import { READ_SYSTEM } from '../src/draft/readings.ts';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -100,8 +101,8 @@ function reader(): Reader & { queries: Record<string, unknown>[] } {
         if ('files' in job) {
           // the job's files named for the term: the quote again under another id, and a copy of the change-order scan
           return { job: { files: { nodes: [
-            file('fQuote2', '6466 Dennis Myers_Epoxy Quote.pdf', 26513, 'Epoxy Quote'),
-            file('fCO2', '6466 Dennis Myers_epoxy quote.pdf', 491463, 'Epoxy change order'),
+            { ...file('fQuote2', '6466 Dennis Myers_Epoxy Quote.pdf', 26513, 'Epoxy Quote'), document: null },
+            { ...file('fCO2', '6466 Dennis Myers_epoxy quote.pdf', 491463, 'Epoxy change order'), document: CO },
             file('fPhoto', 'CompanyCam 1', 200000, null, 'image/jpeg'),
           ] } } } as T;
         }
@@ -120,8 +121,8 @@ function reader(): Reader & { queries: Record<string, unknown>[] } {
         { id: 'y', name: 'Rental -Storage Pod', quantity: 1, unit: { name: 'Lump Sum' } },
       ] };
       if (id === 'docINV') return { document: { costItems, files: { nodes: [] } } } as T;
-      if (id === 'docCO') return { document: { files: { nodes: [file('fCO', '6466 Dennis Myers_epoxy quote.pdf', 491463, 'Epoxy change order')] } } } as T;
-      return { document: { files: { nodes: [file('fQuote', '6466 Dennis Myers_Epoxy Quote.pdf', 26513, 'Epoxy Quote')] } } } as T;
+      if (id === 'docCO') return { document: { files: { nodes: [{ ...file('fCO', '6466 Dennis Myers_epoxy quote.pdf', 491463, 'Epoxy change order'), document: CO }] } } } as T;
+      return { document: { files: { nodes: [{ ...file('fQuote', '6466 Dennis Myers_Epoxy Quote.pdf', 26513, 'Epoxy Quote'), document: WO }] } } } as T;
     },
   };
 }
@@ -162,20 +163,20 @@ test('past work is searched by name and description on real jobs only, grouped b
   assert.equal(job.projectType, 'C-Miscellaneous');
   assert.deepEqual(job.context.map((c) => c.name), ['Crew Labor', 'Rental -Storage Pod'], 'the matched line itself is not context');
 
-  // The sub's quote hangs off the work order; the change order carries a scan; the job's
-  // files named for the term add nothing new but a photo, which is listed and left out.
+  // The sub's quote hangs off the work order and goes first; DB's change-order scan after it;
+  // the job's files named for the term add nothing new but a photo, which is listed and not read.
   assert.deepEqual(
-    job.files.map((f) => [f.name, f.foundOn, f.skipped]),
+    job.files.map((f) => [f.name, f.foundOn, f.onDocument?.vendor ?? null, f.skipped]),
     [
-      ['6466 Dennis Myers_epoxy quote.pdf', 'the change order', null],
-      ['6466 Dennis Myers_Epoxy Quote.pdf', 'the work order', null],
-      ['CompanyCam 1', 'the job\'s files, named for "epoxy"', null],
+      ['6466 Dennis Myers_Epoxy Quote.pdf', 'the work order', 'Rhino Concrete Coatings', null],
+      ['6466 Dennis Myers_epoxy quote.pdf', 'the change order', null, null],
+      ['CompanyCam 1', 'the job\'s files, named for "epoxy"', null, 'a photo, not a quote; quotes and other papers are read'],
     ],
-    'PDFs first, one copy of a file uploaded twice, then the photo',
+    'the sub\'s own quote first, one copy of a file uploaded twice, a plain photo not read',
   );
-  assert.deepEqual(downloaded, ['https://cdn/fCO', 'https://cdn/fQuote', 'https://cdn/fPhoto']);
-  assert.equal(report.attachments!.length, 3);
-  assert.equal(report.attachments![1]!.jobName, '246466 Dennis Myers_Sunroom');
+  assert.deepEqual(downloaded, ['https://cdn/fQuote', 'https://cdn/fCO']);
+  assert.equal(report.attachments!.length, 2);
+  assert.equal(report.attachments![0]!.jobName, '246466 Dennis Myers_Sunroom');
 
   const skim = report.terms[1]!;
   assert.equal(skim.raw, 0);
@@ -187,7 +188,8 @@ test('past work is searched by name and description on real jobs only, grouped b
   assert.match(text, /- \[sold\] Epoxy Sub Pckg · 1 Lump Sum · unit cost \$5,712\.00 · unit price \$7,425\.60 · line cost \$5,712\.00 · Subcontractor · invoice \(approved\) · 2026-09-03/);
   assert.match(text, /- \[ordered\] Epoxy Sub Pckg .* work order \(draft\) from Rhino Concrete Coatings/);
   assert.match(text, /Also on that document: Crew Labor 4 Hours; Rental -Storage Pod 1 Lump Sum/);
-  assert.match(text, /Files from this job attached below: "6466 Dennis Myers_epoxy quote.pdf" \(Epoxy change order\), from the change order, 2026-08-31; "6466 Dennis Myers_Epoxy Quote.pdf" \(Epoxy Quote\), from the work order, 2026-08-31/);
+  assert.match(text, /Files on this job not read this run: "6466 Dennis Myers_Epoxy Quote.pdf" \(Epoxy Quote\), from the work order, 2026-08-31; "6466 Dennis Myers_epoxy quote.pdf" \(Epoxy change order\), from the change order, 2026-08-31/);
+  assert.match(text, /Files found but not read: "CompanyCam 1": a photo, not a quote/);
   assert.match(text, /## "skim" — 0 matching lines, 0 shown on 0 jobs\n\(nothing usable/);
 });
 
@@ -254,6 +256,11 @@ const HISTORY = {
     { target: { kind: 'line', id: 'nope' }, match: 'none', summary: 'ignored', pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
       regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
   ],
+};
+/** The same, with the painting lump sums put per hour, so every finding carries a unit cost. */
+const PRICED = {
+  findings: HISTORY.findings.map((f) =>
+    f.target.id === '22PLhtLxcz9S' ? { ...f, suggestedUnitCost: 48, suggestionBasis: '$1,920 for 40 hours on the Hunter quote = $48/hour.' } : f),
 };
 /** History finds nothing at all; the model prices the skim coat from the area instead. */
 const REGIONAL_ONLY = {
@@ -459,7 +466,7 @@ test('the CLI reads every cost type margin and can turn history off', () => {
   assert.equal(parseDraftArgs(['261323']).history, true);
 });
 
-test('files found beside past lines: PDFs first, duplicates once, oddities and reports left out with a reason', () => {
+test('files found beside past lines: quotes first, duplicates once, oddities, reports and plain photos left out with a reason', () => {
   const found = [
     { file: file('a', 'Quote.pdf', 100, 'q'), foundOn: 'the work order' },
     { file: file('b', 'quote.PDF', 100, null), foundOn: 'the job\'s files' },       // same upload, other case
@@ -474,13 +481,13 @@ test('files found beside past lines: PDFs first, duplicates once, oddities and r
   const out = selectHistoryFiles(found);
   assert.deepEqual(out.map((f) => [f.name, f.skipped]), [
     ['Quote.pdf', null],
-    ['Job_companycam_report.pdf', 'a photo report'],
-    ['huge.pdf', 'larger than 8 MB'],
     ['bid2.pdf', null],
     ['bid3.pdf', null],
     ['bid4.pdf', 'more than 3 files on this job; the first were sent'],
+    ['Job_companycam_report.pdf', 'a photo report'],
+    ['huge.pdf', 'larger than 8 MB'],
     ['notes.docx', 'not a PDF or photo (application/vnd.openxmlformats-officedocument.wordprocessingml.document)'],
-    ['photo.jpg', 'more than 3 files on this job; the first were sent'],
+    ['photo.jpg', 'a photo, not a quote; quotes and other papers are read'],
   ]);
 });
 
@@ -488,28 +495,24 @@ test('with download off, the files are listed and nothing is fetched', async () 
   const r = reader();
   const report = await searchHistory(r, ['epoxy'], { download: null });
   assert.equal(report.attachments!.length, 0);
-  assert.equal(report.terms[0]!.jobs[0]!.files.filter((f) => !f.skipped).length, 3);
+  assert.equal(report.terms[0]!.jobs[0]!.files.filter((f) => !f.skipped).length, 2);
 });
 
-test('attached files go to the model after the text, each introduced by the job it came from', async () => {
-  const call = fake([DRAFT, HISTORY]);
-  const withFile: HistoryReport = {
-    ...report(true),
-    attachments: [{
-      jobName: '246466 Dennis Myers_Sunroom',
-      file: { ...file('fQuote', '6466 Dennis Myers_Epoxy Quote.pdf', 26513, 'Epoxy Quote'), foundOn: 'the work order', skipped: null },
-      bytes: new Uint8Array([37, 80, 68, 70]),
-    }],
-  };
+test('a file that cannot be read is listed with why and not sent whole, so it cannot sink the history call', async () => {
+  const call = fake([DRAFT, { not: 'a reading' }, HISTORY]);
+  const quote = { ...file('fQuote', '6466 Dennis Myers_Epoxy Quote.pdf', 26513, 'Epoxy Quote'), foundOn: 'the work order', skipped: null as string | null };
+  const withFile = report(true);
+  withFile.terms[0]!.jobs[0]!.files.push(quote);
+  withFile.attachments = [{ jobName: '246466 Dennis Myers_Sunroom', file: quote, bytes: new Uint8Array([37, 80, 68, 70]) }];
   await draftEstimate(fx.evidence, fx.index, load, call, {
     templateIds: [FIN, GR],
     history: { search: async () => withFile, margins: MARGINS },
   });
-  const content = call.calls[1]!.content as { type: string; text?: string }[];
-  const intro = content.findIndex((b) => b.type === 'text' && /^From past job 246466 Dennis Myers_Sunroom, found on the work order:/.test(b.text ?? ''));
-  assert.ok(intro > 0, 'the file is introduced');
-  assert.equal(content[intro + 2]!.type, 'document', 'then the PDF itself');
-  assert.match(call.calls[1]!.system, /files, they are attached after the text/);
+  assert.equal(call.calls[1]!.system, READ_SYSTEM, 'the file is read on its own first');
+  const content = call.calls[2]!.content as { type: string; text?: string }[];
+  assert.ok(!content.some((b) => b.type === 'document'), 'never sent whole');
+  assert.match(content.map((b) => b.text ?? '').join('\n'), /Files found but not read: "6466 Dennis Myers_Epoxy Quote\.pdf": could not be read: the read "6466 Dennis Myers_Epoxy Quote\.pdf" reply did not fit the schema/);
+  assert.match(call.calls[2]!.system, /A file that could not be read is listed with the reason/);
 });
 
 // ---- the learned price book -----------------------------------------------------
@@ -549,8 +552,9 @@ test('the second job with the same trades is answered from the price book: no se
   const searches: string[][] = [];
   const src = (search: (t: string[]) => Promise<HistoryReport>) => ({ search, margins: MARGINS, learned: store });
 
-  // First job: everything is searched and read.
-  const first = fake([DRAFT, HISTORY]);
+  // First job: everything is searched and read. (Painting is priced here; an unpriced
+  // finding is searched again every time, which is the next test's business.)
+  const first = fake([DRAFT, PRICED]);
   const d1 = await draftEstimate(fx.evidence, fx.index, load, first, {
     templateIds: [FIN, GR],
     history: src(async (t) => { searches.push(t); return report(true); }),
@@ -645,9 +649,9 @@ test('the file budget is dealt out across the terms, quotes first, each file onc
     [['A', 'A Quote.pdf'], ['C', 'C proposal.pdf'], ['B', 'B bill.pdf'], ['A', 'A misc.pdf']],
     'one per term per round, and within a term a quote from the second job before a plain PDF from the first',
   );
-  assert.equal(jobC.files[0]!.skipped, 'the same file is attached under "paint"');
-  assert.equal(jobB.files[1]!.skipped, "the read's 4-file budget went to closer matches");
-  assert.equal(jobA.files[2]!.skipped, "the read's 4-file budget went to closer matches");
+  assert.equal(jobC.files[0]!.skipped, 'the same file is read under "paint"');
+  assert.equal(jobB.files[1]!.skipped, "this run's 4-file reading budget went to closer matches");
+  assert.equal(jobA.files[2]!.skipped, "this run's 4-file reading budget went to closer matches");
   assert.equal(jobA.files[1]!.skipped, null);
 });
 
@@ -666,13 +670,13 @@ test('a quote filed under the trade\'s name is found on a job whose line is call
   ]);
   assert.deepEqual(job.files.map((f) => [f.name, f.foundOn, f.skipped]), [
     ['2511 Smith_Floor Coating Quote.pdf', 'the work order, named for "floor coating"', null],
-    ['garage floor coating.jpg', 'the job\'s files, named for "floor coating"', null],
+    ['garage floor coating.jpg', 'the job\'s files, named for "floor coating"', 'a photo, not a quote; quotes and other papers are read'],
   ]);
   assert.equal(job.description, 'Sun Room & Deck', 'the job head is read (the fake answers every job alike)');
   const text = historyText(report);
   assert.match(text, /## "floor coating" — 0 matching lines, 1 shown on 1 job/);
   assert.match(text, /### 252511 Smith_Garage[^\n]*\n  Found by a file named for "floor coating", not by a line: these are the lines on the document that file is attached to, whatever they are named\. Read the file for what they cover\.\n- \[ordered\] Flooring - Sub · 480 Square Foot · unit cost \$6\.50/);
-  assert.match(text, /Files from this job attached below: "2511 Smith_Floor Coating Quote\.pdf" \(Rhino quote, garage floor coating 480 sf\), from the work order, named for "floor coating"/);
+  assert.match(text, /Files on this job not read this run: "2511 Smith_Floor Coating Quote\.pdf" \(Rhino quote, garage floor coating 480 sf\), from the work order, named for "floor coating"/);
   // The organization's files were searched with the term, on jobs only.
   const fileQuery = r.queries.find((q) => 'organization' in q && 'files' in (q['organization'] as object)) as { organization: { files: { $: { where: unknown } } } };
   assert.deepEqual(fileQuery.organization.files.$.where, {
@@ -746,3 +750,185 @@ test('a target whose terms were not searched is not remembered as "nothing found
   assert.doesNotMatch(asked, /- gap-15 · gap · Gap 15[^\n]*\n  basis: guess\n  note: Its terms were not searched/);
 });
 
+
+// ---- 25-0000, 2026-10-01: the quote was found and still not read --------------------------
+// Carl: "learn to read the quote files loaded when attempting to find historical costing."
+
+const RHINO_READING = {
+  kind: 'quote', from: 'Rhino Concrete Coatings', date: '2026-08-20', work: 'Epoxy flake floor for the Myers sunroom.',
+  sizes: ['Sunroom floor approx. 420 sq ft'],
+  items: [{ what: 'Epoxy floor system', quantity: 1, unit: 'Lump Sum', unitPrice: null, amount: 5712 }],
+  total: 5712, notes: 'Grind and fill cracks included.',
+};
+
+/** A model that answers by step, so files read in any order get their reading. */
+function byStep(replies: { draft: unknown; read: (args: StructuredArgs<unknown>) => unknown; history: unknown }): Fake {
+  const calls: StructuredArgs<unknown>[] = [];
+  const f = (async (args: StructuredArgs<unknown>) => {
+    calls.push(args);
+    const parsed = args.system === READ_SYSTEM ? replies.read(args) : calls.filter((c) => c.system !== READ_SYSTEM).length === 1 ? replies.draft : replies.history;
+    return { parsed, stopReason: 'end_turn', usage: { input: 1_000, output: 100, cacheRead: 0, cacheWrite: 0 } };
+  }) as Fake;
+  f.calls = calls;
+  return f;
+}
+
+test('the sub\'s quote on the work order is read before DB\'s change-order scan, even with one file\'s turn', () => {
+  const mk = (id: string, name: string, size: number, description: string, onDocument: { type: string; name: string; vendor: string | null } | null) =>
+    ({ ...file(id, name, size, description), foundOn: 'x', onDocument, skipped: null as string | null });
+  const scan = mk('22PdgeJTRrV5', '6466 Dennis Myers_epoxy quote.pdf', 491463, 'Epoxy change order', { type: 'customerOrder', name: 'Change Order', vendor: null });
+  const quote = mk('22PdgemYF7ME', '6466 Dennis Myers_Epoxy Quote.pdf', 26513, 'Epoxy Quote', { type: 'vendorOrder', name: 'Work Order', vendor: 'Rhino Concrete Coatings' });
+  assert.equal(fileRank(quote), 0, 'a PDF on a work order is the sub\'s own paper');
+  assert.equal(fileRank(scan), 2, 'DB\'s change order to the customer');
+  assert.equal(fileRank({ ...quote, onDocument: null }), 1, 'named for a quote, on no document');
+  assert.equal(fileRank({ ...quote, onDocument: null, name: 'sketch.pdf', description: null }), 3);
+  const job = { jobId: 'M', jobName: '246466 Dennis Myers_Sunroom', description: null, projectType: null, lines: [], context: [], files: [scan, quote] };
+  const chosen = chooseAttachments([{ term: 'epoxy', raw: 4, jobs: [job] }], { total: 1 });
+  assert.deepEqual(chosen.map((c) => c.file.id), ['22PdgemYF7ME']);
+});
+
+test('the files on a job\'s work orders are read even when its customer documents carry more matching lines', () => {
+  const l = (id: string, documentId: string, where: string) => ({ id, documentId, where }) as unknown as Parameters<typeof fileDocIds>[0][number];
+  assert.deepEqual(
+    fileDocIds([l('1', 'inv', 'invoice'), l('2', 'co', 'change order'), l('3', 'inv', 'invoice'), l('4', 'co2', 'change order'), l('5', 'inv2', 'invoice'), l('6', 'wo', 'work order')]),
+    ['inv', 'wo', 'co', 'co2'],
+    'the strongest line\'s document, then the work order, then the rest, four at most',
+  );
+  assert.deepEqual(fileDocIds([]), []);
+});
+
+test('every past quote found is read on its own first, and the history reads what it said instead of the file', async () => {
+  const store = new LearnedStore([], { now: () => T0 });
+  const withFile: HistoryReport = {
+    terms: [{ term: 'epoxy', raw: 4, jobs: [{
+      jobId: 'jobM', jobName: '246466 Dennis Myers_Sunroom', description: null, projectType: null, context: [],
+      lines: [],
+      files: [{ ...file('fQuote', '6466 Dennis Myers_Epoxy Quote.pdf', 26513, 'Epoxy Quote'), foundOn: 'the work order', onDocument: { type: 'vendorOrder', name: 'Work Order', vendor: 'Rhino Concrete Coatings' }, skipped: null }],
+    }] }],
+  };
+  withFile.attachments = [{ jobName: '246466 Dennis Myers_Sunroom', file: withFile.terms[0]!.jobs[0]!.files[0]!, bytes: new Uint8Array([37, 80, 68, 70]) }];
+  const call = byStep({ draft: DRAFT, read: () => RHINO_READING, history: HISTORY });
+  const d = await draftEstimate(fx.evidence, fx.index, load, call, {
+    templateIds: [FIN, GR],
+    history: { search: async () => withFile, margins: MARGINS, learned: store },
+  });
+
+  const read = call.calls.find((c) => c.system === READ_SYSTEM)!;
+  const readBlocks = read.content as { type: string; text?: string }[];
+  assert.match(readBlocks[0]!.text!, /^From DB's past job 246466 Dennis Myers_Sunroom, found on the work order from Rhino Concrete Coatings, while looking for past costs of "epoxy"\./);
+  assert.ok(readBlocks.some((b) => b.type === 'document'), 'the reader gets the PDF');
+  assert.match(READ_SYSTEM, /every area, length, count and dimension written anywhere on it/);
+
+  const history = call.calls[call.calls.length - 1]!;
+  const blocks = history.content as { type: string; text?: string }[];
+  assert.ok(!blocks.some((b) => b.type === 'document'), 'the file read on its own is not sent again');
+  const text = blocks.map((b) => b.text ?? '').join('\n');
+  assert.match(text, /  Read from "6466 Dennis Myers_Epoxy Quote\.pdf" \(Epoxy Quote\), on the work order from Rhino Concrete Coatings, uploaded 2026-08-31: quote from Rhino Concrete Coatings, dated 2026-08-20: Epoxy flake floor for the Myers sunroom\. Sizes written on it: Sunroom floor approx\. 420 sq ft\. Lines: Epoxy floor system 1 Lump Sum = \$5,712\.00\. Total \$5,712\.00\. Notes: Grind and fill cracks included\./);
+  assert.match(history.system, /Before you say a past job's size is not shown, check every reading under that job/);
+
+  assert.deepEqual(d.history?.files, { read: 1, readBefore: 0, failed: 0 });
+  assert.equal(store.files.get('fQuote')?.reading.sizes[0], 'Sunroom floor approx. 420 sq ft', 'what the quote said is kept');
+  assert.equal(store.files.get('fQuote')?.jobName, '246466 Dennis Myers_Sunroom');
+  const page = renderDraft(fx.evidence, d);
+  assert.match(page, /1 past quote read/);
+  assert.match(page, /<div class="chip">Past quote read<\/div><h3>6466 Dennis Myers_Epoxy Quote\.pdf/);
+  assert.equal((draftJson(d) as { history: { quotesRead: unknown[] } }).history.quotesRead.length, 1);
+});
+
+test('a quote read on an earlier run is not downloaded or read again; its reading goes to the history as before', async () => {
+  const store = new LearnedStore([], { now: () => T0 });
+  store.rememberFile({ id: 'fQuote', name: '6466 Dennis Myers_Epoxy Quote.pdf', size: 26513 }, '246466 Dennis Myers_Sunroom', RHINO_READING as never);
+  const downloaded: string[] = [];
+  const report = await searchHistory(reader(), ['epoxy'], {
+    excludeJobId: '22PbLhMqY7tC',
+    download: async (url) => { downloaded.push(url); return new Uint8Array([37, 80, 68, 70]); },
+    readingOf: (f) => { const r = store.readingOf(f); return r ? { reading: r.reading, readAt: r.readAt } : null; },
+  });
+  assert.deepEqual(downloaded, ['https://cdn/fCO'], 'only the file never read is fetched');
+  const quote = report.terms[0]!.jobs[0]!.files[0]!;
+  assert.equal(quote.reading?.readBefore, T0.toISOString());
+  const text = historyText(report);
+  assert.match(text, /Read from "6466 Dennis Myers_Epoxy Quote\.pdf" \(Epoxy Quote\), on the work order from Rhino Concrete Coatings, uploaded 2026-08-31: quote from Rhino/);
+  assert.match(text, /Files on this job not read this run: "6466 Dennis Myers_epoxy quote\.pdf"/);
+  assert.doesNotMatch(text, /not read this run: "6466 Dennis Myers_Epoxy Quote/);
+
+  // The same upload under another id is the same reading.
+  assert.equal(store.readingOf({ id: 'other', name: '6466 DENNIS MYERS_Epoxy Quote.pdf', size: 26513 })?.fileId, 'fQuote');
+  assert.equal(store.readingOf({ id: 'other', name: '6466 Dennis Myers_Epoxy Quote.pdf', size: 1 }), null);
+});
+
+test('a file\'s reading never goes stale, survives --relearn and the disk, and --reread reads it again', () => {
+  const store = new LearnedStore([], { now: () => T0 });
+  store.rememberFile({ id: 'fQuote', name: 'q.pdf', size: 1 }, 'Myers', RHINO_READING as never);
+  const dir = mkdtempSync(join(tmpdir(), 'learned-files-'));
+  const path = join(dir, 'learned.json');
+  store.save(path);
+  const back = LearnedStore.load(path, { now: later(5000), ignore: true });
+  assert.equal(back.readingOf({ id: 'fQuote', name: 'q.pdf', size: 1 })?.reading.total, 5712, 'years later, under --relearn, still read');
+  assert.equal(LearnedStore.load(path, { reread: true }).readingOf({ id: 'fQuote', name: 'q.pdf', size: 1 }), null);
+  assert.equal(parseDraftArgs(['261323', '--reread']).reread, true);
+  assert.equal(parseDraftArgs(['261323']).reread, false);
+});
+
+test('a lump sum the book could not put per unit is searched again every time, so a quote read since can price it', async () => {
+  const store = new LearnedStore([], { now: () => T0 });
+  const unpriced = { ...HISTORY.findings[0]!, suggestedUnitCost: null, suggestionBasis: 'The square footage is not shown.' } as Parameters<LearnedStore['remember']>[1]['finding'];
+  store.remember(['epoxy', 'floor coating'], { fromJob: '25-0000', targetName: 'Flooring - Sub', unit: 'Square Foot', finding: unpriced });
+  assert.equal(store.lookup(['epoxy']), null, 'kept on record, not used in place of a search');
+  assert.ok(store.entries.get('epoxy'));
+  const searches: string[][] = [];
+  await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, HISTORY]), {
+    templateIds: [FIN, GR],
+    history: { search: async (t) => { searches.push(t); return report(true); }, margins: MARGINS, learned: store },
+  });
+  assert.ok(searches[0]!.includes('epoxy'), 'searched again');
+  assert.equal(store.lookup(['epoxy'])?.finding.suggestedUnitCost, 13.6, 'and this time priced, and kept');
+});
+
+test('a new sub quote since the book learned a price sends that trade back to the search', async () => {
+  const store = new LearnedStore([], { now: () => T0 });
+  const searches: string[][] = [];
+  const src = (newSince?: (terms: string[], since: string) => Promise<string | null>) => ({
+    search: async (t: string[]) => { searches.push(t); return report(true); }, margins: MARGINS, learned: store,
+    ...(newSince ? { newSince } : {}),
+  });
+  await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, PRICED]), { templateIds: [FIN, GR], history: src() });
+  assert.equal(searches.length, 1);
+
+  const asked: [string[], string][] = [];
+  const d = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, gaps: [DRAFT.gaps[0]!] }, PRICED]), {
+    templateIds: [FIN, GR],
+    history: src(async (terms, since) => {
+      asked.push([terms, since]);
+      return terms.includes('epoxy') ? '"Epoxy Sub Pckg" on a Work Order for 252511 Smith_Garage, 2026-11-02' : null;
+    }),
+  });
+  assert.equal(asked[0]![1], T0.toISOString(), 'asked what came in since the day it was learned');
+  assert.equal(searches.length, 2);
+  assert.deepEqual(searches[1], ['epoxy', 'floor coating'], 'only the trade with new paper is searched');
+  assert.equal(d.history?.learned, 2);
+  assert.deepEqual(d.history?.renewed, [{ target: 'Flooring - Sub', what: '"Epoxy Sub Pckg" on a Work Order for 252511 Smith_Garage, 2026-11-02' }]);
+  assert.match(renderDraft(fx.evidence, d), /Searched again, though the price book had it: new sub paper came in for Flooring - Sub/);
+});
+
+test('new sub paper is a line on a vendor document or a file named for the term, since the date, on a real job other than this one', async () => {
+  const queries: Record<string, unknown>[] = [];
+  const answers = [
+    { costItems: { nodes: [{ name: 'Epoxy', createdAt: '2026-11-01T00:00:00Z', job: { id: 'self', name: '25-0000 Test' }, document: { name: 'Work Order' } }] },
+      files: { nodes: [{ name: 'Epoxy quote.pdf', createdAt: '2026-11-03T00:00:00Z', job: { id: 'jobS', name: '252511 Smith_Garage' } }] } },
+    { costItems: { nodes: [] }, files: { nodes: [] } },
+  ];
+  const r: Reader = {
+    organizationId: 'org',
+    async query<T>(q: Record<string, unknown>): Promise<T> { queries.push(q); return { organization: answers.shift() } as T; },
+  };
+  assert.equal(await newSince(r, ['epoxy'], '2026-10-01T00:00:00.000Z', 'self'), '"Epoxy quote.pdf" on 252511 Smith_Garage, 2026-11-03');
+  const org = queries[0]!['organization'] as { costItems: { $: { where: unknown } }; files: { $: { where: unknown } } };
+  const named = { or: [[['name'], 'like', '%epoxy%'], [['description'], 'like', '%epoxy%']] };
+  assert.deepEqual(org.costItems.$.where, { and: [
+    named, [['job', 'id'], '!=', null], [['createdAt'], '>', '2026-10-01T00:00:00.000Z'],
+    { or: [[['document', 'type'], '=', 'vendorOrder'], [['document', 'type'], '=', 'vendorBill'], [['document', 'type'], '=', 'bidRequest']] },
+  ] });
+  assert.deepEqual(org.files.$.where, { and: [named, [['job', 'id'], '!=', null], [['createdAt'], '>', '2026-10-01T00:00:00.000Z']] });
+  assert.equal(await newSince(r, ['epoxy'], '2026-10-01T00:00:00.000Z', 'self'), null);
+});

@@ -1,7 +1,7 @@
 /**
  * npm run draft -- <job> [--dry-run] [--out review] [--templates id,id] [--model ...]
  *                        [--fixture path] [--capture path] [--no-photos] [--no-history]
- *                        [--learned path] [--relearn] [--relearn-after days]
+ *                        [--learned path] [--relearn] [--relearn-after days] [--reread]
  *                        [--revise "what to change" | --revise-file path]
  *
  * One job, drafted from the budget templates the way a rep would build it:
@@ -22,6 +22,11 @@
  * text and the template list — then stops. No key is needed and nothing
  * leaves the machine.
  *
+ * Past subs' quotes are read on their own and what each said is kept in the
+ * learned store by file id (readings.ts); --reread reads them again. A
+ * price book answer is searched again when new sub paper for its terms came
+ * in since it was learned.
+ *
  * Read-only against JobTread. The job's notes, photos and files and the
  * chosen templates' line names go to Anthropic's API; that is the one thing
  * here that leaves the building, and only when a key is set.
@@ -33,7 +38,7 @@ import { anthropicFromEnv, preflight } from './anthropic.ts';
 import { formatMoney } from './money.ts';
 import { clientFromEnv } from './jobtread/client.ts';
 import { fetchJobEvidence, resolveJobId, type JobEvidence } from './draft/evidence.ts';
-import { searchHistory, type HistoryReport } from './draft/history.ts';
+import { newSince, searchHistory, type HistoryReport } from './draft/history.ts';
 import { DEFAULT_RELEARN_DAYS, LearnedStore } from './draft/learned.ts';
 import { fetchCostTypes } from './jobtread/queries.ts';
 import type { ApiCostType } from './jobtread/types.ts';
@@ -64,6 +69,8 @@ export interface DraftArgs {
   learned: string;
   relearn: boolean;
   relearnAfterDays: number;
+  /** Read past quotes again instead of using what they said last time. */
+  reread: boolean;
   /** The rep's direction for the next pass, inline or from a file. */
   revise: string | null;
   reviseFile: string | null;
@@ -73,7 +80,7 @@ export function parseDraftArgs(argv: string[]): DraftArgs {
   const args: DraftArgs = {
     job: '', dryRun: false, out: 'review', model: DEFAULT_MODEL, templateIds: [],
     fixture: null, capture: null, photos: true, history: true, catalog: true,
-    learned: DEFAULT_LEARNED_PATH, relearn: false, relearnAfterDays: DEFAULT_RELEARN_DAYS,
+    learned: DEFAULT_LEARNED_PATH, relearn: false, relearnAfterDays: DEFAULT_RELEARN_DAYS, reread: false,
     revise: null, reviseFile: null,
   };
   for (let i = 0; i < argv.length; i++) {
@@ -87,6 +94,7 @@ export function parseDraftArgs(argv: string[]): DraftArgs {
     else if (a === '--no-photos') args.photos = false;
     else if (a === '--no-history') args.history = false;
     else if (a === '--relearn') args.relearn = true;
+    else if (a === '--reread') args.reread = true;
     else if (a === '--learned') args.learned = argv[++i] ?? args.learned;
     else if (a === '--relearn-after') {
       const n = Number(argv[++i]);
@@ -185,10 +193,13 @@ async function main(): Promise<number> {
   let catalogSource: CatalogSource | undefined;
   let costTypes: ApiCostType[] | undefined;
   const learned = args.history
-    ? LearnedStore.load(args.learned, { relearnAfterDays: args.relearnAfterDays, ignore: args.relearn })
+    ? LearnedStore.load(args.learned, { relearnAfterDays: args.relearnAfterDays, ignore: args.relearn, reread: args.reread })
     : undefined;
-  if (learned && learned.entries.size) {
-    log(`learned price book: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'} in ${args.learned}${args.relearn ? ' (ignored this run: --relearn)' : ''}`);
+  if (learned && (learned.entries.size || learned.files.size)) {
+    log(
+      `learned price book: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}${args.relearn ? ' (ignored this run: --relearn)' : ''}, ` +
+        `${learned.files.size} past quote${learned.files.size === 1 ? '' : 's'} read${args.reread ? ' (read again this run: --reread)' : ''}, in ${args.learned}`,
+    );
   }
 
   if (args.fixture) {
@@ -230,16 +241,23 @@ async function main(): Promise<number> {
     };
     if (args.history) {
       costTypes = await fetchCostTypes(client);
+      const sinceCache = new Map<string, Promise<string | null>>();
       historySource = {
         search: async (terms) => {
           log(`searching past work for ${terms.map((t) => `"${t}"`).join(', ')}`);
           return searchHistory(client, terms, {
             excludeJobId: job.id,
             ...(args.photos ? {} : { download: null }),
+            ...(learned ? { readingOf: (f) => { const r = learned.readingOf(f); return r ? { reading: r.reading, readAt: r.readAt } : null; } } : {}),
           });
         },
         margins: marginsOf(costTypes),
         ...(learned ? { learned } : {}),
+        newSince: async (terms, since) => {
+          const key = `${terms.join('|')}@${since}`;
+          if (!sinceCache.has(key)) sinceCache.set(key, newSince(client, terms, since, job.id));
+          return sinceCache.get(key)!;
+        },
       };
     }
     if (args.catalog) {
@@ -326,7 +344,7 @@ async function main(): Promise<number> {
 
   if (learned && draft.history) {
     learned.save(args.learned);
-    log(`learned price book saved: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}`);
+    log(`learned price book saved: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}, ${learned.files.size} past quote${learned.files.size === 1 ? '' : 's'} read`);
   }
 
   if (args.capture) {
@@ -362,6 +380,14 @@ async function main(): Promise<number> {
             (draft.totals.proposedForGaps.gaps ? `; proposes a price for ${draft.totals.proposedForGaps.gaps} gap${draft.totals.proposedForGaps.gaps === 1 ? '' : 's'}` : '') +
             (draft.history.regional ? `; regional ballpark for ${draft.history.regional} gap${draft.history.regional === 1 ? '' : 's'} (not DB pricing)` : ''),
       );
+      const fr = draft.history.files;
+      if (fr.read || fr.readBefore || fr.failed) {
+        log(
+          `past quotes: ${fr.read} read this run, ${fr.readBefore} read before` +
+            (fr.failed ? `; ${fr.failed} could not be read on ${fr.failed === 1 ? 'its' : 'their'} own and went to the history whole` : ''),
+        );
+      }
+      for (const r of draft.history.renewed) log(`searched again (new sub paper since the price book learned it): ${r.target}: ${r.what}`);
     }
     if (draft.catalog?.error) {
       log(`catalog: the search failed (${draft.catalog.error}); the ${draft.gaps.length} flagged item${draft.gaps.length === 1 ? ' was' : 's were'} not checked against it`);
