@@ -382,8 +382,9 @@ a selection group, write this in General Description — with a Copy button.
 A JSON copy of the draft sits beside it, and `npm run build-budget -- <job>`
 builds it onto the job's Budget tab: the template's scope group with the kept
 lines in their sections, the General Description, the options as selection
-groups, the open items tagged `(DRAFT - Carl confirms)`, the contingency line
-and its parameters. Dry run by default, with the tree to read in
+groups, the open items tagged `(DRAFT - Carl confirms)`, and the contingency on
+the base scope as built with each option's share inside its choice, so it
+follows what the customer picks. Dry run by default, with the tree to read in
 `review/<jobId>-build-plan.html`; `--apply` writes under the separate
 `JOBTREAD_WRITE_GRANT_KEY`, and only a test job is built until `--live`. First
 built on test job 25-0000 on 2026-10-01 (`docs/drafter.md`, *Build it in

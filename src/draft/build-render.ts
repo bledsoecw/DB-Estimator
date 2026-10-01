@@ -11,7 +11,7 @@
 
 import { CSS } from '../report.ts';
 import { EXTRA_CSS } from './render.ts';
-import { CONTINGENCY_GROUP } from './contingency.ts';
+import { CONTINGENCY_GROUP, CONTINGENCY_LINE } from './contingency.ts';
 import { DRAFT_TAG, OPTIONS_GROUP, countItems, type BuildPlan, type BuildRecord, type Gate, type NewGroup, type NewItem } from './build.ts';
 
 export interface BuildPageInput {
@@ -78,7 +78,9 @@ function rowHtml(r: Row): string {
   ].join(' ');
   const note = li.quantityFormula
     ? `= <code>${esc(li.quantityFormula)}</code>${li.description ? `<div>${esc(li.description)}</div>` : ''}`
-    : draft || li.quantity === 0
+    : li.name === CONTINGENCY_LINE
+      ? esc(li.description ?? '')
+      : draft || li.quantity === 0
       ? esc(li.description ?? '')
       : li.organizationCostItemId
         ? (li.unitCost === null ? 'no price on the catalog item' : 'priced from the catalog item')
@@ -157,12 +159,17 @@ export function renderBuildPage(x: BuildPageInput): string {
 
   ${plan ? `<section class="summary">
     <h2>What gets built</h2>
-    <p>${plan.counts.lines} template line${plan.counts.lines === 1 ? '' : 's'}, ${plan.counts.found} from the catalog, ${plan.counts.created} created on the job, ${plan.counts.options} option group${plan.counts.options === 1 ? '' : 's'}${plan.contingencyQuantity !== null ? `, contingency ${usd(plan.contingencyQuantity)}` : ''}. Base price is the template groups and the contingency; each option is priced on its own below.</p>
+    <p>${plan.counts.lines} template line${plan.counts.lines === 1 ? '' : 's'}, ${plan.counts.found} from the catalog, ${plan.counts.created} created on the job, ${plan.counts.options} option group${plan.counts.options === 1 ? '' : 's'}${
+      plan.contingency ? `. Contingency ${plan.contingency.rate}%: ${usd(plan.contingency.amount)} on the ${usd(plan.contingency.base)} base scope${plan.contingency.shares.length ? ', and each option carries its own share inside its choice, so the budget\'s contingency follows what the customer picks' : ''}` : ''}. Base price is the template groups and the base contingency; each option is priced on its own below, its share included.</p>
     ${options ? `<ul>${options.lineItems.filter((li): li is NewGroup => li._type === 'costGroup').map((o) => {
       const choices = o.lineItems.filter((li): li is NewGroup => li._type === 'costGroup');
+      const share = (c: NewGroup): string => {
+        const s = plan.contingency?.shares.find((x) => x.group === o.name && x.choice === c.name);
+        return s ? ` (incl. ${usd(s.amount)} contingency)` : '';
+      };
       return o.minSelectionsRequired! >= 1
-        ? `<li><strong>${esc(o.name)}</strong>, one choice required:<ul>${choices.map((c) => `<li>${esc(c.name)}${c.isSelected ? ' (pre-selected)' : ''} &mdash; ${usd(totals(c).price)} price, ${usd(totals(c).cost)} cost</li>`).join('')}</ul></li>`
-        : `<li><strong>${esc(o.name)}</strong>, optional add-on &mdash; ${usd(totals(o).price)} price, ${usd(totals(o).cost)} cost</li>`;
+        ? `<li><strong>${esc(o.name)}</strong>, one choice required:<ul>${choices.map((c) => `<li>${esc(c.name)}${c.isSelected ? ' (pre-selected)' : ''} &mdash; ${usd(totals(c).price)} price, ${usd(totals(c).cost)} cost${share(c)}</li>`).join('')}</ul></li>`
+        : `<li><strong>${esc(o.name)}</strong>, optional add-on &mdash; ${usd(totals(o).price)} price, ${usd(totals(o).cost)} cost${choices[0] ? share(choices[0]) : ''}</li>`;
     }).join('')}</ul>` : ''}
     ${plan.parameters.length ? `<p class="fine">Job parameters: ${plan.parameters.map((p) => `${esc(p.name)} = ${p.value}`).join(', ')}.</p>` : ''}
   </section>

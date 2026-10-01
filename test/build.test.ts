@@ -51,8 +51,8 @@ test('the plan: the templates\' scope groups first, then the options, then the c
   const p = plan();
   assert.deepEqual(p.groups.map((g) => g.name), ['FINISHES', 'GENERAL REQUIREMENTS', OPTIONS_GROUP, CONTINGENCY_GROUP]);
   assert.deepEqual(p.counts, { lines: 11, found: 3, created: 3, options: 3 });
-  // 11 kept + 3 found + 3 created + the General Description + the contingency line.
-  assert.equal(p.groups.reduce((n, g) => n + countItems(g), 0), 19);
+  // 11 kept + 3 found + 3 created + the General Description + the contingency line + a contingency share in each of the 5 choices.
+  assert.equal(p.groups.reduce((n, g) => n + countItems(g), 0), 24);
   assert.equal(p.pass, 2);
   assert.equal(p.jobId, '22PDZbwDdZfq');
   assert.deepEqual(p.notes, []);
@@ -142,8 +142,9 @@ test('options: two choices make one required pick with the first selected; one c
   assert.equal(flooring.maxSelectionsAllowed, 1);
   assert.equal(flooring.showChildDeltas, true);
   assert.deepEqual(flooring.lineItems.map((li) => [li.name, (li as NewGroup).isSelected]), [['LVP', true], ['Epoxy', false]]);
-  assert.deepEqual(items(sub(flooring, 'LVP')).map((i) => [i.name, i.quantity]), [['Flooring', 650], ['Flooring Labor', 20]]);
-  assert.deepEqual(items(sub(flooring, 'Epoxy')).map((i) => [i.name, i.quantity, i.costTypeId]), [['Flooring - Sub', 650, TYPES['Subcontractor']]]);
+  // Each choice ends with its own contingency share (tested on its own below).
+  assert.deepEqual(items(sub(flooring, 'LVP')).map((i) => [i.name, i.quantity]), [['Flooring', 650], ['Flooring Labor', 20], [CONTINGENCY_LINE, 348]]);
+  assert.deepEqual(items(sub(flooring, 'Epoxy')).map((i) => [i.name, i.quantity, i.costTypeId]), [['Flooring - Sub', 650, TYPES['Subcontractor']], [CONTINGENCY_LINE, 390, TYPES['Other']]]);
   const ceiling = sub(opts, 'Ceiling paint');
   assert.equal(ceiling.minSelectionsRequired, 0);
   assert.equal(ceiling.maxSelectionsAllowed, 1);
@@ -173,7 +174,7 @@ test('open items are created on the job, tagged, priced from history or the ball
   assert.equal(lumber.costCodeId, CODES['General Requirements']);
   assert.match(lumber.description!, /Priced from DB history: 25-0003/);
   // The ballpark, in the other choice, says so loudly.
-  const paint = items(sub(walls, 'Paint the block'));
+  const paint = items(sub(walls, 'Paint the block')).filter((i) => i.name !== CONTINGENCY_LINE);
   assert.equal(paint.length, 1);
   assert.equal(paint[0]!.name, `Mold-resistant concrete paint ${DRAFT_TAG}`);
   assert.equal(paint[0]!.unitCost, 0.45);
@@ -202,20 +203,58 @@ test('an open item without a section and without an option goes into the primary
   assert.ok(line);
 });
 
-test('the contingency group is last, its line carries the dollars and the formula, and the parameters are set', () => {
+test('the contingency is on the base scope AS BUILT, with the formula and the parameters; the group is last', () => {
   const p = plan();
   const c = p.groups.at(-1)!;
   assert.equal(c.name, CONTINGENCY_GROUP);
   const line = items(c)[0]!;
   assert.equal(line.name, CONTINGENCY_LINE);
   assert.equal(line.organizationCostItemId, fx.names.contingencyItemId);
-  assert.equal(line.quantity, 190.4);
+  // FINISHES $2,280 + GENERAL REQUIREMENTS $440 of cost as built (the draft's own base figure, $2,380, is not used), at 8%.
+  assert.equal(line.quantity, 217.6);
   assert.equal(line.quantityFormula, CONTINGENCY_FORMULA);
   assert.equal(line.unitCost, 1);
   assert.equal(line.unitPrice, 1);
-  assert.match(line.description!, /8%/);
-  assert.equal(p.contingencyQuantity, 190.4);
-  assert.deepEqual(p.parameters, [{ name: 'Contingency Rate', value: 8 }, { name: 'Contingency Base', value: 2380 }]);
+  assert.match(line.description!, /8% on the base scope/);
+  assert.match(line.description!, /each option carries its own share/);
+  assert.equal(p.contingencyQuantity, 217.6);
+  assert.deepEqual(p.parameters, [{ name: 'Contingency Rate', value: 8 }, { name: 'Contingency Base', value: 2720 }]);
+  assert.equal(p.contingency!.base, 2720);
+  assert.equal(p.contingency!.amount, 217.6);
+});
+
+test('each option carries its own contingency share inside its choice group, so the budget\'s contingency follows the pick', () => {
+  const p = plan();
+  // contingency(base + choice) − contingency(base): LVP $4,350 → $565.60 − $217.60.
+  assert.deepEqual(p.contingency!.shares, [
+    { group: 'Flooring', choice: 'LVP', cost: 4350, amount: 348 },
+    { group: 'Flooring', choice: 'Epoxy', cost: 4875, amount: 390 },
+    { group: 'Walls', choice: 'Framed false walls', cost: 2610.75, amount: 208.86 },
+    { group: 'Walls', choice: 'Paint the block', cost: 409.05, amount: 32.72 },
+    { group: 'Ceiling paint', choice: 'Ceiling paint', cost: 2567.5, amount: 205.4 },
+  ]);
+  const opts = top(p, OPTIONS_GROUP);
+  const lvp = items(sub(sub(opts, 'Flooring'), 'LVP'));
+  const share = lvp.at(-1)!;
+  assert.equal(share.name, CONTINGENCY_LINE);
+  assert.equal(share.quantity, 348);
+  assert.equal(share.unitCost, 1);
+  assert.equal(share.unitPrice, 1);
+  assert.equal(share.quantityFormula, undefined);
+  assert.equal(share.organizationCostItemId, fx.names.contingencyItemId);
+  assert.match(share.description!, /8% on this option.*comes with the option when the customer takes it/);
+  // Every choice has exactly one share, after its own lines; the base line is the only one with the formula.
+  for (const og of opts.lineItems) {
+    for (const ch of (og as NewGroup).lineItems) {
+      const shares = items(ch as NewGroup).filter((i) => i.name === CONTINGENCY_LINE);
+      assert.equal(shares.length, 1, `${og.name} › ${ch.name}`);
+      assert.equal(items(ch as NewGroup).at(-1), shares[0]);
+    }
+  }
+  assert.equal(p.groups.flatMap(allItems).filter((i) => i.quantityFormula).length, 1);
+  // Base + the pre-selected choices' shares is 8% of the budget as the customer first sees it.
+  const first = 217.6 + 348 + 208.86;
+  assert.equal(Math.round(first * 100), Math.round((2720 + 4350 + 2610.75) * 0.08 * 100));
 });
 
 test('no contingency item, or no contingency in the draft: no group, no parameters, a note when the item is missing', () => {
@@ -223,6 +262,8 @@ test('no contingency item, or no contingency in the draft: no group, no paramete
   assert.ok(!none.groups.some((g) => g.name === CONTINGENCY_GROUP));
   assert.deepEqual(none.parameters, []);
   assert.equal(none.contingencyQuantity, null);
+  assert.equal(none.contingency, null);
+  assert.ok(!none.groups.flatMap(allItems).some((i) => i.name === CONTINGENCY_LINE));
   assert.ok(none.notes.some((n) => /Project Contingency/.test(n)));
   const without = plan({ ...fx.draft, contingency: null });
   assert.ok(!without.groups.some((g) => g.name === CONTINGENCY_GROUP));
@@ -271,8 +312,10 @@ test('planText reads as the tree the rep will see', () => {
   assert.match(text, /\n  Flooring \[select: min 1, max 1\]\n    LVP \[selected\]\n/);
   assert.match(text, /\n  Ceiling paint \[select: min 0, max 1\]\n/);
   assert.match(text, /- Framing lumber for the false walls \(DRAFT - Carl confirms\): 120 · \$3\.55 \/ \$5\.92 · no catalog item/);
-  assert.match(text, /- Project Contingency: 190\.4 = \{Contingency Base\} \* \{Contingency Rate\} \/ 100 · \$1 \/ \$1/);
-  assert.match(text, /\nJob parameters: Contingency Rate = 8, Contingency Base = 2380$/);
+  assert.match(text, /- Project Contingency: 217\.6 = \{Contingency Base\} \* \{Contingency Rate\} \/ 100 · \$1 \/ \$1/);
+  assert.match(text, /\n      - Project Contingency: 348 · \$1 \/ \$1\n/);
+  assert.match(text, /\nContingency 8%: \$217\.60 on the \$2720\.00 base scope; inside each option: Flooring — LVP \+\$348\.00, Flooring — Epoxy \+\$390\.00, Walls — Framed false walls \+\$208\.86, Walls — Paint the block \+\$32\.72, Ceiling paint — Ceiling paint \+\$205\.40\n/);
+  assert.match(text, /\nJob parameters: Contingency Rate = 8, Contingency Base = 2720$/);
 });
 
 test('groupMutation: jobId and the group at the root with no discriminator, nested _type kept, nothing undefined, the created ids asked back', () => {
@@ -391,32 +434,34 @@ function materialize(p: BuildPlan): ApiBudget {
 test('verifyBuild: every top-level group with as many lines as planned, the contingency quantity, the parameters', () => {
   const p = plan();
   const built = materialize(p);
-  const params = [{ name: 'Contingency Rate', value: 8 }, { name: 'Contingency Base', value: 2380 }];
+  const params = [{ name: 'Contingency Rate', value: 8 }, { name: 'Contingency Base', value: 2720 }];
   const ok = verifyBuild(p, built, params);
   assert.equal(ok.ok, true, ok.lines.join('\n'));
   assert.deepEqual(ok.lines, [
     'ok: "FINISHES" with 5 lines',
     'ok: "GENERAL REQUIREMENTS" with 2 lines',
-    'ok: "CUSTOMER OPTIONS" with 11 lines',
+    'ok: "CUSTOMER OPTIONS" with 16 lines',
     'ok: "Phase 5 - Contingency" with 1 line',
-    'ok: "Project Contingency" at 190.4 (cost $190.4)',
+    'ok: "Project Contingency" at 217.6 on the base scope (cost $217.6)',
+    'ok: 5 option shares inside the choices, $1184.98 in all',
     'ok: parameter Contingency Rate = 8',
-    'ok: parameter Contingency Base = 2380',
+    'ok: parameter Contingency Base = 2720',
   ]);
   // A line lost deep in a choice group is a mismatch on its top-level group.
   const short: ApiBudget = { ...built, costItems: { count: built.costItems.count - 1, nodes: built.costItems.nodes.filter((i) => i.name !== 'Flooring Labor') } };
   const bad = verifyBuild(p, short, params);
   assert.equal(bad.ok, false);
-  assert.ok(bad.lines.includes('MISMATCH: "CUSTOMER OPTIONS" holds 10 lines, the plan 11'));
-  // The contingency line without its quantity (what the API does to a formula alone), a parameter dropped.
+  assert.ok(bad.lines.includes('MISMATCH: "CUSTOMER OPTIONS" holds 15 lines, the plan 16'));
+  // The contingency lines without their quantity (what the API does to a formula alone), a parameter dropped.
   const noQty: ApiBudget = { ...built, costItems: { ...built.costItems, nodes: built.costItems.nodes.map((i) => (i.name === CONTINGENCY_LINE ? { ...i, quantity: null } : i)) } };
   const worse = verifyBuild(p, noQty, [{ name: 'Contingency Rate', value: 8 }]);
-  assert.ok(worse.lines.includes('MISMATCH: "Project Contingency" quantity is null, the plan 190.4'));
-  assert.ok(worse.lines.includes('MISMATCH: parameter Contingency Base is not set, the plan 2380'));
+  assert.ok(worse.lines.includes('MISMATCH: "Project Contingency" quantity is null, the plan 217.6'));
+  assert.ok(worse.lines.includes('MISMATCH: 5 option shares of $0.00 on the budget, the plan 5 of $1184.98'));
+  assert.ok(worse.lines.includes('MISMATCH: parameter Contingency Base is not set, the plan 2720'));
   // A group missing altogether.
   const gone = verifyBuild(p, budgetWith(STRUCTURAL), params);
   assert.ok(gone.lines.includes('MISSING: "FINISHES" is not on the budget'));
-  assert.ok(gone.lines.includes(`MISSING: the "${CONTINGENCY_LINE}" line`));
+  assert.ok(gone.lines.includes(`MISSING: the "${CONTINGENCY_LINE}" line in "${CONTINGENCY_GROUP}"`));
 });
 
 test('planFile holds the exact mutations in the order they run: deletes, the parameters, the groups', () => {
@@ -425,7 +470,7 @@ test('planFile holds the exact mutations in the order they run: deletes, the par
   assert.deepEqual(f.mutations.map((m) => Object.keys(m).filter((k) => k !== 'note')[0]), ['deleteCostGroup', 'updateJob', 'createCostGroup', 'createCostGroup', 'createCostGroup', 'createCostGroup']);
   assert.equal(f.mutations[0]!['note'], 'delete "FINISHES"');
   const u = f.mutations[1]!['updateJob'] as { $: { parameters: unknown[] } };
-  assert.deepEqual(u.$.parameters, [{ name: 'Area', value: 1000 }, { name: 'Contingency Rate', value: 8 }, { name: 'Contingency Base', value: 2380 }]);
+  assert.deepEqual(u.$.parameters, [{ name: 'Area', value: 1000 }, { name: 'Contingency Rate', value: 8 }, { name: 'Contingency Base', value: 2720 }]);
   assert.deepEqual(f.counts, p.counts);
   assert.equal(f.plan, planText(p));
 });
@@ -449,13 +494,16 @@ test('parseMoney reads the page\'s dollars; parseBuildArgs the flags', () => {
   assert.throws(() => parseBuildArgs(['a', 'b']), /unexpected argument b/);
 });
 
-test('the live build on 25-0000 (2026-10-01): what JobTread held after the plan was applied verifies against the plan', () => {
+test('the first live build on 25-0000 (2026-10-01): what JobTread held afterwards is the record of the write shapes', () => {
+  // The plan has since changed (the base from the built lines, a share inside each choice), so the read-back is
+  // checked for what it records, not against today's plan: the groups by name, every line, the flags as sent.
   const built = (fx as unknown as { built: { budget: ApiBudget; parameters: { name: string; value: number }[]; groupIds: string[]; selection: { name: string; minSelectionsRequired: number | null; maxSelectionsAllowed: number | null; showChildDeltas: boolean; isSelected: boolean }[]; contingency: { quantity: number; cost: number; quantityFormula: string } } }).built;
   const p = plan();
-  const v = verifyBuild(p, built.budget, built.parameters);
-  assert.equal(v.ok, true, v.lines.join('\n'));
+  const tops = built.budget.costGroups.nodes.filter((g) => g.parentCostGroup === null).map((g) => g.name);
+  assert.deepEqual(tops, p.groups.map((g) => g.name));
   assert.equal(built.budget.costItems.count, 19);
   assert.equal(built.groupIds.length, 4);
+  assert.deepEqual(built.parameters, [{ name: 'Contingency Rate', value: 8 }, { name: 'Contingency Base', value: 2380 }]);
   // Selection groups came back as sent: a required pick with its first choice selected, an add-on nobody picked.
   assert.deepEqual(
     built.selection.map((s) => [s.name, s.minSelectionsRequired, s.maxSelectionsAllowed, s.showChildDeltas, s.isSelected]),
@@ -490,17 +538,19 @@ test('the build page: the tree with quantities, prices and tags on a dry run; th
   assert.match(dry, /<div class="name">Mold-resistant concrete paint<\/div>.*<span class="tag warn">DRAFT — Carl confirms<\/span>/);
   assert.match(dry, /<span class="tag dim">count not set<\/span>/);
   assert.match(dry, /= <code>\{Contingency Base\} \* \{Contingency Rate\} \/ 100<\/code>/);
-  assert.match(dry, /Job parameters: Contingency Rate = 8, Contingency Base = 2380\./);
-  assert.match(dry, /<strong>Flooring<\/strong>, one choice required:<ul><li>LVP \(pre-selected\) &mdash; \$6,712\.50 price, \$4,350\.00 cost<\/li>/);
+  assert.match(dry, /Job parameters: Contingency Rate = 8, Contingency Base = 2720\./);
+  assert.match(dry, /Contingency 8%: \$217\.60 on the \$2,720\.00 base scope, and each option carries its own share inside its choice/);
+  assert.match(dry, /<strong>Flooring<\/strong>, one choice required:<ul><li>LVP \(pre-selected\) &mdash; \$7,060\.50 price, \$4,698\.00 cost \(incl\. \$348\.00 contingency\)<\/li>/);
+  assert.match(dry, /<strong>Ceiling paint<\/strong>, optional add-on &mdash; \$3,928\.28 price, \$2,772\.90 cost \(incl\. \$205\.40 contingency\)<\/li>/);
   assert.match(dry, /npm run build-budget -- 22PDZbwDdZfq --draft review\/22PDZbwDdZfq-draft\.json --apply<\/pre>/);
   assert.ok(!dry.includes('Read back from JobTread'));
   // Base price = the template groups and the contingency, not the options.
   const basePrice = p.groups.filter((g) => g.name !== OPTIONS_GROUP).flatMap((g) => g.lineItems).length;
   assert.ok(basePrice > 0);
-  // FINISHES $3,913.50 + GENERAL REQUIREMENTS $800.00 + contingency $190.40; the options are not in it.
-  assert.match(dry, /<span class="k">Base price<\/span><span class="v">\$4,903\.90<\/span>/);
-  assert.match(dry, /<span class="k">Base cost<\/span><span class="v">\$2,910\.40<\/span>/);
-  assert.match(dry, /<span class="k">Lines<\/span><span class="v">19<\/span>/);
+  // FINISHES $3,913.50 + GENERAL REQUIREMENTS $800.00 + contingency $217.60; the options are not in it.
+  assert.match(dry, /<span class="k">Base price<\/span><span class="v">\$4,931\.10<\/span>/);
+  assert.match(dry, /<span class="k">Base cost<\/span><span class="v">\$2,937\.60<\/span>/);
+  assert.match(dry, /<span class="k">Lines<\/span><span class="v">24<\/span>/);
 
   const refused = gateBuild({ job: REAL_JOB, draft: fx.draft, budget: budgetWith(STRUCTURAL), record: null, live: false, replace: false });
   const no = renderBuildPage({ ...common, job: REAL_JOB, gate: refused, plan: null });

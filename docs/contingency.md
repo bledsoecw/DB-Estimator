@@ -143,3 +143,13 @@ merged with the job's existing parameters because the list replaces. The
 rep who types the parameters in JobTread's own UI sees the line follow the
 formula; the point of sending the quantity is that the budget is right the
 moment it is built, before anyone opens it.
+
+**Options.** The first build on 25-0000 put one contingency line on the base
+scope only, and a basement whose walls and floor are both customer options
+had a $440 base and a $44 contingency under a $30,000 budget. The build now
+takes `Contingency Base` from the base-scope cost as built and puts a second
+Project Contingency line inside every option's choice group, for
+`contingency(base + choice) − contingency(base)`, so the shares add to the cent
+and the budget's contingency follows the selection the way the rest of the
+option does. The main line keeps the formula; the shares carry only their
+dollars, since a formula cannot reference its group's cost.

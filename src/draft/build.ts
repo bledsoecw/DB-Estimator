@@ -187,14 +187,39 @@ export interface BuildPlan {
   groups: NewGroup[];
   /** Job parameters to set, merged into whatever the job already has. */
   parameters: { name: string; value: number }[];
-  /** The contingency quantity in dollars, when the plan carries the line; what a verify looks for. */
+  /** The contingency quantity in dollars on the base scope, when the plan carries the line; what a verify looks for. */
   contingencyQuantity: number | null;
+  /**
+   * The contingency as built: the rate, the base-scope cost it applies to,
+   * and each option's share, which sits inside that option's choice group so
+   * the budget's contingency follows what the customer picks.
+   */
+  contingency: { rate: number; base: number; amount: number; shares: ContingencyShare[] } | null;
   /** What could not be built as asked, in plain words. */
   notes: string[];
   counts: { lines: number; found: number; created: number; options: number };
 }
 
+export interface ContingencyShare {
+  group: string;
+  choice: string;
+  /** The choice's cost as built. */
+  cost: number;
+  /** contingency(base + choice) − contingency(base), so base + shares round the same as one figure. */
+  amount: number;
+}
+
 export const OPTIONS_GROUP = 'CUSTOMER OPTIONS';
+
+/** JobTread bills a null quantity as one unit. In cents, so the sums are exact. */
+export function costCents(g: NewGroup): number {
+  let n = 0;
+  for (const li of g.lineItems) {
+    if (li._type === 'costGroup') n += costCents(li);
+    else if (li.unitCost !== null) n += Math.round((li.quantity ?? 1) * li.unitCost * 100);
+  }
+  return n;
+}
 export const DRAFT_TAG = '(DRAFT - Carl confirms)';
 
 const need = (m: Map<string, string>, what: string, name: string | null, notes: string[]): string | null => {
@@ -458,33 +483,61 @@ export function planBuild(
     groups.push(holder);
   }
 
-  // Contingency: the group and its formula line. The API stores the formula without evaluating it, so the quantity goes too.
+  // Contingency. The base is the base-scope cost AS BUILT (the template groups, the found lines and the
+  // created lines, not the options), so the figure matches the budget JobTread shows, and each option
+  // carries its own share inside its choice group, so the budget's contingency follows what the customer
+  // picks. The API stores the formula without evaluating it, so the quantity goes too.
   const parameters: { name: string; value: number }[] = [];
   let contingencyQuantity: number | null = null;
+  let contingency: BuildPlan['contingency'] = null;
   if (draft.contingency) {
-    const c = draft.contingency;
+    const rate = draft.contingency.rate;
     if (names.contingencyItemId) {
-      contingencyQuantity = parseMoney(c.amount) ?? 0;
+      const baseCents = groups.filter((g) => g.name !== OPTIONS_GROUP).reduce((n, g) => n + costCents(g), 0);
+      const amountCents = Math.round((baseCents * rate) / 100);
+      const line = (quantity: number, description: string, formula?: string): NewItem => ({
+        _type: 'costItem',
+        name: CONTINGENCY_LINE,
+        organizationCostItemId: names.contingencyItemId!,
+        unitId: names.units.get('lump sum') ?? null,
+        costTypeId: names.costTypes.get('other') ?? null,
+        costCodeId: codeOf('General Requirements'),
+        quantity,
+        ...(formula ? { quantityFormula: formula } : {}),
+        unitCost: 1,
+        unitPrice: 1,
+        description,
+        unitName: 'Lump Sum',
+      });
+      const shares: ContingencyShare[] = [];
+      const holder = groups.find((g) => g.name === OPTIONS_GROUP);
+      for (const og of holder?.lineItems ?? []) {
+        if (og._type !== 'costGroup') continue;
+        for (const choice of og.lineItems) {
+          if (choice._type !== 'costGroup') continue;
+          const choiceCents = costCents(choice);
+          const shareCents = Math.round(((baseCents + choiceCents) * rate) / 100) - amountCents;
+          if (shareCents <= 0) continue;
+          choice.lineItems.push(line(
+            shareCents / 100,
+            `Contingency at ${rate}% on this option, at cost. It comes with the option when the customer takes it; unused contingency is credited at closeout.`,
+          ));
+          shares.push({ group: og.name, choice: choice.name, cost: choiceCents / 100, amount: shareCents / 100 });
+        }
+      }
+      contingencyQuantity = amountCents / 100;
+      contingency = { rate, base: baseCents / 100, amount: contingencyQuantity, shares };
       groups.push({
         _type: 'costGroup',
         name: CONTINGENCY_GROUP,
         description: CONTINGENCY_GROUP_DESCRIPTION,
-        lineItems: [{
-          _type: 'costItem',
-          name: CONTINGENCY_LINE,
-          organizationCostItemId: names.contingencyItemId,
-          unitId: names.units.get('lump sum') ?? null,
-          costTypeId: names.costTypes.get('other') ?? null,
-          costCodeId: codeOf('General Requirements'),
-          quantity: contingencyQuantity,
-          quantityFormula: CONTINGENCY_FORMULA,
-          unitCost: 1,
-          unitPrice: 1,
-          description: `Contingency at ${c.rate}%, at cost; unused contingency is credited at closeout. ${CONTINGENCY_PARAMETERS.base} is the base-scope cost; add the cost of each option the customer takes.`,
-          unitName: 'Lump Sum',
-        }],
+        lineItems: [line(
+          contingencyQuantity,
+          `Contingency at ${rate}% on the base scope, at cost; unused contingency is credited at closeout. ${CONTINGENCY_PARAMETERS.base} is the base-scope cost as built${shares.length ? '; each option carries its own share inside its choice, so the total follows what the customer picks' : ''}.`,
+          CONTINGENCY_FORMULA,
+        )],
       });
-      for (const [name, value] of Object.entries(c.parameters)) parameters.push({ name, value });
+      parameters.push({ name: CONTINGENCY_PARAMETERS.rate, value: rate }, { name: CONTINGENCY_PARAMETERS.base, value: baseCents / 100 });
     } else {
       notes.push(`no "${CONTINGENCY_LINE}" catalog item; contingency was not built`);
     }
@@ -497,6 +550,7 @@ export function planBuild(
     groups,
     parameters,
     contingencyQuantity,
+    contingency,
     notes,
     counts: { lines, found, created, options },
   };
@@ -550,6 +604,11 @@ export function planText(plan: BuildPlan): string {
     }
   };
   for (const g of plan.groups) walk(g, 0);
+  if (plan.contingency) {
+    const c = plan.contingency;
+    out.push(`Contingency ${c.rate}%: $${c.amount.toFixed(2)} on the $${c.base.toFixed(2)} base scope` +
+      (c.shares.length ? `; inside each option: ${c.shares.map((s) => `${s.group} — ${s.choice} +$${s.amount.toFixed(2)}`).join(', ')}` : ''));
+  }
   if (plan.parameters.length) out.push(`Job parameters: ${plan.parameters.map((p) => `${p.name} = ${p.value}`).join(', ')}`);
   for (const n of plan.notes) out.push(`note: ${n}`);
   return out.join('\n');
@@ -711,10 +770,19 @@ export function verifyBuild(plan: BuildPlan, budget: ApiBudget, parameters: JobP
     else lines.push(`ok: "${g.name}" with ${want} line${want === 1 ? '' : 's'}`);
   }
   if (plan.contingencyQuantity !== null) {
-    const line = budget.costItems.nodes.find((it) => it.name === CONTINGENCY_LINE);
-    if (!line) { ok = false; lines.push(`MISSING: the "${CONTINGENCY_LINE}" line`); }
+    const all = budget.costItems.nodes.filter((it) => it.name === CONTINGENCY_LINE);
+    const line = all.find((it) => it.costGroup?.name === CONTINGENCY_GROUP);
+    if (!line) { ok = false; lines.push(`MISSING: the "${CONTINGENCY_LINE}" line in "${CONTINGENCY_GROUP}"`); }
     else if (line.quantity !== plan.contingencyQuantity) { ok = false; lines.push(`MISMATCH: "${CONTINGENCY_LINE}" quantity is ${line.quantity}, the plan ${plan.contingencyQuantity}`); }
-    else lines.push(`ok: "${CONTINGENCY_LINE}" at ${line.quantity} (cost $${line.cost})`);
+    else lines.push(`ok: "${CONTINGENCY_LINE}" at ${line.quantity} on the base scope (cost $${line.cost})`);
+    const shares = plan.contingency?.shares ?? [];
+    const found = all.filter((it) => it !== line);
+    const want = shares.reduce((n, s) => n + Math.round(s.amount * 100), 0);
+    const have = found.reduce((n, it) => n + Math.round((it.quantity ?? 0) * 100), 0);
+    if (shares.length || found.length) {
+      if (found.length !== shares.length || have !== want) { ok = false; lines.push(`MISMATCH: ${found.length} option share${found.length === 1 ? '' : 's'} of $${(have / 100).toFixed(2)} on the budget, the plan ${shares.length} of $${(want / 100).toFixed(2)}`); }
+      else lines.push(`ok: ${shares.length} option share${shares.length === 1 ? '' : 's'} inside the choices, $${(want / 100).toFixed(2)} in all`);
+    }
   }
   for (const p of plan.parameters) {
     const have = parameters.find((x) => x.name === p.name);

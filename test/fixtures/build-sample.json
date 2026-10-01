@@ -1652,7 +1652,7 @@
     }
   },
   "built": {
-    "note": "What JobTread held after the plan above was applied to 25-0000 on 2026-10-01: one updateJob for the parameters, then the four createCostGroup mutations, by hand through the API. Read back the way fetchBudget reads a budget, plus the selection flags on the groups.",
+    "note": "What JobTread held after the plan above was applied to 25-0000 on 2026-10-01: one updateJob for the parameters, then the four createCostGroup mutations, by hand through the API. Read back the way fetchBudget reads a budget, plus the selection flags on the groups. The plan has since changed (2026-10-01, later the same day): the contingency base is the base-scope cost as built, not the draft's figure, and each option's choice group carries its own contingency share; this read-back records the first build's write shapes, not today's plan.",
     "builtAt": "2026-10-01T19:10:00.000Z",
     "parameters": [
       {

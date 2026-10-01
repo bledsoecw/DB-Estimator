@@ -435,10 +435,18 @@ prices from again, and creates the budget as the rep would have:
 - **CUSTOMER OPTIONS**, one selection group per option group: two or more
   choices make a required pick (`min 1 / max 1`) with the first choice
   pre-selected, one choice is an add-on (`min 0 / max 1`) nobody has picked;
-- **Phase 5 - Contingency** with the Project Contingency line: the formula
-  and, because the API stores a formula without evaluating it, the quantity
-  in dollars too. The two job parameters are set first, merged with whatever
-  parameters the job already has (`updateJob.parameters` replaces the list).
+- **Phase 5 - Contingency** with the Project Contingency line on the
+  base scope: `Contingency Base` is the base-scope cost **as built** (the
+  template groups, the found lines and the created lines, not the options),
+  so the figure matches the budget JobTread shows; the formula is stored and,
+  because the API does not evaluate it, the quantity in dollars goes too.
+  **Each option carries its own share** — a second Project Contingency line
+  inside each choice group, `contingency(base + choice) − contingency(base)`
+  — so the budget's contingency follows what the customer picks: take LVP
+  and the framed walls and their shares come with them, decline the ceiling
+  paint and its share goes too. The two job parameters are set first,
+  merged with whatever parameters the job already has
+  (`updateJob.parameters` replaces the list).
 
 The job's structural groups (CLOCK IN ITEMS, BURDEN, GENERAL AND
 ADMINISTRATIVE, CHANGE ORDER) are not touched, and no catalog template is
