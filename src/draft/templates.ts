@@ -63,11 +63,11 @@ export interface TemplateLine {
   /**
    * The unit the line's catalog price is per, set only when it is not the
    * line's own `unit`. One of the two is wrong in the catalog, and which one
-   * is a judgment: "Drywall Brd- Mat" says Each but its $1.02 is per Square
-   * Foot (21 sheets at $1.02 is $21 of drywall), while "Drywall - Sub" says
-   * Hours and its $55 price item says Lump Sum. So the line keeps its own
-   * unit and the conflict is flagged for a person (checks.ts), never fixed
-   * by guessing.
+   * is a judgment: "Drywall Brd- Mat" said Each while its $1.02 is per Square
+   * Foot (21 sheets at $1.02 was $21 of drywall), while "Drywall - Sub" said
+   * Hours, rightly, and its $55 price item said Lump Sum (both fixed
+   * 2026-10-01). So the line keeps its own unit and the conflict is flagged
+   * for a person (checks.ts), never fixed by guessing.
    */
   pricedUnit?: string | null;
 }

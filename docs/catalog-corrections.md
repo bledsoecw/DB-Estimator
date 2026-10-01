@@ -75,18 +75,28 @@ The evidence for square feet: the item's own unit, and past budgets that used
 it at 990 (Currier) and 20 (Edgemont Colony) where a count of sheets would be
 30 and 1; two reps overrode its price to $12 and $13.98 a sheet instead.
 
-The Kitchen Remodel copy carries its own price, $1.02 cost and $1.70 price
+The Kitchen Remodel copy carried its own price, $1.02 cost and $1.70 price
 (x1.667), where the item it points at is $1.479 (x1.45, the Materials
-policy). Not changed; it is the same kind of template copy the 2026-09-29
-corrections above set to match its master.
+policy). At Carl's request its price was set to $1.479 the same day, to
+match its master, as the 2026-09-29 corrections above did for other copies;
+read back at $1.02 cost and $1.479 price.
 
-## Found 2026-10-01, not yet changed: Drywall - Sub
+## Changed 2026-10-01: Drywall Sub to Hours
 
-| Template line | Templates | Line's unit | Its price | Likely fix |
-|---|---|---|---|---|
-| Drywall - Sub `22PLwnKctZFM`, `22PM23fwBfbf`, `22PPsvvVSeBd` | Addition/House Build, Door/Window Installation, Bathroom Remodel | Hours | Drywall Sub `22PLN6M7K2w8`, $55 / $79.75 per Lump Sum | the item to Hours, if $55 is an hourly rate |
+The three template lines named Drywall - Sub said Hours, while the item they
+price from, Drywall Sub `22PLN6M7K2w8`, said Lump Sum at $55 cost and $79.75
+price. $55 is DB's hourly rate everywhere else, so at Carl's request the
+item's unit was changed to Hours, through `updateCostItem` (`unitId` to Hours
+`22PBAjfWNQqP`), and read back. The item and all three lines now agree.
+
+| Item or line | Where | Before | After |
+|---|---|---|---|
+| Drywall Sub `22PLN6M7K2w8` | loose (Cost Items tab) | Lump Sum | Hours |
+| Drywall - Sub `22PLwnKctZFM` | Addition/House Build | Hours | unchanged, now agrees |
+| Drywall - Sub `22PM23fwBfbf` | Door/Window Installation | Hours | unchanged, now agrees |
+| Drywall - Sub `22PPsvvVSeBd` | Bathroom Remodel | Hours | unchanged, now agrees |
 
 The drafter and the build flag any line counted in one unit and priced per
-another (`src/draft/checks.ts`), so this one shows on a page whenever it is
-kept. These came from one catalog search for "drywall"; the rest of the
-templates have not been swept for the same thing.
+another (`src/draft/checks.ts`). The drywall lines above came from one
+catalog search for "drywall"; the rest of the templates have not been swept
+for the same thing.

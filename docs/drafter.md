@@ -477,14 +477,14 @@ the lines and the dollars, and the build page tags every row a check names
   Sub" and "Insulation - Batt" both for 909 SF were on 25-0000), two subs of
   one trade, or one line twice.
 - **A line counted in one unit and priced per another**: "Drywall Brd- Mat"
-  said Each in five templates (fixed in the catalog 2026-10-01), but its
-  catalog price, $1.02, is per square
-  foot, so 21 sheets came to $21.42 of drywall. The line keeps its own unit
-  (for "Drywall - Sub" the template's Hours is the likely-right one and the
-  price item's Lump Sum the wrong one, so neither is assumed); the page says
-  what the count comes to, the model is told the line is in conflict and
-  gives the count in both units, and the catalog gets fixed by a person. A
-  draft counted before such a fix is caught on the build too.
+  said Each in five templates while its price, $1.02, is per square foot,
+  so 21 sheets came to $21.42 of drywall. The line keeps its own unit,
+  because which side is wrong is a judgment: for the board it was the
+  template's Each, for "Drywall - Sub" it was the price item's Lump Sum
+  (both fixed in the catalog 2026-10-01, `docs/catalog-corrections.md`).
+  The page says what the count comes to, the model is told the line is in
+  conflict and gives the count in both units, and the catalog gets fixed by
+  a person. A draft counted before such a fix is caught on the build too.
 - **What is not final**: lines with no count yet, lines with no price, and
   the DRAFT lines Carl confirms, with their total.
 - **What the contingency comes to** on the base and with the pre-selected
