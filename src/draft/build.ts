@@ -164,6 +164,8 @@ export interface NewItem {
   unitCost: number | null;
   unitPrice: number | null;
   description?: string | null;
+  /** For the page only; `groupMutation` strips it. */
+  unitName?: string | null;
 }
 
 export interface NewGroup {
@@ -252,6 +254,7 @@ export function planBuild(
       unitCost: l.priced?.unitCost ?? null,
       unitPrice: l.priced?.unitPrice ?? null,
       description: l.description,
+      unitName: l.unit,
     };
   };
 
@@ -342,6 +345,7 @@ export function planBuild(
         unitCost: 0,
         unitPrice: 0,
         description: draft.scopeOfWork,
+        unitName: 'Lump Sum',
       });
     } else {
       notes.push(`no "${GENERAL_DESCRIPTION}" catalog item; the scope text goes on the group description instead`);
@@ -365,6 +369,7 @@ export function planBuild(
       unitCost: p.unitCost,
       unitPrice: p.unitPrice,
       description: p.description,
+      unitName: p.unit,
     };
     const dest = f.option ? choiceFor(f.option) : placeFor(f.placeIn, templates, groupFor, rootFor, primaryId, notes, `found line "${p.name}"`);
     dest.lineItems.push(item);
@@ -391,6 +396,7 @@ export function planBuild(
           unitCost: p.unitCost,
           unitPrice: p.unitPrice,
           description: `For: ${g.scope}. ${g.why} The count is not known yet, so the quantity is 0 until the rep sets it.`,
+          unitName: p.unit,
         });
         created++;
         continue;
@@ -415,6 +421,7 @@ export function planBuild(
       unitCost,
       unitPrice,
       description: `${g.why} ${g.basis ? `Basis: ${g.basis} ` : ''}${priceNote}${countNote}`.trim(),
+      unitName: g.unit,
     });
     created++;
   }
@@ -474,6 +481,7 @@ export function planBuild(
           unitCost: 1,
           unitPrice: 1,
           description: `Contingency at ${c.rate}%, at cost; unused contingency is credited at closeout. ${CONTINGENCY_PARAMETERS.base} is the base-scope cost; add the cost of each option the customer takes.`,
+          unitName: 'Lump Sum',
         }],
       });
       for (const [name, value] of Object.entries(c.parameters)) parameters.push({ name, value });
@@ -608,7 +616,7 @@ export function gateBuild(g: GateInput): Gate {
 /** The exact `createCostGroup` for one top-level group of the plan. */
 export function groupMutation(jobId: string, group: NewGroup): Record<string, unknown> {
   // The discriminator is for nested line items; the root of the mutation is a cost group by definition.
-  const { _type, ...root } = stripUndefined(group) as NewGroup;
+  const { _type, ...root } = stripUndefined(forWire(group)) as NewGroup;
   void _type;
   return {
     createCostGroup: {
@@ -639,6 +647,19 @@ export function parametersMutation(
 /** Take down one top-level group this tool built, and everything under it. */
 export function deleteMutation(groupId: string): Record<string, unknown> {
   return { deleteCostGroup: { $: { id: groupId } } };
+}
+
+/** The plan without its page-only fields: what goes on the wire. */
+function forWire(g: NewGroup): NewGroup {
+  return {
+    ...g,
+    lineItems: g.lineItems.map((li) => {
+      if (li._type === 'costGroup') return forWire(li);
+      const { unitName, ...item } = li;
+      void unitName;
+      return item;
+    }),
+  };
 }
 
 function stripUndefined(v: unknown): unknown {

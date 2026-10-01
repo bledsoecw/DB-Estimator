@@ -472,3 +472,57 @@ test('the live build on 25-0000 (2026-10-01): what JobTread held after the plan 
   const permit = built.budget.costItems.nodes.find((i) => i.name === 'Permit')!;
   assert.equal(permit.unitPrice, null);
 });
+
+test('the build page: the tree with quantities, prices and tags on a dry run; the reason when refused; the checks after --apply', async () => {
+  const { renderBuildPage } = await import('../src/draft/build-render.ts');
+  const p = plan();
+  const gate = gateBuild({ job: TEST_JOB, draft: fx.draft, budget: budgetWith(STRUCTURAL), record: null, live: false, replace: false });
+  const common = { job: TEST_JOB, draftPath: 'review/22PDZbwDdZfq-draft.json', planPath: 'review/22PDZbwDdZfq-build-plan.json', plannedAt: '2026-10-01T19:00:00.000Z' };
+  const dry = renderBuildPage({ ...common, gate, plan: p });
+  assert.match(dry, /<title>25-0000 Kay Oss_Test Job 1 — build dry run<\/title>/);
+  assert.match(dry, /Dry run\. Nothing was written\./);
+  for (const name of ['FINISHES', 'GENERAL REQUIREMENTS', OPTIONS_GROUP, CONTINGENCY_GROUP]) assert.ok(dry.includes(`<h2>${name}</h2>`), name);
+  assert.match(dry, /<div class="name">Primer<\/div>/);
+  assert.match(dry, /\$43\.50<div class="unit">cost \$30\.00<\/div>/);           // unit price and cost
+  assert.match(dry, /\$174\.00<div class="unit">cost \$120\.00<\/div>/);         // 4 gallons extended
+  assert.match(dry, /Flooring › LVP<\/div><div class="name">Flooring<\/div><span class="tag sel">one choice required<\/span> <span class="tag ">pre-selected<\/span>/);
+  assert.match(dry, /Ceiling paint › Ceiling paint<\/div><div class="name">Paint Labor - Sub<\/div><span class="tag sel">add-on<\/span>/);
+  assert.match(dry, /<div class="name">Mold-resistant concrete paint<\/div>.*<span class="tag warn">DRAFT — Carl confirms<\/span>/);
+  assert.match(dry, /<span class="tag dim">count not set<\/span>/);
+  assert.match(dry, /= <code>\{Contingency Base\} \* \{Contingency Rate\} \/ 100<\/code>/);
+  assert.match(dry, /Job parameters: Contingency Rate = 8, Contingency Base = 2380\./);
+  assert.match(dry, /<strong>Flooring<\/strong>, one choice required:<ul><li>LVP \(pre-selected\) &mdash; \$6,712\.50 price, \$4,350\.00 cost<\/li>/);
+  assert.match(dry, /npm run build-budget -- 22PDZbwDdZfq --draft review\/22PDZbwDdZfq-draft\.json --apply<\/pre>/);
+  assert.ok(!dry.includes('Read back from JobTread'));
+  // Base price = the template groups and the contingency, not the options.
+  const basePrice = p.groups.filter((g) => g.name !== OPTIONS_GROUP).flatMap((g) => g.lineItems).length;
+  assert.ok(basePrice > 0);
+  // FINISHES $3,913.50 + GENERAL REQUIREMENTS $800.00 + contingency $190.40; the options are not in it.
+  assert.match(dry, /<span class="k">Base price<\/span><span class="v">\$4,903\.90<\/span>/);
+  assert.match(dry, /<span class="k">Base cost<\/span><span class="v">\$2,910\.40<\/span>/);
+  assert.match(dry, /<span class="k">Lines<\/span><span class="v">19<\/span>/);
+
+  const refused = gateBuild({ job: REAL_JOB, draft: fx.draft, budget: budgetWith(STRUCTURAL), record: null, live: false, replace: false });
+  const no = renderBuildPage({ ...common, job: REAL_JOB, gate: refused, plan: null });
+  assert.match(no, /build not built<\/title>/);
+  assert.match(no, /Not built\. 261323 Haag_Remodel is not a test job\./);
+  assert.ok(!no.includes('<table'));
+
+  const rec: BuildRecord = { jobId: TEST_JOB.id, jobName: TEST_JOB.name, pass: 2, builtAt: '2026-10-01T19:10:00.000Z', groups: [{ id: 'g1', name: 'FINISHES' }], parameters: [] };
+  const built = renderBuildPage({ ...common, gate, plan: p, applied: { record: rec, verify: { ok: true, lines: ['ok: "FINISHES" with 5 lines'] } } });
+  assert.match(built, /build built<\/title>/);
+  assert.match(built, /<h2>FINISHES <code class="id">g1<\/code><\/h2>/);
+  assert.match(built, /<li class="ok">ok: &quot;FINISHES&quot; with 5 lines<\/li>/);
+  assert.match(built, /Built 2026-10-01 19:10/);
+  const bad = renderBuildPage({ ...common, gate, plan: p, applied: { record: rec, verify: { ok: false, lines: ['MISMATCH: x'] } } });
+  assert.match(bad, /build not verified<\/title>/);
+  assert.match(bad, /<li class="bad">MISMATCH: x<\/li>/);
+});
+
+test('the unit name rides on the plan for the page and never goes on the wire', () => {
+  const p = plan();
+  const primer = allItems(top(p, 'FINISHES')).find((i) => i.name === 'Primer')!;
+  assert.equal(primer.unitName, 'Gallons');
+  assert.ok(!JSON.stringify(groupMutation('job1', top(p, 'FINISHES'))).includes('unitName'));
+  assert.ok(!JSON.stringify(groupMutation('job1', top(p, OPTIONS_GROUP))).includes('unitName'));
+});

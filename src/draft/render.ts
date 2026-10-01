@@ -769,7 +769,7 @@ function lineRow(l: DraftLine): string {
   </tr>`;
 }
 
-const EXTRA_CSS = `
+export const EXTRA_CSS = `
 .options ul, .summary p { margin: 8px 0 0; }
 .options h2, .summary h2, .scope h2, .steps h2 { margin-top: 30px; }
 .options ul { padding-left: 20px; font-size: 14px; }

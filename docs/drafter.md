@@ -445,13 +445,18 @@ ADMINISTRATIVE, CHANGE ORDER) are not touched, and no catalog template is
 ever modified: everything is created on the job's copy.
 
 Without `--apply` it is a dry run: it prints the tree with quantities and
-prices, writes the exact mutations to `review/<jobId>-build-plan.json`, and
-changes nothing. With `--apply` it needs `JOBTREAD_WRITE_GRANT_KEY`, issues
-one `createCostGroup` per top-level group, records what it created in
+prices, writes the same tree as a page to read the way the draft page is
+read (`review/<jobId>-build-plan.html`: each group, every line with its
+quantity, unit price and extension, the DRAFT lines marked, the options with
+the pre-selected choice, the contingency formula, and the `--apply` command
+to run next), writes the exact mutations to `review/<jobId>-build-plan.json`,
+and changes nothing. With `--apply` it needs `JOBTREAD_WRITE_GRANT_KEY`,
+issues one `createCostGroup` per top-level group, records what it created in
 `review/<jobId>-built.json` after every write (so a run that dies mid-way
-leaves a record of what exists), then reads the budget back and says whether
-each group is there with as many lines as planned, the contingency line has
-its quantity, and the parameters are set.
+leaves a record of what exists), then reads the budget back and says, on the
+terminal and on the page, whether each group is there with as many lines as
+planned, the contingency line has its quantity, and the parameters are set.
+A run the gate refuses writes the page too, with the reason.
 
 Three gates, in `gateBuild`:
 

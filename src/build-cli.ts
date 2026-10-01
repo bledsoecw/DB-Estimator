@@ -17,13 +17,15 @@
  * groups the job template puts there; --replace takes down what this tool
  * built last time (recorded in review/<jobId>-built.json) and nothing else.
  *
- * Without --apply it is a dry run: it reads everything, prints the plan and
- * writes the exact mutations to review/<jobId>-build-plan.json, and changes
- * nothing. It needs only the read key.
+ * Without --apply it is a dry run: it reads everything, prints the plan,
+ * writes it as a page (review/<jobId>-build-plan.html) and the exact
+ * mutations as JSON (review/<jobId>-build-plan.json), and changes nothing.
+ * It needs only the read key.
  *
  * With --apply it needs JOBTREAD_WRITE_GRANT_KEY, writes, records what it
  * created in review/<jobId>-built.json after every write, reads the budget
- * back and says whether each group is there with as many lines as planned.
+ * back and says whether each group is there with as many lines as planned,
+ * on the terminal and on the page.
  * Only a test job (25-0000) is built unless --live is given.
  *
  * --fixture replays a saved build fixture offline (test/fixtures): no
@@ -43,6 +45,7 @@ import {
   planBuild, planText, pricedIdsOf, verifyBuild,
   type BuildPlan, type BuildRecord, type DraftFile, type JobHead, type NameMaps, type PricedInfo,
 } from './draft/build.ts';
+import { renderBuildPage } from './draft/build-render.ts';
 
 export interface BuildArgs {
   job: string | null;
@@ -185,10 +188,18 @@ async function main(): Promise<number> {
   mkdirSync(args.out, { recursive: true });
   const recordPath = join(args.out, `${job.id}-built.json`);
   const record = readRecord(recordPath);
+  const planPath = join(args.out, `${job.id}-build-plan.json`);
+  const pagePath = join(args.out, `${job.id}-build-plan.html`);
+  const plannedAt = new Date().toISOString();
+  const page = (plan: BuildPlan | null, applied?: { record: BuildRecord; verify: { ok: boolean; lines: string[] } }): void => {
+    writeFileSync(pagePath, renderBuildPage({ job, draftPath, planPath, plannedAt, gate, plan, applied: applied ?? null }));
+  };
 
   const gate = gateBuild({ job, draft, budget, record, live: args.live, replace: args.replace });
   if (!gate.ok) {
+    page(null);
     log(`not built: ${gate.reason}`);
+    log(`page written to ${pagePath}`);
     return 2;
   }
   for (const w of gate.warnings) log(`note: ${w}`);
@@ -197,12 +208,12 @@ async function main(): Promise<number> {
   log(planText(plan));
   if (gate.deletes.length) log(`--replace takes down first: ${gate.deletes.map((d) => `"${d.name}"`).join(', ')}`);
 
-  const planPath = join(args.out, `${job.id}-build-plan.json`);
   writeFileSync(planPath, JSON.stringify(planFile(plan, gate.deletes, job.parameters, draftPath), null, 2));
-  log(`plan written to ${planPath}`);
+  page(plan);
+  log(`page written to ${pagePath}; the mutations in ${planPath}`);
 
   if (!args.apply) {
-    log('dry run: nothing was written. Run again with --apply to build it.');
+    log('dry run: nothing was written. Read the page, then run again with --apply to build it.');
     return 0;
   }
 
@@ -240,7 +251,8 @@ async function main(): Promise<number> {
   const head = await fetchJobHead(client!, job.id);
   const v = verifyBuild(plan, again, head.parameters);
   for (const l of v.lines) log(l);
-  log(v.ok ? `built: ${job.name}'s budget holds the draft. Open the job's Budget tab.` : 'NOT VERIFIED: see the lines above before touching the budget by hand.');
+  page(plan, { record: built, verify: v });
+  log(v.ok ? `built: ${job.name}'s budget holds the draft. Open the job's Budget tab; the page is ${pagePath}.` : `NOT VERIFIED: see the lines above and ${pagePath} before touching the budget by hand.`);
   return v.ok ? 0 : 1;
 }
 
