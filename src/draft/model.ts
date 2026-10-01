@@ -34,7 +34,7 @@ export interface StreamingClient {
   messages: {
     stream(params: Anthropic.MessageStreamParams): {
       finalMessage(): Promise<{
-        parsed_output: unknown;
+        content: { type: string; text?: string }[];
         stop_reason: string | null;
         usage: {
           input_tokens: number;
@@ -51,22 +51,32 @@ export interface StreamingClient {
  * The real call. Structured output, so the reply is the schema or nothing.
  *
  * Streamed, because the SDK refuses a non-streaming request whose max_tokens
- * could take over ten minutes (3600 × max_tokens / 128000 seconds; 32,000
- * tokens is fifteen), and the draft's reply can be long. The stream is only
- * accumulated here: `finalMessage()` carries the same `parsed_output`.
+ * could take over ten minutes (3600 × max_tokens / 128000 seconds), and the
+ * replies can be long: on Claude Opus 5.5 the model's thinking is always on
+ * and counts against max_tokens with the answer.
+ *
+ * The schema goes without the SDK's own parser. With it, `finalMessage()`
+ * parses the text whatever the stop reason, so a reply cut off at
+ * max_tokens throws "Unterminated string in JSON" (laptop run on 25-0000,
+ * 2026-10-01) instead of saying it was cut off. Here the stop reason comes
+ * back first and the text is parsed only when the reply ended.
  */
 export function anthropicStructuredCall(client: StreamingClient): StructuredCall {
   return async ({ model, system, content, schema, maxTokens }) => {
+    const { parse: _sdkParse, ...format } = zodOutputFormat(schema);
+    void _sdkParse;
     const stream = client.messages.stream({
       model,
       max_tokens: maxTokens,
       system,
-      output_config: { format: zodOutputFormat(schema), effort: 'high' },
+      output_config: { format, effort: 'high' },
       messages: [{ role: 'user', content }],
     });
     const message = await stream.finalMessage();
+    const { parsed, parseError } = readReply(message);
     return {
-      parsed: message.parsed_output,
+      parsed,
+      ...(parseError ? { parseError } : {}),
       stopReason: message.stop_reason,
       usage: {
         input: message.usage.input_tokens,
@@ -76,6 +86,18 @@ export function anthropicStructuredCall(client: StreamingClient): StructuredCall
       },
     };
   };
+}
+
+/** The reply's JSON, parsed only when the reply ended normally. A cut-off or refused reply has none. */
+export function readReply(message: { content: { type: string; text?: string }[]; stop_reason: string | null }): { parsed: unknown; parseError: string | null } {
+  if (message.stop_reason === 'max_tokens' || message.stop_reason === 'refusal') return { parsed: null, parseError: null };
+  const text = message.content.filter((b) => b.type === 'text').map((b) => b.text ?? '').join('');
+  if (!text.trim()) return { parsed: null, parseError: 'the reply had no text' };
+  try {
+    return { parsed: JSON.parse(text), parseError: null };
+  } catch (err) {
+    return { parsed: null, parseError: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 /** Run one call and insist on a whole, schema-shaped reply. `what` names the step in errors. */
@@ -89,7 +111,10 @@ export async function runStructured<T>(
     throw new Error(`the model declined to ${what} (stop_reason: refusal)`);
   }
   if (reply.stopReason === 'max_tokens') {
-    throw new Error(`the ${what} reply was cut off (max_tokens); nothing was used`);
+    throw new Error(`the ${what} reply was cut off at ${args.maxTokens.toLocaleString('en-US')} tokens (max_tokens); nothing was used`);
+  }
+  if (reply.parseError) {
+    throw new Error(`the ${what} reply was not valid JSON (${reply.parseError}); nothing was used`);
   }
   const parsed = args.schema.safeParse(reply.parsed);
   if (!parsed.success) {

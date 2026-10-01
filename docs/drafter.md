@@ -583,6 +583,15 @@ $0.50 for a job like 261323; a large addition against the 350-line
 `Addition/House Build` template might be $1.50. The page prints the actual
 figure. Twenty drafts a month is on the order of $10 to $30.
 
+Each call is allowed a long reply: 32,000 output tokens for the pick and
+64,000 for the draft and the history read. On Claude Opus 5.5 the model's
+thinking is always on and counts against that with the answer, and the
+history read on 25-0000 (2026-10-01, laptop) was cut off at the old 16,000.
+Only what is produced is paid for. A reply that is still cut off is reported
+as cut off, by step, and nothing from it is used; the SDK's own parser is
+not used, because it threw a JSON error on a cut-off reply before the stop
+reason could be read.
+
 ## What leaves the building
 
 Nothing, until a key is set. With one, the job's description, comments,

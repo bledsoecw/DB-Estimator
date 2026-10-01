@@ -35,6 +35,8 @@ export interface ModelReply {
   parsed: unknown;
   stopReason: string | null;
   usage: Usage;
+  /** Set when the reply ended normally but its text was not JSON. */
+  parseError?: string;
 }
 
 export interface ModelCall {

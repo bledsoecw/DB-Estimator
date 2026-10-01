@@ -251,9 +251,15 @@ export interface DraftOptions {
   catalog?: CatalogSource;
 }
 
-const PICK_MAX_TOKENS = 8_000;
-const DRAFT_MAX_TOKENS = 32_000;
-const HISTORY_MAX_TOKENS = 16_000;
+/**
+ * Room for each reply. On Claude Opus 5.5 thinking is always on and counts
+ * against these with the answer, so they are generous: the history read on
+ * 25-0000 (2026-10-01) was cut off at 16,000 with twelve thousand characters
+ * of answer written. Only what is produced is paid for; the model allows 128,000.
+ */
+export const PICK_MAX_TOKENS = 32_000;
+export const DRAFT_MAX_TOKENS = 64_000;
+export const HISTORY_MAX_TOKENS = 64_000;
 export const MAX_TERMS = 16;
 
 const NO_PROPOSALS: GapProposals = { cost: ZERO, price: ZERO, gaps: 0 };

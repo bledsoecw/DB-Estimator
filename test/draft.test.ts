@@ -20,9 +20,9 @@ import {
 } from '../src/draft/templates.ts';
 import { fetchJobEvidence, resolveJobId } from '../src/draft/evidence.ts';
 import { evidenceText, templateIndexText, templateLinesText } from '../src/draft/prompt.ts';
-import { anthropicStructuredCall, type StructuredArgs, type StructuredCall } from '../src/draft/model.ts';
+import { anthropicStructuredCall, runStructured, type StructuredArgs, type StructuredCall } from '../src/draft/model.ts';
 import { z } from 'zod';
-import { draftEstimate, parseOption, type DraftFixture } from '../src/draft/draft.ts';
+import { DRAFT_MAX_TOKENS, HISTORY_MAX_TOKENS, PICK_MAX_TOKENS, draftEstimate, parseOption, type DraftFixture } from '../src/draft/draft.ts';
 import { draftJson, draftSteps, renderDraft } from '../src/draft/render.ts';
 import { estimateDraftTokens, parseDraftArgs } from '../src/draft-cli.ts';
 
@@ -469,35 +469,57 @@ test('a template JobTread refuses at 30 lines a page is read again at 15, then 8
   await assert.rejects(fetchTemplate(other, 't1'), /HTTP 500/, 'only a 413 is retried smaller');
 });
 
-test('the real call streams, asks for the schema, and reads the parsed reply off the final message', async () => {
+test('the real call streams, asks for the schema without the SDK parser, and parses the reply only when it ended', async () => {
   const seen: unknown[] = [];
+  let reply: { content: { type: string; text?: string }[]; stop_reason: string } = { content: [{ type: 'thinking' }, { type: 'text', text: '{"ok":true}' }], stop_reason: 'end_turn' };
   const client = {
     messages: {
       stream(params: unknown) {
         seen.push(params);
         return {
           async finalMessage() {
-            return {
-              parsed_output: { ok: true },
-              stop_reason: 'end_turn',
-              usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: null, cache_creation_input_tokens: 2 },
-            };
+            return { ...reply, usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: null, cache_creation_input_tokens: 2 } };
           },
         };
       },
     },
   };
   const call = anthropicStructuredCall(client);
-  const reply = await call({
-    model: 'claude-opus-5-5', system: 'sys', content: [{ type: 'text', text: 'hi' }],
-    schema: z.object({ ok: z.boolean() }), maxTokens: 32_000,
-  });
-  assert.deepEqual(reply, { parsed: { ok: true }, stopReason: 'end_turn', usage: { input: 10, output: 5, cacheRead: 0, cacheWrite: 2 } });
-  const p = seen[0] as { max_tokens: number; output_config: { format: { type: string }; effort: string }; system: string };
-  assert.equal(p.max_tokens, 32_000, 'long replies need the room, which is why it streams');
-  assert.equal(p.output_config.format.type, 'json_schema');
+  const args = {
+    model: 'claude-opus-5-5', system: 'sys', content: [{ type: 'text' as const, text: 'hi' }],
+    schema: z.object({ ok: z.boolean() }), maxTokens: 64_000,
+  };
+  assert.deepEqual(await call(args), { parsed: { ok: true }, stopReason: 'end_turn', usage: { input: 10, output: 5, cacheRead: 0, cacheWrite: 2 } });
+  const p = seen[0] as { max_tokens: number; output_config: { format: Record<string, unknown>; effort: string }; system: string };
+  assert.equal(p.max_tokens, 64_000);
+  assert.equal(p.output_config.format['type'], 'json_schema');
+  assert.ok(p.output_config.format['schema'], 'the JSON schema goes');
+  assert.ok(!('parse' in p.output_config.format), 'the SDK must not parse: it would throw on a cut-off reply before the stop reason is seen');
   assert.equal(p.output_config.effort, 'high');
   assert.equal(p.system, 'sys');
+
+  // Cut off mid-answer, as the history read was on the laptop: the stop reason is reported, not a JSON error.
+  reply = { content: [{ type: 'text', text: '{"findings":[{"summary":"DB subbed one epoxy flo' }], stop_reason: 'max_tokens' };
+  const cut = await call(args);
+  assert.equal(cut.stopReason, 'max_tokens');
+  assert.equal(cut.parsed, null);
+  assert.equal(cut.parseError, undefined);
+  await assert.rejects(runStructured(call, args, 'read the history'), /the read the history reply was cut off at 64,000 tokens \(max_tokens\); nothing was used/);
+
+  // Ended, but not JSON: said so, by step.
+  reply = { content: [{ type: 'text', text: 'Sorry, here is the answer: {' }], stop_reason: 'end_turn' };
+  await assert.rejects(runStructured(call, args, 'draft the budget'), /the draft the budget reply was not valid JSON \(.+\); nothing was used/);
+  reply = { content: [], stop_reason: 'end_turn' };
+  await assert.rejects(runStructured(call, args, 'draft the budget'), /not valid JSON \(the reply had no text\)/);
+  // A refusal has no JSON to read and says so.
+  reply = { content: [{ type: 'text', text: '' }], stop_reason: 'refusal' };
+  await assert.rejects(runStructured(call, args, 'draft the budget'), /declined to draft the budget/);
+});
+
+test('every call has room for thinking and a long answer', () => {
+  assert.equal(PICK_MAX_TOKENS, 32_000);
+  assert.equal(DRAFT_MAX_TOKENS, 64_000);
+  assert.equal(HISTORY_MAX_TOKENS, 64_000);
 });
 
 test('an option name is read the way the prompt asks the model to write it', () => {
