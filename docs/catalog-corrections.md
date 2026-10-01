@@ -50,27 +50,43 @@ approved as a premium, but it is not a pitch item. Carl changed it to cost
 type Labor at the 45% margin: $65 -> $118.18. Read back from JobTread the same
 day.
 
-## Found 2026-10-01, not yet changed: template lines counted in one unit and priced per another
+## Changed 2026-10-01: drywall board template lines to Square Foot
 
 Found on test job 25-0000, where the budget carried $21.42 of drywall board for
 about 600 SF of wall. JobTread computes a line's cost as quantity times the
-price of the item it points at, whatever the line's own unit says, so a line
-whose unit disagrees with its price's unit gets counted in the wrong unit.
-The drafter and the build now flag these as problems (`src/draft/checks.ts`);
-the catalog still wants the fix, and which unit is right is Carl's call.
+price of the item it points at, whatever the line's own unit says. These
+template lines said Each while their price, Drywall Board - Mat
+`22PCCE2cGYqw` at $1.02 cost and $1.479 price, is per Square Foot, so a rep or
+the drafter counted sheets against a per-square-foot price. Changed at Carl
+Bledsoe's request through the JobTread API (`updateCostItem`, `unitId` to
+Square Foot `22PCC8zqEiwK`), then read back: all six lines that price from the
+item now say Square Foot.
+
+| Template line | Template | Before | After |
+|---|---|---|---|
+| Drywall Brd- Mat `22PLCchBuFMU` | X-Division 09 Finishes | Each | Square Foot |
+| Drywall Board- Mat `22PLwktUit8p` | Addition/House Build | Each | Square Foot |
+| Drywall Board- Mat `22PPsvvVSeBZ` | Bathroom Remodel | Each | Square Foot |
+| Drywall Board - Mat `22PSSe3pfzsD` | Countertop Replacement | Each | Square Foot |
+| Drywall Board - Mat `22PSSgVruC4j` | Door/Window Installation | Each | Square Foot |
+| Drywall Brd- Mat `22PHGfWHEStj` | Kitchen Remodel | Square Foot | unchanged |
+
+The evidence for square feet: the item's own unit, and past budgets that used
+it at 990 (Currier) and 20 (Edgemont Colony) where a count of sheets would be
+30 and 1; two reps overrode its price to $12 and $13.98 a sheet instead.
+
+The Kitchen Remodel copy carries its own price, $1.02 cost and $1.70 price
+(x1.667), where the item it points at is $1.479 (x1.45, the Materials
+policy). Not changed; it is the same kind of template copy the 2026-09-29
+corrections above set to match its master.
+
+## Found 2026-10-01, not yet changed: Drywall - Sub
 
 | Template line | Templates | Line's unit | Its price | Likely fix |
 |---|---|---|---|---|
-| Drywall Brd- Mat `22PLCchBuFMU` | X-Division 09 Finishes | Each | Drywall Board - Mat `22PCCE2cGYqw`, $1.02 / $1.479 per Square Foot | the line to Square Foot |
-| Drywall Board- Mat `22PLwktUit8p` | Addition/House Build | Each | the same | the line to Square Foot |
-| Drywall Board- Mat `22PPsvvVSeBZ` | Bathroom Remodel | Each | the same | the line to Square Foot |
-| Drywall Board - Mat `22PSSe3pfzsD` | Countertop Replacement | Each | the same | the line to Square Foot |
 | Drywall - Sub `22PLwnKctZFM`, `22PM23fwBfbf`, `22PPsvvVSeBd` | Addition/House Build, Door/Window Installation, Bathroom Remodel | Hours | Drywall Sub `22PLN6M7K2w8`, $55 / $79.75 per Lump Sum | the item to Hours, if $55 is an hourly rate |
 
-Kitchen Remodel's copy, `Drywall Brd- Mat 22PHGfWHEStj`, already says Square
-Foot. The evidence for square feet on the board: the item's own unit, and
-past budgets that used it at 990 (Currier) and 20 (Edgemont Colony) where a
-count of sheets would be 30 and 1; two reps overrode its price to $12 and
-$13.98 a sheet instead. This list comes from one catalog search for
-"drywall"; the rest of the templates have not been swept for the same thing.
-
+The drafter and the build flag any line counted in one unit and priced per
+another (`src/draft/checks.ts`), so this one shows on a page whenever it is
+kept. These came from one catalog search for "drywall"; the rest of the
+templates have not been swept for the same thing.

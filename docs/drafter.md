@@ -477,7 +477,8 @@ the lines and the dollars, and the build page tags every row a check names
   Sub" and "Insulation - Batt" both for 909 SF were on 25-0000), two subs of
   one trade, or one line twice.
 - **A line counted in one unit and priced per another**: "Drywall Brd- Mat"
-  says Each in four templates, but its catalog price, $1.02, is per square
+  said Each in five templates (fixed in the catalog 2026-10-01), but its
+  catalog price, $1.02, is per square
   foot, so 21 sheets came to $21.42 of drywall. The line keeps its own unit
   (for "Drywall - Sub" the template's Hours is the likely-right one and the
   price item's Lump Sum the wrong one, so neither is assumed); the page says
