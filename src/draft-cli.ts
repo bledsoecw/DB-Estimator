@@ -33,7 +33,7 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, win32 } from 'node:path';
 import { anthropicFromEnv, preflight } from './anthropic.ts';
 import { formatMoney } from './money.ts';
 import { clientFromEnv } from './jobtread/client.ts';
@@ -50,8 +50,32 @@ import { draftFlags, draftJson, renderDraft } from './draft/render.ts';
 import { addDirection, changesText, previousFromJson, revisionText, type Revision } from './draft/revise.ts';
 import { CREW_LABOR, searchCatalog, type CatalogCandidate, type CatalogSource } from './draft/catalog.ts';
 
-/** Holds DB's pricing; git-ignored, on the machine that runs the drafter. */
-export const DEFAULT_LEARNED_PATH = '.db-estimator/learned-prices.json';
+/**
+ * Carl, 2026-10-02: one learned book for the work computer and the laptop, in
+ * his OneDrive. Used whenever that folder is on the computer running the
+ * drafter. It holds DB's pricing; it is outside the repo and never in git.
+ */
+export const SHARED_LEARNED_DIR = 'C:\\Users\\carlb\\OneDrive\\Documents\\DBs\\Intranet\\dev\\DB-Estimator';
+export const SHARED_LEARNED_PATH = win32.join(SHARED_LEARNED_DIR, 'learned-prices.json');
+/** Where a computer without that folder keeps its own book; git-ignored. */
+export const LOCAL_LEARNED_PATH = '.db-estimator/learned-prices.json';
+
+/**
+ * Which book this run reads and writes: --learned, else DB_LEARNED_PATH in
+ * .env (a rep's computer whose OneDrive puts the shared folder elsewhere),
+ * else the shared OneDrive book, else this computer's own.
+ */
+export function resolveLearnedPath(
+  flag: string | null,
+  env: NodeJS.ProcessEnv = process.env,
+  exists: (path: string) => boolean = existsSync,
+): { path: string; why: string; shared: boolean } {
+  if (flag) return { path: flag, why: '--learned', shared: false };
+  const fromEnv = env['DB_LEARNED_PATH']?.trim();
+  if (fromEnv) return { path: fromEnv, why: 'DB_LEARNED_PATH in .env', shared: true };
+  if (exists(SHARED_LEARNED_DIR)) return { path: SHARED_LEARNED_PATH, why: 'the shared OneDrive book', shared: true };
+  return { path: LOCAL_LEARNED_PATH, why: `this computer's own book; the shared OneDrive folder ${SHARED_LEARNED_DIR} is not here`, shared: false };
+}
 
 export interface DraftArgs {
   job: string;
@@ -65,8 +89,8 @@ export interface DraftArgs {
   history: boolean;
   /** Search the rest of the catalog for each gap. */
   catalog: boolean;
-  /** The learned price book. Findings are read from and written to it. */
-  learned: string;
+  /** The learned price book given with --learned; null for the default (resolveLearnedPath). */
+  learned: string | null;
   relearn: boolean;
   relearnAfterDays: number;
   /** Read past quotes again instead of using what they said last time. */
@@ -80,7 +104,7 @@ export function parseDraftArgs(argv: string[]): DraftArgs {
   const args: DraftArgs = {
     job: '', dryRun: false, out: 'review', model: DEFAULT_MODEL, templateIds: [],
     fixture: null, capture: null, photos: true, history: true, catalog: true,
-    learned: DEFAULT_LEARNED_PATH, relearn: false, relearnAfterDays: DEFAULT_RELEARN_DAYS, reread: false,
+    learned: null, relearn: false, relearnAfterDays: DEFAULT_RELEARN_DAYS, reread: false,
     revise: null, reviseFile: null,
   };
   for (let i = 0; i < argv.length; i++) {
@@ -192,13 +216,21 @@ async function main(): Promise<number> {
   let historySource: HistorySource | undefined;
   let catalogSource: CatalogSource | undefined;
   let costTypes: ApiCostType[] | undefined;
+  const book = resolveLearnedPath(args.learned);
   const learned = args.history
-    ? LearnedStore.load(args.learned, { relearnAfterDays: args.relearnAfterDays, ignore: args.relearn, reread: args.reread })
+    ? LearnedStore.load(book.path, { relearnAfterDays: args.relearnAfterDays, ignore: args.relearn, reread: args.reread })
     : undefined;
-  if (learned && (learned.entries.size || learned.files.size)) {
+  // The first run on the shared book brings in what this computer learned on its own before.
+  let mergedLocal = false;
+  if (learned && book.shared && existsSync(LOCAL_LEARNED_PATH)) {
+    const took = learned.merge(LearnedStore.load(LOCAL_LEARNED_PATH));
+    mergedLocal = true;
+    log(`this computer's old book (${LOCAL_LEARNED_PATH}) merged in: ${took.entries} term${took.entries === 1 ? '' : 's'}, ${took.files} quote reading${took.files === 1 ? '' : 's'}`);
+  }
+  if (learned) {
     log(
-      `learned price book: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}${args.relearn ? ' (ignored this run: --relearn)' : ''}, ` +
-        `${learned.files.size} past quote${learned.files.size === 1 ? '' : 's'} read${args.reread ? ' (read again this run: --reread)' : ''}, in ${args.learned}`,
+      `learned price book: ${book.path} (${book.why}): ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}${args.relearn ? ' (ignored this run: --relearn)' : ''}, ` +
+        `${learned.files.size} past quote${learned.files.size === 1 ? '' : 's'} read${args.reread ? ' (read again this run: --reread)' : ''}`,
     );
   }
 
@@ -343,8 +375,14 @@ async function main(): Promise<number> {
   }
 
   if (learned && draft.history) {
-    learned.save(args.learned);
-    log(`learned price book saved: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}, ${learned.files.size} past quote${learned.files.size === 1 ? '' : 's'} read`);
+    learned.save(book.path);
+    log(`learned price book saved to ${book.path}: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}, ${learned.files.size} past quote${learned.files.size === 1 ? '' : 's'} read`);
+    if (mergedLocal) {
+      // Merged once; renamed so a hand edit to the shared book is not undone by merging the old one again.
+      const moved = LOCAL_LEARNED_PATH.replace(/\.json$/, '.moved-to-shared.json');
+      renameSync(LOCAL_LEARNED_PATH, moved);
+      log(`this computer's old book is now ${moved}`);
+    }
   }
 
   if (args.capture) {

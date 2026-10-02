@@ -18,14 +18,14 @@ import type { Reader } from '../src/jobtread/queries.ts';
 import { chooseAttachments, fileDocIds, fileRank, historyText, newSince, searchHistory, selectHistoryFiles, strengthOf, whereOf, type HistoryHits, type HistoryReport } from '../src/draft/history.ts';
 import { LearnedStore } from '../src/draft/learned.ts';
 import { READ_SYSTEM } from '../src/draft/readings.ts';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { StructuredArgs, StructuredCall } from '../src/draft/model.ts';
 import { MAX_TERMS, attachHistory, draftEstimate, historyTargets, keyWord, searchedTargets, uniqueTerms, withKeyWord, type DraftFixture } from '../src/draft/draft.ts';
 import { historyTargetsText } from '../src/draft/prompt.ts';
 import { draftJson, draftSteps, renderDraft } from '../src/draft/render.ts';
-import { marginsOf, parseDraftArgs } from '../src/draft-cli.ts';
+import { LOCAL_LEARNED_PATH, SHARED_LEARNED_DIR, SHARED_LEARNED_PATH, marginsOf, parseDraftArgs, resolveLearnedPath } from '../src/draft-cli.ts';
 
 const fx = JSON.parse(readFileSync('test/fixtures/haag-basement.json', 'utf8')) as DraftFixture;
 /** DB's cost types: a sub line prices at 30% margin, crew labor at 45%. */
@@ -621,7 +621,8 @@ test('the CLI knows the price book flags', () => {
   assert.equal(a.learned, 'x.json');
   assert.equal(a.relearn, true);
   assert.equal(a.relearnAfterDays, 200);
-  assert.equal(parseDraftArgs(['261323']).learned, '.db-estimator/learned-prices.json');
+  assert.equal(parseDraftArgs(['261323']).learned, null, 'the default is resolved at run time');
+  assert.equal(parseDraftArgs(['261323', '--learned', 'x.json']).learned, 'x.json');
   assert.equal(parseDraftArgs(['261323']).relearnAfterDays, 365);
   assert.throws(() => parseDraftArgs(['261323', '--relearn-after', 'soon']), /needs a number of days/);
 });
@@ -931,4 +932,50 @@ test('new sub paper is a line on a vendor document or a file named for the term,
   ] });
   assert.deepEqual(org.files.$.where, { and: [named, [['job', 'id'], '!=', null], [['createdAt'], '>', '2026-10-01T00:00:00.000Z']] });
   assert.equal(await newSince(r, ['epoxy'], '2026-10-01T00:00:00.000Z', 'self'), null);
+});
+
+// ---- 2026-10-02: one book for the work computer and the laptop ----------------------------
+
+test('the shared OneDrive book is the default wherever that folder is; --learned and DB_LEARNED_PATH come first', () => {
+  assert.equal(SHARED_LEARNED_PATH, 'C:\\Users\\carlb\\OneDrive\\Documents\\DBs\\Intranet\\dev\\DB-Estimator\\learned-prices.json');
+  const here = (p: string) => p === SHARED_LEARNED_DIR;
+  const nowhere = () => false;
+  assert.deepEqual(resolveLearnedPath(null, {}, here), { path: SHARED_LEARNED_PATH, why: 'the shared OneDrive book', shared: true });
+  const own = resolveLearnedPath(null, {}, nowhere);
+  assert.equal(own.path, LOCAL_LEARNED_PATH, 'a computer without the folder keeps its own');
+  assert.equal(own.shared, false);
+  assert.match(own.why, /the shared OneDrive folder .* is not here/);
+  assert.deepEqual(resolveLearnedPath(null, { DB_LEARNED_PATH: ' D:\\Shared\\learned.json ' }, here), { path: 'D:\\Shared\\learned.json', why: 'DB_LEARNED_PATH in .env', shared: true });
+  assert.deepEqual(resolveLearnedPath('mine.json', { DB_LEARNED_PATH: 'x' }, here), { path: 'mine.json', why: '--learned', shared: false },
+    'a one-off book given by hand does not take in this computer\'s old one');
+});
+
+test('two computers saving one book keep each other\'s answers; the newer answer for a term wins', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'shared-book-'));
+  const path = join(dir, 'learned-prices.json');
+  const finding = HISTORY.findings[0]! as Parameters<LearnedStore['remember']>[1]['finding'];
+  const entry = (job: string) => ({ fromJob: job, targetName: 'Flooring - Sub', unit: 'Square Foot', finding });
+
+  // Both computers open the same (empty) book.
+  const work = LearnedStore.load(path, { now: () => T0 });
+  const laptop = LearnedStore.load(path, { now: later(1) });
+  laptop.remember(['epoxy'], entry('laptop run'));
+  laptop.rememberFile({ id: 'fQuote', name: 'q.pdf', size: 1 }, 'Myers', RHINO_READING as never);
+  laptop.save(path);
+  // The work computer learned "epoxy" a day earlier and "insulation" too, and saves after the laptop.
+  work.remember(['epoxy', 'insulation'], entry('work run'));
+  work.save(path);
+
+  const back = LearnedStore.load(path, { now: later(2) });
+  assert.equal(back.entries.get('epoxy')?.fromJob, 'laptop run', 'the newer answer wins');
+  assert.equal(back.entries.get('insulation')?.fromJob, 'work run');
+  assert.equal(back.files.get('fQuote')?.jobName, 'Myers', 'the laptop\'s quote reading is kept');
+  assert.deepEqual(readdirSync(dir), ['learned-prices.json'], 'written through a temporary file, nothing left behind');
+
+  // A computer's old book merged into the shared one takes only what is missing or newer.
+  const old = new LearnedStore([], { now: () => new Date('2026-09-01T00:00:00Z') });
+  old.remember(['epoxy', 'skim'], entry('old book'));
+  assert.deepEqual(back.merge(old), { entries: 1, files: 0 });
+  assert.equal(back.entries.get('epoxy')?.fromJob, 'laptop run');
+  assert.equal(back.entries.get('skim')?.fromJob, 'old book');
 });

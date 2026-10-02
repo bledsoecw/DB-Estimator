@@ -12,7 +12,11 @@
  * change.
  *
  * The store is one JSON file, readable and editable by hand. It holds DB's
- * pricing, so it stays on the machine that runs the drafter and out of git.
+ * pricing, so it stays out of git. Carl, 2026-10-02: one book for the work
+ * computer and the laptop, in his OneDrive (draft-cli.ts). So a save reads
+ * the file again first and keeps what the other computer saved meanwhile,
+ * the newer answer winning, and writes through a temporary file so OneDrive
+ * never syncs half a book.
  *
  * It also keeps what each past quote said once it has been read. Carl,
  * 2026-10-01: the Myers epoxy quote gives the square footage, and a second
@@ -25,7 +29,7 @@
  * from the book. It is searched again, so a quote read since can price it.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { HistoryFinding } from './prompt.ts';
 import type { FileReading } from './readings.ts';
@@ -112,12 +116,38 @@ export class LearnedStore {
     return new LearnedStore(entries, opts, files);
   }
 
+  /** Write the book, keeping what another computer saved to the same file since it was read. */
   save(path: string): void {
+    if (existsSync(path)) this.merge(LearnedStore.load(path));
     mkdirSync(dirname(path), { recursive: true });
     const file: LearnedFile = { version: 1, entries: {}, files: {} };
     for (const [k, v] of [...this.entries.entries()].sort(([a], [b]) => a.localeCompare(b))) file.entries[k] = v;
     for (const [k, v] of [...this.files.entries()].sort(([a], [b]) => a.localeCompare(b))) file.files![k] = v;
-    writeFileSync(path, JSON.stringify(file, null, 2) + '\n');
+    const text = JSON.stringify(file, null, 2) + '\n';
+    const tmp = `${path}.${process.pid}.tmp`;
+    writeFileSync(tmp, text);
+    try {
+      renameSync(tmp, path);
+    } catch {
+      // OneDrive can hold the file for a moment while it syncs; write it in place instead.
+      writeFileSync(path, text);
+      rmSync(tmp, { force: true });
+    }
+  }
+
+  /** Take another book's answers and readings where this one has none or an older one. Returns how many were taken. */
+  merge(other: LearnedStore): { entries: number; files: number } {
+    let entries = 0;
+    let files = 0;
+    for (const [k, e] of other.entries) {
+      const mine = this.entries.get(k);
+      if (!mine || Date.parse(e.learnedAt) > Date.parse(mine.learnedAt)) { this.entries.set(k, e); entries++; }
+    }
+    for (const [k, f] of other.files) {
+      const mine = this.files.get(k);
+      if (!mine || Date.parse(f.readAt) > Date.parse(mine.readAt)) { this.files.set(k, f); files++; }
+    }
+    return { entries, files };
   }
 
   /**

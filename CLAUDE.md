@@ -34,4 +34,6 @@ one quote.
   separate `JOBTREAD_WRITE_GRANT_KEY`; the read client stays read-only. Write
   to test jobs (e.g. 25-0000) unless `--live` is given.
 - Secrets stay in `.env`. Pricing data, rendered review pages, and the
-  learned store (`.db-estimator/`) never go in git.
+  learned store never go in git. The learned store is one shared file in
+  Carl's OneDrive (`SHARED_LEARNED_PATH` in `src/draft-cli.ts`), falling back
+  to `.db-estimator/` on a computer without that folder.

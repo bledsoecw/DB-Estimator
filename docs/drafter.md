@@ -231,8 +231,8 @@ since can price it.
 
 Carl's second rule, the same day: once a past price has been found for a
 kind of work, keep it, and only look again after a long time, a year, in
-case the sub's pricing moved. So every history finding is written to a local
-price book, `.db-estimator/learned-prices.json`, under the search terms that
+case the sub's pricing moved. So every history finding is written to a
+price book, `learned-prices.json`, under the search terms that
 produced it, with when it was learned and on which job. On the next job a
 target whose terms hit a fresh entry is answered from the book: no search,
 no model call, and the page says "Learned 2026-09-30 on 261323 Haag_Remodel;
@@ -242,13 +242,26 @@ are. "Nothing found" is remembered for thirty days only, because the next
 job may be the first of its kind.
 
 The file is plain JSON, readable and editable by hand: delete an entry to
-forget it. It holds DB's pricing, so it is git-ignored and lives on the
-machine that runs the drafter. `--relearn` ignores the book's prices for one
-run and overwrites what it finds (the quotes' readings stay); `--reread`
-reads the quotes again; `--relearn-after 180` shortens the year; `--learned
-path` moves the file. Each computer keeps its own book: a work computer and
-a laptop learn separately unless both point `--learned` at the same file in
-a folder they share.
+forget it. It holds DB's pricing, so it is never in git. **One book for every
+computer Carl drafts on** (2026-10-02): it lives in his OneDrive, in
+`C:\Users\carlb\OneDrive\Documents\DBs\Intranet\dev\DB-Estimator\learned-prices.json`,
+so what the work computer learns the laptop knows. The drafter uses it
+whenever that folder is on the computer; otherwise it keeps a book of its own
+in `.db-estimator/learned-prices.json` (git-ignored) and the log says why.
+`DB_LEARNED_PATH` in `.env` points a computer elsewhere (a rep's OneDrive
+puts a shared folder at another path), and `--learned path` overrides both
+for one run. The log names the book every run.
+
+Two computers can save the same book: a save reads the file again first and
+keeps what the other saved meanwhile, the newer answer for a term winning,
+and writes through a temporary file so OneDrive never syncs half a book. The
+first run on the shared book merges in what that computer had learned on its
+own, then renames the old file to `learned-prices.moved-to-shared.json` so a
+hand edit to the shared book is not undone by merging it again.
+
+`--relearn` ignores the book's prices for one run and overwrites what it
+finds (the quotes' readings stay); `--reread` reads the quotes again;
+`--relearn-after 180` shortens the year.
 
 `--no-history` turns the whole step off. A `--capture` saves the history
 that was read, so a replay from the fixture is offline.

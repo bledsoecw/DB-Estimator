@@ -346,7 +346,9 @@ the work order before DB's own change order, for every size, line and total
 written on it, so a lump sum can be put per square foot. A cost it cites is
 priced at the subcontractor margin and shown as a **proposal** beside the
 template rate or on the gap; proposals never enter the totals. What it finds
-is kept in a local **learned price book** (`.db-estimator/`, git-ignored) and
+is kept in a **learned price book**, one file in Carl's OneDrive shared by the
+computers he drafts on (a computer without that folder keeps its own in
+`.db-estimator/`; `DB_LEARNED_PATH` in `.env` points elsewhere; never in git), and
 reused for a year, unless a new sub quote for that trade comes in first; what
 each quote said is kept for good, so a quote is read once.
 
