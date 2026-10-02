@@ -23,7 +23,7 @@ import { scopeGroupName } from './build.ts';
 const BASE_CONTINGENCY_HOME = 'Phase 1 - General Requirements';
 import { changesText, reviseCommand } from './revise.ts';
 import type { HistoryFinding } from './prompt.ts';
-import { CHECKS_CSS, borrowedLines, doubleCounts, flagsHtml, sortFlags, uninstalledMaterials, unitConflictFlag, type CheckLine, type LaborUse, type MaterialUse, type ReviewFlag } from './checks.ts';
+import { CHECKS_CSS, SUPPLY_LINE, borrowedLines, doubleCounts, flagsHtml, sortFlags, unfastenedMaterials, uninstalledMaterials, unitConflictFlag, type CheckLine, type LaborUse, type MaterialUse, type ReviewFlag } from './checks.ts';
 import { readingText } from './readings.ts';
 
 /**
@@ -61,8 +61,8 @@ export function draftFlags(d: Draft): ReviewFlag[] {
   }
   flags.push(...optionFlags(d.totals?.options ?? []));
   if (d.plans) {
-    const { materials, labor } = installUses(d);
-    flags.push(...uninstalledMaterials(materials, labor));
+    const { materials, labor, kept } = installUses(d);
+    flags.push(...uninstalledMaterials(materials, labor), ...unfastenedMaterials(materials, kept));
   }
   return sortFlags(flags);
 }
@@ -70,7 +70,7 @@ export function draftFlags(d: Draft): ReviewFlag[] {
 const LABOR_TYPE = /^(labor|subcontractor)$/i;
 
 /** The draft's kept materials and its labor, by the choice each is in, for the install check. */
-export function installUses(d: Pick<Draft, 'lines' | 'found' | 'gaps' | 'plans'>): { materials: MaterialUse[]; labor: LaborUse[] } {
+export function installUses(d: Pick<Draft, 'lines' | 'found' | 'gaps' | 'plans'>): { materials: MaterialUse[]; labor: LaborUse[]; kept: { scope: string; name: string }[] } {
   const scopeOf = (option: string | null): string => option?.trim() || 'base';
   const found = new Map(d.found.map((f) => [f.lineId, f]));
   const templates = new Map(d.plans.map((p) => [p.template.id, p.template]));
@@ -88,13 +88,17 @@ export function installUses(d: Pick<Draft, 'lines' | 'found' | 'gaps' | 'plans'>
     const tl = t?.lines.find((x) => x.id === l.lineId);
     if (!t || !tl) continue;
     const sectionLabor = t.lines.filter((x) => x.groupId === tl.groupId && LABOR_TYPE.test(x.costTypeName)).map((x) => x.name);
-    materials.push({ scope: scopeOf(l.option), name: l.name, quantity: l.quantity, unit: l.unit, sectionLabor });
+    const sectionSupplies = t.lines
+      .filter((x) => x.groupId === tl.groupId && x.id !== tl.id && /^materials$/i.test(x.costTypeName) && SUPPLY_LINE.test(x.name))
+      .map((x) => x.name);
+    materials.push({ scope: scopeOf(l.option), name: l.name, quantity: l.quantity, unit: l.unit, sectionLabor, sectionSupplies });
   }
   for (const g of d.gaps) {
     if (g.resolved || !LABOR_TYPE.test(g.costType)) continue;
     labor.push({ scope: scopeOf(g.option), name: g.scope, for: g.scope });
   }
-  return { materials, labor };
+  const kept = d.lines.map((l) => ({ scope: scopeOf(l.option), name: l.name }));
+  return { materials, labor, kept };
 }
 
 /**
@@ -546,6 +550,7 @@ export function draftJson(d: Draft): unknown {
       tracking: l.tracking,
       option: l.option,
       basis: l.basis,
+      purpose: l.purpose,
       confidence: l.confidence,
       evidence: l.evidence,
       lookBack: l.lookBack,
@@ -572,6 +577,7 @@ export function draftJson(d: Draft): unknown {
       cost: l.priced ? formatMoney(l.cost) : null,
       price: l.priced ? formatMoney(l.price) : null,
       basis: l.basis,
+      purpose: l.purpose,
       confidence: l.confidence,
     })),
     gaps: d.gaps.map((g) => ({
@@ -927,13 +933,14 @@ function lineRow(l: DraftLine): string {
     <td class="num">${esc(qty(l.quantity))}<div class="unit">${esc(l.unit ?? '')}</div></td>
     <td class="num">${money(l.unitPrice, l.priced)}<div class="unit">${l.priced ? `cost ${formatMoney(l.unitCost)}` : ''}</div></td>
     <td class="num">${money(l.price, l.priced)}</td>
-    <td class="basis">${esc(l.basis)} <span class="conf">${CONFIDENCE_LABEL[l.confidence]}</span>${ev}${
+    <td class="basis">${l.purpose ? `<div class="purpose">${esc(l.purpose)}</div>` : ''}${esc(l.basis)} <span class="conf">${CONFIDENCE_LABEL[l.confidence]}</span>${ev}${
       l.history ? `<div class="hist"><span class="k">History</span> ${esc(historyLineText(l))}${
         l.history.pastWork.length ? `<details class="ev"><summary>past work</summary><table class="math">${pastWorkRows(l.history)}</table></details>` : ''}</div>` : ''}</td>
   </tr>`;
 }
 
 export const EXTRA_CSS = `
+.basis .purpose { font-weight: 600; margin-bottom: 3px; }
 .options ul, .summary p { margin: 8px 0 0; }
 .options h2, .summary h2, .scope h2, .steps h2 { margin-top: 30px; }
 .options ul { padding-left: 20px; font-size: 14px; }

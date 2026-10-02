@@ -1203,3 +1203,14 @@ there (`src/draft/build.ts`; the plan and the read-back are in
   group. `costItem { $: { id } }` is a root field; a template line's
   `organizationCostItem` gives the item it prices from, so one aliased query
   prices a batch of found lines.
+- **A line made from a catalog item gets the item's custom fields.** The
+  2026-10-02 build of 25-0000 sent no `customFieldValues`, and every line
+  made from a catalog item read back with that item's *Internal Notes*
+  ("125 sf/hr" on Drywall Board- Labor, "300 sf/gal" on Primer). The cost
+  items' Internal Notes is the org custom field `22PC7iufQPLi` (text; the
+  build looks it up by name). Nested `lineItems` take `customFieldValues`
+  (`createCostGroup.$.lineItems._on_newCostItem.customFieldValues`, an
+  object of any keys); the build sends it keyed by the custom field's id,
+  `{ "<fieldId>": "text" }`, with the catalog's note first so it is not
+  lost. NOT YET VERIFIED: the first build with notes reads them back
+  (`verifyNotes`) and says so on the page.

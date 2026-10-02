@@ -154,7 +154,7 @@ const gap = (scope: string, costType: string, unit: string, quantity: number | n
 const DRAFT = {
   summary: 'Basement: concrete paint, or framed false walls as an option.',
   scopeTitle: 'Basement Finish', optionPlaces: [], scopeOfWork: 'Paint the block; option to frame false walls.',
-  lines: [{ lineId: '22PLCchBuFMa', quantity: 6, basis: 'two coats', evidence: ev, option: null, confidence: 'medium', lookBack: [] }],
+  lines: [{ lineId: '22PLCchBuFMa', quantity: 6, basis: 'two coats', purpose: '', evidence: ev, option: null, confidence: 'medium', lookBack: [] }],
   gaps: [
     gap('Batt insulation in the false wall cavities', 'Materials', 'Square Foot', 909, ['insulation', 'batt']),
     gap('Plastic vapor barrier between the foundation and the false walls', 'Materials', 'Square Foot', 909, ['vapor barrier', 'poly']),

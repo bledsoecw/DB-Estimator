@@ -1,5 +1,5 @@
 /**
- * npm run build-budget -- [<job>] [--draft path] [--apply [--yes]] [--live] [--replace] [--out review]
+ * npm run build-budget -- [<job>] [--draft path] [--apply [--yes]] [--live] [--replace] [--no-notes] [--out review]
  *                         [--fixture path]
  *
  * Builds the last draft into the job's budget in JobTread: the "Build it in
@@ -36,6 +36,11 @@
  * on the terminal and on the page.
  * Only a test job (25-0000) is built unless --live is given.
  *
+ * Each line's Internal Notes gets a note for the team under the catalog's own
+ * note: what the line is for on this job, how the count was reached, where a
+ * new line's price came from (Carl, 2026-10-02). --no-notes leaves them to
+ * JobTread's copy of the catalog's note.
+ *
  * --fixture replays a saved build fixture offline (test/fixtures): no
  * JobTread, no key, and --apply is refused.
  */
@@ -50,8 +55,8 @@ import type { ApiBudget } from './jobtread/types.ts';
 import { resolveJobId } from './draft/evidence.ts';
 import { fetchTemplate, type Template } from './draft/templates.ts';
 import {
-  deleteMutation, fetchJobHead, fetchNameMaps, fetchPricedItems, gateBuild, groupMutation, parametersMutation,
-  planBuild, planText, pricedIdsOf, verifyBuild,
+  attachNotes, catalogIdsOf, deleteMutation, fetchCatalogNotes, fetchJobHead, fetchLineNotes, fetchNameMaps, fetchPricedItems,
+  gateBuild, groupMutation, parametersMutation, planBuild, planText, pricedIdsOf, verifyBuild, verifyNotes,
   type BuildPlan, type BuildRecord, type DraftFile, type JobHead, type NameMaps, type PricedInfo,
 } from './draft/build.ts';
 import { renderBuildPage } from './draft/build-render.ts';
@@ -64,18 +69,21 @@ export interface BuildArgs {
   replace: boolean;
   /** Write without asking. */
   yes: boolean;
+  /** Build without the job notes in Internal Notes: JobTread copies the catalog's note as before. */
+  noNotes: boolean;
   out: string;
   fixture: string | null;
 }
 
 export function parseBuildArgs(argv: string[]): BuildArgs {
-  const args: BuildArgs = { job: null, draft: null, apply: false, live: false, replace: false, yes: false, out: 'review', fixture: null };
+  const args: BuildArgs = { job: null, draft: null, apply: false, live: false, replace: false, yes: false, noNotes: false, out: 'review', fixture: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--apply') args.apply = true;
     else if (a === '--live') args.live = true;
     else if (a === '--replace') args.replace = true;
     else if (a === '--yes' || a === '-y') args.yes = true;
+    else if (a === '--no-notes') args.noNotes = true;
     else if (a === '--out') args.out = argv[++i] ?? args.out;
     else if (a === '--draft') args.draft = argv[++i] ?? null;
     else if (a === '--fixture') args.fixture = argv[++i] ?? null;
@@ -84,7 +92,7 @@ export function parseBuildArgs(argv: string[]): BuildArgs {
     else throw new Error(`unexpected argument ${a}`);
   }
   if (args.job === null && args.draft === null && args.fixture === null) {
-    throw new Error('usage: npm run build-budget -- [<jobId | 250000 | 25-0000>] [--draft path] [--apply [--yes]] [--live] [--replace] [--out review]');
+    throw new Error('usage: npm run build-budget -- [<jobId | 250000 | 25-0000>] [--draft path] [--apply [--yes]] [--live] [--replace] [--no-notes] [--out review]');
   }
   if (args.fixture && args.apply) throw new Error('--fixture replays offline; it cannot --apply');
   if (args.yes && !args.apply) throw new Error('--yes only answers the question --apply asks; add --apply');
@@ -123,6 +131,7 @@ export interface BuildFixture {
     costCodes: Record<string, string>;
     generalDescriptionItemId: string | null;
     contingencyItemId: string | null;
+    internalNotesFieldId?: string | null;
   };
   /** Keyed by the id the draft used; a template line's id maps to the item it prices from. */
   priced: Record<string, PricedInfo>;
@@ -137,6 +146,7 @@ export function namesFromFixture(n: BuildFixture['names']): NameMaps {
     costCodes: lower(n.costCodes),
     generalDescriptionItemId: n.generalDescriptionItemId,
     contingencyItemId: n.contingencyItemId,
+    internalNotesFieldId: n.internalNotesFieldId ?? null,
   };
 }
 
@@ -237,6 +247,16 @@ async function main(): Promise<number> {
   for (const w of gate.warnings) log(`note: ${w}`);
 
   const plan = planBuild(draft, templates, names, priced);
+  // Each line's Internal Notes: the catalog's note as written, then what the line is for on this job.
+  if (args.noNotes) {
+    log('--no-notes: lines are built with the catalog\'s Internal Notes only');
+  } else if (client && names.internalNotesFieldId) {
+    const notes = await fetchCatalogNotes(client, catalogIdsOf(plan), names.internalNotesFieldId);
+    const n = attachNotes(plan, names.internalNotesFieldId, notes);
+    log(`job notes for ${n.noted} line${n.noted === 1 ? '' : 's'}, under the catalog's Internal Notes${n.left ? `; ${n.left} left to the catalog's note (its item was not read)` : ''}`);
+  } else if (client) {
+    log('no "Internal Notes" custom field on cost items: lines are built without job notes');
+  }
   log(planText(plan));
   if (gate.deletes.length) log(`--replace takes down first: ${gate.deletes.map((d) => `"${d.name}"`).join(', ')}`);
 
@@ -297,6 +317,7 @@ async function main(): Promise<number> {
   const again = await fetchBudget(client!, job.id);
   const head = await fetchJobHead(client!, job.id);
   const v = verifyBuild(plan, again, head.parameters);
+  if (names.internalNotesFieldId && !args.noNotes) v.lines.push(verifyNotes(plan, await fetchLineNotes(client!, job.id, names.internalNotesFieldId)));
   for (const l of v.lines) log(l);
   page(plan, { record: built, verify: v });
   log(v.ok ? `built: ${job.name}'s budget holds the draft. Open the job's Budget tab; the page is ${pagePath}.` : `NOT VERIFIED: see the lines above and ${pagePath} before touching the budget by hand.`);

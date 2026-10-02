@@ -69,6 +69,8 @@ export interface DraftLine {
   /** A catalog item at exactly $0 cost and $0 price: a time-tracking line, kept so the crew can clock to it. */
   tracking: boolean;
   basis: string;
+  /** What the line is for on this job, for the crew and office; the build puts it in Internal Notes. */
+  purpose: string;
   evidence: { source: string; quote: string }[];
   option: string | null;
   confidence: Confidence;
@@ -720,6 +722,7 @@ export function resolveGaps(
       priced: c.unitCost !== null && (unitCost !== ZERO || unitPrice !== ZERO),
       tracking: false,
       basis: f.catalog.basis.trim() || g.basis,
+      purpose: g.scope,
       evidence: g.evidence,
       option: g.option,
       confidence: f.confidence,
@@ -1101,6 +1104,7 @@ export function priceLines(
       priced,
       tracking,
       basis: r.basis,
+      purpose: r.purpose?.trim() ?? '',
       evidence: r.evidence,
       option: r.option?.trim() || null,
       confidence: r.confidence,

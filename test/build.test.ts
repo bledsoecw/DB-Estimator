@@ -16,7 +16,7 @@ import type { Template } from '../src/draft/templates.ts';
 import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE } from '../src/draft/contingency.ts';
 import {
   DRAFT_TAG, GENERAL_DESCRIPTION, OPTIONS_GROUP,
-  countItems, deleteMutation, gateBuild, groupMutation, parametersMutation, parseMoney, planBuild, planLines, planText, pricedIdsOf, selectionGroups, verifyBuild,
+  attachNotes, catalogIdsOf, countItems, deleteMutation, gateBuild, groupMutation, parametersMutation, parseMoney, planBuild, planLines, planText, pricedIdsOf, selectionGroups, verifyBuild,
   type BuildPlan, type BuildRecord, type DraftFile, type NewGroup, type NewItem,
 } from '../src/draft/build.ts';
 import { askYesNo, namesFromFixture, parseBuildArgs, planFile, type BuildFixture } from '../src/build-cli.ts';
@@ -171,8 +171,10 @@ test('open items are created on the job, tagged, priced from history or the ball
   assert.equal(elec.quantity, 0);
   assert.equal(elec.unitCost, 55);
   assert.equal(elec.costCodeId, CODES['Electrical']);
-  assert.match(elec.description!, /Extend or relocate outlets/);
-  assert.match(elec.description!, /quantity is 0 until the rep sets it/);
+  // The reasoning is the team's: it goes in Internal Notes, and the description is the catalog item's own.
+  assert.match(elec.jobNote!, /^For this job: Extend or relocate outlets/);
+  assert.match(elec.jobNote!, /quantity is 0 until the rep sets it/);
+  assert.ok(!/quantity is 0/.test(elec.description ?? ''), 'nothing for the team in what an estimate may show');
   // History-priced, created from scratch, on the cost code of the section it is placed in (Drywall/Plaster: Finishes).
   const lumber = framed.find((i) => i.name === `Framing lumber for the false walls ${DRAFT_TAG}`)!;
   assert.equal(lumber.organizationCostItemId, undefined);
@@ -182,14 +184,15 @@ test('open items are created on the job, tagged, priced from history or the ball
   assert.equal(lumber.unitId, UNITS['Linear Feet']);
   assert.equal(lumber.costTypeId, TYPES['Materials']);
   assert.equal(lumber.costCodeId, CODES['Finishes']);
-  assert.match(lumber.description!, /Priced from DB history: 25-0003/);
+  assert.match(lumber.jobNote!, /Priced from DB history: 25-0003/);
+  assert.equal(lumber.description, null);
   // The ballpark, in the other choice, says so loudly.
   const paint = items(sub(walls, 'Paint the block')).filter((i) => i.name !== CONTINGENCY_LINE);
   assert.equal(paint.length, 1);
   assert.equal(paint[0]!.name, `Mold-resistant concrete paint ${DRAFT_TAG}`);
   assert.equal(paint[0]!.unitCost, 0.45);
   assert.equal(paint[0]!.unitPrice, 0.6525);
-  assert.match(paint[0]!.description!, /regional ballpark, NOT DB pricing/);
+  assert.match(paint[0]!.jobNote!, /regional ballpark, NOT DB pricing/);
   // Placed in Paint, whose lines are Finishes: never General Requirements by default.
   assert.equal(paint[0]!.costCodeId, CODES['Finishes']);
   // The sections named for a line with an option do not pull it out of its choice group.
@@ -206,7 +209,7 @@ test('a gap the catalog resolved is not created again; a gap with no quantity is
   const q = plan(draft);
   const line = q.groups.flatMap(allItems).find((i) => i.name.startsWith('Mold-resistant'))!;
   assert.equal(line.quantity, 0);
-  assert.match(line.description!, /quantity is 0 until the rep sets it/);
+  assert.match(line.jobNote!, /quantity is 0 until the rep sets it/);
 });
 
 test('an open item without a section and without an option goes into the primary\'s group', () => {
@@ -329,7 +332,9 @@ test('planText reads as the tree the rep will see', () => {
   assert.match(text, /\n        - Project Contingency: 348 · \$1 \/ \$1\n/);
   assert.match(text, /\nContingency 8%: \$217\.60 on the \$2720\.00 base scope; inside each option: Flooring — LVP \+\$348\.00, Flooring — Epoxy \+\$390\.00, Walls — Framed false walls \+\$208\.86, Walls — Paint the block \+\$32\.72, Ceiling paint — Ceiling paint \+\$205\.40\n/);
   assert.match(text, /\nJob parameters: Contingency Rate = 8, Contingency Base = 2720\n/);
-  assert.match(text, /\nCHECK BEFORE --apply \(0 problems, 2 to check\):\n  1\. check: 1 line has no count yet and cost nothing until the rep sets it: "Electrical Labor"\.\n  2\. check: 3 lines were created for Carl to confirm/);
+  assert.match(text, /\nCHECK BEFORE --apply \(0 problems, 3 to check\):\n  1\. check: 1 line has no count yet and cost nothing until the rep sets it: "Electrical Labor"\.\n  2\. check: 3 lines were created for Carl to confirm/);
+  // The sample's LVP left its supplies behind: the template files Flooring - Miscellaneous MAT beside Flooring.
+  assert.match(text, /\n  3\. check: "Flooring — LVP": "Flooring" \(650 Square Foot\) is kept without "Flooring - Miscellaneous MAT"/);
 });
 
 test('groupMutation: jobId and the group at the root with no discriminator, nested _type kept, nothing undefined, the created ids asked back', () => {
@@ -500,7 +505,8 @@ test('parseMoney reads the page\'s dollars; parseBuildArgs the flags', () => {
   assert.equal(parseMoney('$0.45'), 0.45);
   assert.equal(parseMoney(null), null);
   assert.equal(parseMoney('n/a'), null);
-  assert.deepEqual(parseBuildArgs(['25-0000', '--apply', '--replace', '--out', 'r']), { job: '25-0000', draft: null, apply: true, live: false, replace: true, yes: false, out: 'r', fixture: null });
+  assert.deepEqual(parseBuildArgs(['25-0000', '--apply', '--replace', '--out', 'r']), { job: '25-0000', draft: null, apply: true, live: false, replace: true, yes: false, noNotes: false, out: 'r', fixture: null });
+  assert.equal(parseBuildArgs(['25-0000', '--no-notes']).noNotes, true);
   assert.deepEqual(parseBuildArgs(['--draft', 'review/x.json', '--live']).draft, 'review/x.json');
   assert.deepEqual(parseBuildArgs(['--fixture', 'f.json']).fixture, 'f.json');
   assert.throws(() => parseBuildArgs([]), /usage: npm run build-budget/);
@@ -555,6 +561,11 @@ test('the build page: the tree with quantities, prices and tags on a dry run; th
   assert.match(dry, /Ceiling paint › Ceiling paint<\/div><div class="name">Paint Labor - Sub<\/div><span class="tag sel">add-on<\/span>/);
   assert.match(dry, /<div class="name">Mold-resistant concrete paint<\/div>.*<span class="tag warn">DRAFT — Carl confirms<\/span>/);
   assert.match(dry, /<span class="tag dim">count not set<\/span>/);
+  const noted = plan();
+  const { noted: n } = attachNotes(noted, 'cfNotes', new Map(catalogIdsOf(noted).map((id) => [id, ''])));
+  assert.match(renderBuildPage({ ...common, gate, plan: noted }), new RegExp(`${n} lines carry a note for the team in Internal Notes, under the catalog's own note`));
+  // The Note column is the team's note, as it goes in Internal Notes.
+  assert.match(dry, /<div class="jobnote">For this job: Mold-resistant concrete paint<br>Quantity 909 Square Foot: [^<]*<br>Not in the template: [^<]*<br>Priced from a regional ballpark, NOT DB pricing/);
   assert.match(dry, /= <code>\{Contingency Base\} \* \{Contingency Rate\} \/ 100<\/code>/);
   assert.match(dry, /Job parameters: Contingency Rate = 8, Contingency Base = 2720\./);
   assert.match(dry, /Contingency 8%: \$217\.60 on the \$2,720\.00 base scope, and each option carries its own share inside its choice/);
@@ -702,7 +713,7 @@ test('the build page puts the checks at the top and tags the rows they name', as
   const box = html.indexOf('<section class="review has-problems">');
   assert.ok(box > 0 && box < html.indexOf('<h2>FINISHES</h2>'), 'the box comes before the groups');
   // The problem (the sub beside the crew), the sub beside the paint it may supply, the line with no count, the DRAFT lines.
-  assert.match(html, /<h2>Check before you apply <span class="counts">1 problem &middot; 3 to check<\/span><\/h2>/);
+  assert.match(html, /<h2>Check before you apply <span class="counts">1 problem &middot; 4 to check<\/span><\/h2>/);
   assert.match(html, /<li class="check"><span class="sev">Check<\/span> FINISHES › Paint: &quot;Paint Labor - Sub&quot; \(a subcontractor, \$3,590\.55\) and &quot;Paint&quot; \(DB&#39;s material|<li class="check"><span class="sev">Check<\/span> FINISHES › Paint: &quot;Paint Labor - Sub&quot; \(a subcontractor, \$3,590\.55\) and &quot;Paint&quot; \(DB's material/);
   assert.match(html, /<li class="problem"><span class="sev">Problem<\/span> FINISHES › Paint: &quot;Paint Labor - Sub&quot;/);
   assert.match(html, /<li class="info"><span class="sev">Figure<\/span> Contingency 8%: \$\d/);

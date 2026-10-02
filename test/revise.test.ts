@@ -36,7 +36,7 @@ const texts = (args: StructuredArgs<unknown>): string[] => args.content.map((c) 
 
 const ev = [{ source: 'Robert Switzer, 2026-07-23', quote: 'skimming the concrete walls' }];
 const line = (lineId: string, quantity: number, basis: string, option: string | null = null) =>
-  ({ lineId, quantity, basis, evidence: ev, option, confidence: 'medium', lookBack: [] as string[] });
+  ({ lineId, quantity, basis, purpose: '', evidence: ev, option, confidence: 'medium', lookBack: [] as string[] });
 
 const PASS1 = {
   summary: 'Basement refresh: skim and paint the walls, new floor.',

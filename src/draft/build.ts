@@ -43,9 +43,9 @@
  * bottom read JobTread; the CLI (build-cli.ts) does the writing.
  */
 
-import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
+import { CONTINGENCY_CONDITION_LABELS, CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS, type ContingencyCondition } from './contingency.ts';
 import { STRUCTURAL_GROUPS, groupPath, orderedLines, type Template, type TemplateGroup, type TemplateLine } from './templates.ts';
-import { borrowedLines, doubleCounts, openLines, sortFlags, uninstalledMaterials, unitConflictFlag, type CheckLine, type LaborUse, type MaterialUse, type ReviewFlag } from './checks.ts';
+import { SUPPLY_LINE, borrowedLines, doubleCounts, openLines, sortFlags, unfastenedMaterials, uninstalledMaterials, unitConflictFlag, type CheckLine, type LaborUse, type MaterialUse, type ReviewFlag } from './checks.ts';
 import { isTestJob, type Reader } from '../jobtread/queries.ts';
 import type { ApiBudget } from '../jobtread/types.ts';
 
@@ -71,6 +71,9 @@ export interface DraftFile {
     option: string | null;
     tracking?: boolean;
     basis?: string;
+    /** What the line is for on this job; it goes in the line's Internal Notes. Absent in older drafts. */
+    purpose?: string;
+    history?: { summary?: string } | null;
   }[];
   found?: {
     lineId: string;
@@ -82,6 +85,7 @@ export interface DraftFile {
     unit: string | null;
     option: string | null;
     basis?: string;
+    purpose?: string;
   }[];
   gaps?: {
     scope: string;
@@ -101,6 +105,8 @@ export interface DraftFile {
   }[];
   contingency?: {
     rate: number;
+    /** DB's policy conditions the rate came from (contingency.ts). */
+    conditions?: string[];
     base: string;
     amount: string;
     parameters: Record<string, number>;
@@ -129,6 +135,8 @@ export interface NameMaps {
   generalDescriptionItemId: string | null;
   /** The $1.00 "Project Contingency" catalog item. */
   contingencyItemId: string | null;
+  /** The cost items' "Internal Notes" custom field, where each line's job note goes; null when the org has none. */
+  internalNotesFieldId?: string | null;
 }
 
 /** A priced catalog item as it stands today: what a found line is priced from. */
@@ -169,6 +177,10 @@ export interface NewItem {
   unitCost: number | null;
   unitPrice: number | null;
   description?: string | null;
+  /** Custom field values by field id: the line's Internal Notes (attachNotes). */
+  customFieldValues?: Record<string, string>;
+  /** What the line is for on this job, for the team; attachNotes puts it in Internal Notes. Never on the wire itself. */
+  jobNote?: string | undefined;
   /** For the page only; `groupMutation` strips it. */
   unitName?: string | null;
   /** For the checks only: the cost type's name. */
@@ -464,6 +476,8 @@ export function planBuild(
       continue;
     }
     const item = itemFrom(hit.t, hit.l, d.quantity, d.unit);
+    const note = jobNoteText({ purpose: d.purpose, quantity: d.quantity, unit: hit.l.unit, basis: d.basis, more: [historyNote(d.history?.summary)] });
+    if (note) item.jobNote = note;
     const dest = d.option ? choiceFor(d.option, { t: hit.t, groupId: hit.l.groupId }) : groupFor(hit.t, hit.l.groupId);
     dest.lineItems.push(item);
     lines++;
@@ -491,6 +505,12 @@ export function planBuild(
       unitName: p.unit,
       ...(f.unit !== null && p.unit !== null && f.unit !== p.unit ? { draftUnit: f.unit } : {}),
     };
+    const forGap = draft.gaps?.[f.forGap];
+    const note = jobNoteText({
+      purpose: f.purpose?.trim() || forGap?.scope, quantity: f.quantity, unit: p.unit, basis: f.basis,
+      more: [forGap?.why ? `Not in the template: ${forGap.why}` : null, historyNote(forGap?.history?.summary)],
+    });
+    if (note) item.jobNote = note;
     const dest = f.option ? choiceFor(f.option, homeOf(f.placeIn)) : placeFor(f.placeIn, templates, groupFor, rootFor, primaryId, notes, `found line "${p.name}"`);
     dest.lineItems.push(item);
     found++;
@@ -516,7 +536,11 @@ export function planBuild(
           quantity: 0,
           unitCost: p.unitCost,
           unitPrice: p.unitPrice,
-          description: `For: ${g.scope}. ${g.why} The count is not known yet, so the quantity is 0 until the rep sets it.`,
+          description: p.description,
+          jobNote: jobNoteText({
+            purpose: g.scope, basis: g.basis,
+            more: [g.why ? `Not in the template: ${g.why}` : null, 'The count is not known yet, so the quantity is 0 until the rep sets it.'],
+          }),
           unitName: p.unit,
         });
         created++;
@@ -542,7 +566,12 @@ export function planBuild(
       quantity: g.quantity ?? 0,
       unitCost,
       unitPrice,
-      description: `${g.why} ${g.basis ? `Basis: ${g.basis} ` : ''}${priceNote}${countNote}`.trim(),
+      // The reasoning is the team's, in Internal Notes; the description is what an estimate may show.
+      description: null,
+      jobNote: jobNoteText({
+        purpose: g.scope, quantity: g.quantity, unit: g.unit, basis: g.basis,
+        more: [g.why ? `Not in the template: ${g.why}` : null, priceNote, countNote.trim()],
+      }),
       unitName: g.unit,
     });
     created++;
@@ -603,7 +632,7 @@ export function planBuild(
     if (names.contingencyItemId) {
       const baseCents = groups.reduce((n, g) => n + costCents(g), 0) - selections.reduce((n, g) => n + costCents(g), 0);
       const amountCents = Math.round((baseCents * rate) / 100);
-      const line = (quantity: number, description: string, formula?: string): NewItem => ({
+      const line = (quantity: number, description: string, jobNote: string, formula?: string): NewItem => ({
         _type: 'costItem',
         name: CONTINGENCY_LINE,
         organizationCostItemId: names.contingencyItemId!,
@@ -615,8 +644,13 @@ export function planBuild(
         unitCost: 1,
         unitPrice: 1,
         description,
+        jobNote,
         unitName: 'Lump Sum',
       });
+      const conditions = (draft.contingency.conditions ?? [])
+        .map((c) => CONTINGENCY_CONDITION_LABELS[c as ContingencyCondition])
+        .filter(Boolean);
+      const why = conditions.length ? `, DB's policy rate for ${conditions.join('; ')}` : '';
       const shares: ContingencyShare[] = [];
       for (const og of selections) {
         for (const choice of og.lineItems) {
@@ -627,6 +661,7 @@ export function planBuild(
           choice.lineItems.push(line(
             shareCents / 100,
             `Contingency at ${rate}% on this option, at cost. It comes with the option when the customer takes it; unused contingency is credited at closeout.`,
+            `${JOB_NOTE_HEAD} the ${rate}% contingency share for "${og.name} — ${choice.name}"${why}, on the choice's ${dollars(choiceCents / 100)} cost as built. It comes and goes with the choice.`,
           ));
           shares.push({ group: og.name, choice: choice.name, cost: choiceCents / 100, amount: shareCents / 100 });
         }
@@ -642,6 +677,8 @@ export function planBuild(
       home.lineItems.push(line(
         contingencyQuantity,
         `Contingency at ${rate}% on the base scope, at cost; unused contingency is credited at closeout. ${CONTINGENCY_PARAMETERS.base} is the base-scope cost as built${shares.length ? '; each option carries its own share inside its choice, so the total follows what the customer picks' : ''}.`,
+        `${JOB_NOTE_HEAD} contingency at ${rate}%${why}, on the ${dollars(baseCents / 100)} base scope as built, without the customer's selections${shares.length ? '; each choice carries its own share' : ''}. ` +
+          `The quantity follows ${CONTINGENCY_PARAMETERS.base} × ${CONTINGENCY_PARAMETERS.rate} on the job's parameters.`,
         CONTINGENCY_FORMULA,
       ));
       parameters.push({ name: CONTINGENCY_PARAMETERS.rate, value: rate }, { name: CONTINGENCY_PARAMETERS.base, value: baseCents / 100 });
@@ -689,7 +726,10 @@ export function installFlags(
     const sectionLabor = hit.t.lines
       .filter((x) => x.groupId === hit.l.groupId && LABOR_TYPE.test(x.costTypeName))
       .map((x) => x.name);
-    materials.push({ scope: scopeOf(d.option), name: d.name, quantity: d.quantity, unit: d.unit, sectionLabor });
+    const sectionSupplies = hit.t.lines
+      .filter((x) => x.groupId === hit.l.groupId && x.id !== hit.l.id && /^materials$/i.test(x.costTypeName) && SUPPLY_LINE.test(x.name))
+      .map((x) => x.name);
+    materials.push({ scope: scopeOf(d.option), name: d.name, quantity: d.quantity, unit: d.unit, sectionLabor, sectionSupplies });
   }
   for (const f of draft.found ?? []) {
     const type = priced.get(f.source.pricedItemId)?.costTypeName ?? '';
@@ -701,7 +741,11 @@ export function installFlags(
     if (g.resolved || !LABOR_TYPE.test(g.costType)) continue;
     labor.push({ scope: scopeOf(g.option), name: g.scope, for: g.scope });
   }
-  return uninstalledMaterials(materials, labor);
+  const kept = [
+    ...draft.lines.map((d) => ({ scope: scopeOf(d.option), name: d.name })),
+    ...(draft.found ?? []).map((f) => ({ scope: scopeOf(f.option), name: f.name })),
+  ];
+  return [...uninstalledMaterials(materials, labor), ...unfastenedMaterials(materials, kept)];
 }
 
 /** Every line of the plan with the path of groups it sits in, and whether it is inside a customer selection. */
@@ -788,6 +832,137 @@ function costTypeOf(item: NewItem): string | null {
 }
 
 /** Where a found or created line goes: the section the model named, else the primary template's group. */
+/** How a job note starts; the read-back counts the lines that carry it. */
+export const JOB_NOTE_HEAD = 'For this job:';
+/** The longest Internal Notes value written: the catalog's note and the job's, cut there if ever longer. */
+const MAX_NOTE = 4000;
+
+function historyNote(summary: string | null | undefined): string | null {
+  return summary?.trim() ? `DB history: ${summary.trim()}` : null;
+}
+
+/**
+ * The team's note for one line on this job: what it is for, how the count
+ * was reached, and whatever else the draft knows (why it is not a template
+ * line, where its price came from, what DB's past work showed). Carl,
+ * 2026-10-02: add notes to the line item to help the team understand what
+ * it is for. Undefined when there is nothing to say.
+ */
+export function jobNoteText(p: {
+  purpose?: string | null | undefined;
+  quantity?: number | null | undefined;
+  unit?: string | null | undefined;
+  basis?: string | null | undefined;
+  more?: (string | null | undefined)[];
+}): string | undefined {
+  const purpose = p.purpose?.trim() ?? '';
+  const basis = p.basis?.trim() ?? '';
+  const count = p.quantity === null || p.quantity === undefined
+    ? ''
+    : ` ${p.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })}${p.unit ? ` ${p.unit}` : ''}`;
+  const rest = (p.more ?? []).map((m) => m?.trim() ?? '').filter(Boolean);
+  if (!purpose && !basis && !rest.length) return undefined;
+  return [
+    `${JOB_NOTE_HEAD}${purpose ? ` ${purpose}` : ''}`,
+    basis ? `Quantity${count}: ${basis}` : '',
+    ...rest,
+  ].filter(Boolean).join('\n');
+}
+
+/**
+ * Each line's Internal Notes on the job: the catalog item's own note, kept
+ * as written, with the job note under it. Carl, 2026-10-02: "in addition to
+ * whatever is in the internal notes, add any relevant notes to the line item
+ * to help the team understand what the line item is for." JobTread copies
+ * the catalog's Internal Notes onto a line made from a catalog item only when
+ * the line is created without a value, so the catalog's note is read
+ * (`catalogNotes`: every item read, '' when it has none) and written back
+ * first. A line whose catalog item was not read is left to JobTread's copy,
+ * so a catalog note is never lost. Returns how many lines carry a note and
+ * how many were left.
+ */
+export function attachNotes(plan: BuildPlan, fieldId: string | null | undefined, catalogNotes: Map<string, string>): { noted: number; left: number } {
+  let noted = 0;
+  let left = 0;
+  if (!fieldId) return { noted, left };
+  for (const { item } of planLines(plan.groups)) {
+    if (!item.jobNote) continue;
+    const id = item.organizationCostItemId;
+    if (id && !catalogNotes.has(id)) { left++; continue; }
+    const catalog = id ? catalogNotes.get(id)!.trim() : '';
+    let value = [catalog, item.jobNote].filter(Boolean).join('\n\n');
+    if (value.length > MAX_NOTE) value = `${value.slice(0, MAX_NOTE - 1)}…`;
+    item.customFieldValues = { [fieldId]: value };
+    noted++;
+  }
+  return { noted, left };
+}
+
+/** The catalog items a plan's lines are made from. */
+export function catalogIdsOf(plan: BuildPlan): string[] {
+  return [...new Set(planLines(plan.groups).map((x) => x.item.organizationCostItemId).filter((id): id is string => !!id))];
+}
+
+/** Each catalog item's Internal Notes, a few items per query; '' for an item with none. */
+export async function fetchCatalogNotes(client: Reader, ids: string[], fieldId: string): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const PER_QUERY = 10;
+  for (let i = 0; i < ids.length; i += PER_QUERY) {
+    const batch = ids.slice(i, i + PER_QUERY);
+    const query: Record<string, unknown> = {};
+    batch.forEach((id, k) => {
+      query[`i${k}`] = {
+        _: 'costItem', $: { id }, id: {},
+        customFieldValues: { $: { size: 1, where: [['customField', 'id'], '=', fieldId] }, nodes: { value: {} } },
+      };
+    });
+    const res = await client.query<Record<string, { id: string; customFieldValues: { nodes: { value: unknown }[] } } | null>>(query);
+    batch.forEach((id, k) => {
+      const r = res[`i${k}`];
+      if (!r) return;
+      const v = r.customFieldValues.nodes[0]?.value;
+      out.set(id, typeof v === 'string' ? v : '');
+    });
+  }
+  return out;
+}
+
+/** Every budget line's Internal Notes on the job after the build, for the read-back. */
+export async function fetchLineNotes(client: Reader, jobId: string, fieldId: string): Promise<{ name: string; note: string | null }[]> {
+  type Page = { job: { costItems: { nextPage: string | null; nodes: { name: string; customFieldValues: { nodes: { value: unknown }[] } }[] } } | null };
+  const out: { name: string; note: string | null }[] = [];
+  let page: string | null | undefined;
+  do {
+    const res: Page = await client.query<Page>({
+      job: {
+        $: { id: jobId },
+        costItems: {
+          $: { size: 25, where: [['document', 'id'], '=', null], ...(page ? { page } : {}) },
+          nextPage: {},
+          nodes: { name: {}, customFieldValues: { $: { size: 1, where: [['customField', 'id'], '=', fieldId] }, nodes: { value: {} } } },
+        },
+      },
+    });
+    const c = res.job?.costItems;
+    if (!c) break;
+    for (const n of c.nodes) {
+      const v = n.customFieldValues.nodes[0]?.value;
+      out.push({ name: n.name, note: typeof v === 'string' ? v : null });
+    }
+    page = c.nodes.length ? c.nextPage : null;
+  } while (page);
+  return out;
+}
+
+/** The read-back of the job notes: how many planned notes are on the job. Never fails the build: the budget stands without them. */
+export function verifyNotes(plan: BuildPlan, read: { name: string; note: string | null }[]): string {
+  const want = planLines(plan.groups).filter((x) => x.item.customFieldValues).length;
+  const have = read.filter((r) => r.note?.includes(JOB_NOTE_HEAD)).length;
+  return have >= want
+    ? `ok: ${have} line${have === 1 ? '' : 's'} carry their job note in Internal Notes`
+    : `NOTES: ${have} of ${want} lines carry their job note in Internal Notes; the rest have the catalog's note only`;
+}
+
 function placeFor(
   placeIn: { template: string; groupId: string } | null,
   templates: Map<string, Template>,
@@ -982,8 +1157,8 @@ function forWire(g: NewGroup): NewGroup {
     ...g,
     lineItems: g.lineItems.map((li) => {
       if (li._type === 'costGroup') return forWire(li);
-      const { unitName, draftUnit, pricedUnit, costTypeName, ...item } = li;
-      void unitName; void draftUnit; void pricedUnit; void costTypeName;
+      const { unitName, draftUnit, pricedUnit, costTypeName, jobNote, ...item } = li;
+      void unitName; void draftUnit; void pricedUnit; void costTypeName; void jobNote;
       return item;
     }),
   };
@@ -1082,6 +1257,7 @@ export async function fetchNameMaps(client: Reader): Promise<NameMaps> {
       costTypes: { nodes: Named[] };
       costCodes: { nextPage: string | null; nodes: Named[] };
       costItems: { nodes: (Named & { unitCost: number | null; unitPrice: number | null })[] };
+      customFields: { nodes: (Named & { targetType: string })[] };
     };
   }>({
     organization: {
@@ -1101,6 +1277,8 @@ export async function fetchNameMaps(client: Reader): Promise<NameMaps> {
         },
         nodes: { id: {}, name: {}, unitCost: {}, unitPrice: {} },
       },
+      // Seventy-odd custom fields across every kind of record; the one wanted is the cost items' Internal Notes.
+      customFields: { $: { size: 100 }, nodes: { id: {}, name: {}, targetType: {} } },
     },
   });
   const o = res.organization;
@@ -1120,6 +1298,7 @@ export async function fetchNameMaps(client: Reader): Promise<NameMaps> {
     costCodes: lower(codes),
     generalDescriptionItemId: o.costItems.nodes.find((i) => i.name === GENERAL_DESCRIPTION && (i.unitCost ?? 0) === 0)?.id ?? null,
     contingencyItemId: o.costItems.nodes.find((i) => i.name === CONTINGENCY_LINE && i.unitCost === 1 && i.unitPrice === 1)?.id ?? null,
+    internalNotesFieldId: o.customFields.nodes.find((f) => f.targetType === 'costItem' && f.name.trim().toLowerCase() === 'internal notes')?.id ?? null,
   };
 }
 

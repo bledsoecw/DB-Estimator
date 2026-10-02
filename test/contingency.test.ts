@@ -86,7 +86,7 @@ test('the contingency line is not scope: the model never sees it, the rep is nev
   // A model that names it anyway is told why it was not kept.
   const reply = {
     summary: '', scopeTitle: 'Basement Finish', optionPlaces: [], scopeOfWork: '', gaps: [], questions: [], contingency: { rate: 8, why: '', conditions: ['stripped-to-substrate' as const] },
-    lines: [{ lineId: 'cont', quantity: 1, basis: '', evidence: [], option: null, confidence: 'high' as const, lookBack: [] }],
+    lines: [{ lineId: 'cont', quantity: 1, basis: '', purpose: '', evidence: [], option: null, confidence: 'high' as const, lookBack: [] }],
   };
   const { lines, rejected } = priceLines(reply, [t]);
   assert.equal(lines.length, 0);

@@ -308,6 +308,49 @@ trade, or the labor the template files beside it ("Paint Labor" for
 "Primer"); for wainscot, only its own. A material whose template section
 carries no labor line is not checked.
 
+### Fasteners, and a note on every line (2026-10-02)
+
+The first build on the new layout kept 909 SF of Framing Wall in the
+framed-wall choice and left out Fastener - Framing Nails, which
+Addition/House Build files beside it in Framing Materials. Carl: "I don't
+even see fasteners in the budget?" Nor was there anything to fasten the
+bottom plates to the slab, or to nail the trim and wainscot. Rule 17 now
+says a material also needs what fastens or finishes it, in the same
+choice: the fastener or supplies line its template section files with it
+(Fastener - Framing Nails with Framing Wall, Paint - Miscellaneous Mat
+with paint, Flooring - Miscellaneous MAT with Flooring), with a count;
+where the template has none, an open item the catalog search places
+(Concrete Fasteners for a plate on concrete, Fastener - Trim Nail or Brad
+Nail for trim and wainscot). The check box on both pages flags a material
+kept without the supplies line its section carries, one flag per missing
+line (`unfastenedMaterials` in `src/draft/checks.ts`; `SUPPLY_LINE` says
+what counts: fasteners, nails, screws, staples, caulk, adhesive, misc).
+
+Carl, the same day: "in addition to whatever is in the internal notes, add
+any relevant notes to the line item to help the team understand what the
+line item is for." Every kept line now carries `purpose` (rule 19): one
+plain sentence for the crew and office on what the line is for on this job
+("Hang 1/2-inch drywall on the new false walls, above the wainscot only").
+The build writes each line's Internal Notes (the cost items' custom field)
+as the catalog item's own note, as written, then:
+
+    For this job: <purpose>
+    Quantity <count> <unit>: <basis>
+    Not in the template: <why>              (a found or created line)
+    Priced from DB history / a regional ballpark …   (a created line)
+    DB history: <what past work showed>      (when history was read)
+
+JobTread copies the catalog's note onto a line only when none is sent, so
+the build reads each catalog item's note first (`fetchCatalogNotes`) and a
+line whose item could not be read is left to JobTread's copy. The
+contingency lines say the rate, the policy condition it came from, and the
+base. A created line's reasoning ("NOT DB pricing — confirm with Carl")
+used to be its description, which an estimate may print; it is now in
+Internal Notes only, and the description is the catalog item's own (none
+for a line created from scratch). The build page's Note column shows each
+line's note; the read-back counts the lines that carry one
+(`jobNoteText`, `attachNotes`, `verifyNotes` in `src/draft/build.ts`).
+
 ### The learned price book
 
 Carl's second rule, the same day: once a past price has been found for a
@@ -761,6 +804,7 @@ npm run build-budget -- 25-0000 --apply           # shows the plan and its check
 npm run build-budget -- 25-0000 --apply --yes     # writes without asking
 npm run build-budget -- 261323 --apply --live     # a real job; the budget must be empty of scope
 npm run build-budget -- 25-0000 --apply --replace # take down this tool's last build there, build the new draft
+npm run build-budget -- 25-0000 --apply --no-notes # without the job notes in Internal Notes
 npm run build-budget -- --fixture test/fixtures/build-sample.json   # the plan from a saved fixture, offline
 ```
 

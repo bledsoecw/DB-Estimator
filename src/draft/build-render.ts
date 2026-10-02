@@ -106,15 +106,18 @@ function rowHtml(r: Row, top: string, marks: Marks): string {
     !li.organizationCostItemId && !draft ? '<span class="tag warn">no catalog item</span>' : '',
     li.quantity === 0 ? '<span class="tag dim">count not set</span>' : '',
   ].join(' ');
+  // The job note is what the team reads in the line's Internal Notes; the price's source goes under it.
+  const jobNote = li.jobNote ? `<div class="jobnote">${esc(li.jobNote).replace(/\n/g, '<br>')}</div>` : '';
+  const source = li.name === CONTINGENCY_LINE || draft || !li.organizationCostItemId
+    ? ''
+    : `<div class="unit">${li.unitCost === null ? 'no price on the catalog item' : 'priced from the catalog item'}</div>`;
   const note = li.quantityFormula
-    ? `= <code>${esc(li.quantityFormula)}</code>${li.description ? `<div>${esc(li.description)}</div>` : ''}`
-    : li.name === CONTINGENCY_LINE
-      ? esc(li.description ?? '')
-      : draft || li.quantity === 0
-      ? esc(li.description ?? '')
-      : li.organizationCostItemId
-        ? (li.unitCost === null ? 'no price on the catalog item' : 'priced from the catalog item')
-        : esc(li.description ?? '');
+    ? `= <code>${esc(li.quantityFormula)}</code>${jobNote || (li.description ? `<div>${esc(li.description)}</div>` : '')}`
+    : jobNote
+      ? `${jobNote}${source}`
+      : li.name === CONTINGENCY_LINE || draft || li.quantity === 0 || !li.organizationCostItemId
+        ? esc(li.description ?? '')
+        : source;
   return `<tr class="${[draft ? 'draft' : '', flagged.some((f) => f.severity === 'problem') ? 'problem' : ''].filter(Boolean).join(' ')}">
     <td>${r.path.length ? `<div class="path">${esc(r.path.join(' › '))}</div>` : ''}<div class="name">${esc(name)}</div>${tags}</td>
     <td class="num">${esc(qtyText(li.quantity))}<div class="unit">${esc(li.unitName ?? '')}</div></td>
@@ -158,6 +161,7 @@ export function renderBuildPage(x: BuildPageInput): string {
     return { cost: all.cost - opt.cost, price: all.price - opt.price };
   })() : null;
   const asSelected = plan ? sum(plan.groups.map((g) => totals(g, true))) : null;
+  const noted = plan ? plan.groups.flatMap((g) => rows(g)).filter((r) => r.item.customFieldValues).length : 0;
   const title = `${job.name} — build ${mode}`;
   const draftId = plan?.jobId ?? null;
 
@@ -216,6 +220,7 @@ export function renderBuildPage(x: BuildPageInput): string {
         : `<li><strong>${esc(o.name)}</strong>, optional add-on &mdash; ${usd(totals(o).price)} price, ${usd(totals(o).cost)} cost${choices[0] ? share(choices[0]) : ''}</li>`;
     }).join('')}</ul>` : ''}
     ${plan.parameters.length ? `<p class="fine">Job parameters: ${plan.parameters.map((p) => `${esc(p.name)} = ${p.value}`).join(', ')}.</p>` : ''}
+    ${noted ? `<p class="fine">${noted} line${noted === 1 ? '' : 's'} carry a note for the team in Internal Notes, under the catalog's own note: what the line is for on this job, how the count was reached, and where a new line's price came from. It is in the Note column below.</p>` : ''}
   </section>
 
   ${plan.groups.map((g) => groupSection(g, x.applied?.record ?? null, marksOf(plan.flags))).join('\n')}` : ''}
@@ -249,4 +254,5 @@ tr.problem td { background: color-mix(in srgb, var(--red) 9%, transparent); }
 .checks li.bad::before { content: '✗ '; color: var(--red); }
 .checks li.bad { color: var(--red); font-weight: 600; }
 footer.fine { margin-top: 30px; }
+.jobnote { font-size: 12.5px; line-height: 1.45; }
 `;

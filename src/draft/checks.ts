@@ -181,6 +181,8 @@ export interface MaterialUse {
   unit: string | null;
   /** Labor and subcontractor lines the template files in the same section. Empty: the template expects no labor there. */
   sectionLabor: string[];
+  /** Fastener and supplies lines the template files in the same section (SUPPLY_LINE). Absent or empty: none. */
+  sectionSupplies?: string[];
 }
 
 /** A kept labor or sub line, or an open item for labor, and where it is in the job. */
@@ -231,6 +233,46 @@ export function uninstalledMaterials(materials: MaterialUse[], labor: LaborUse[]
     });
   }
   return out;
+}
+
+/** A template's fastener or supplies line: what a material is fastened, sealed or finished with. */
+export const SUPPLY_LINE = /\b(fasteners?|nails?|screws?|staples|caulk(ing)?|adhesive|misc\.?|miscellaneous)\b/i;
+
+/**
+ * Materials kept without the fasteners or supplies their template files
+ * with them. 25-0000, 2026-10-02: the framed-wall choice kept 909 SF of
+ * Framing Wall and left out Fastener - Framing Nails, which Addition/House
+ * Build files beside it in Framing Materials; Carl: "I don't even see
+ * fasteners in the budget?" A supply line of the material's own section
+ * (Fastener - Framing Nails, Paint - Miscellaneous Mat, Flooring -
+ * Miscellaneous MAT) kept in the same choice, or in the base scope, covers
+ * every material of that section. One flag per missing supply, naming the
+ * materials that need it.
+ */
+export function unfastenedMaterials(materials: MaterialUse[], kept: { scope: string; name: string }[]): ReviewFlag[] {
+  const missing = new Map<string, { scope: string; supplies: string[]; materials: MaterialUse[] }>();
+  for (const m of materials) {
+    const supplies = m.sectionSupplies ?? [];
+    if (!supplies.length || SUPPLY_LINE.test(m.name.replace(DRAFT_SUFFIX, ''))) continue;
+    const here = kept.filter((k) => k.scope === m.scope || k.scope === 'base');
+    if (supplies.some((s) => here.some((k) => sameName(s, k.name)))) continue;
+    const key = `${m.scope}\u0000${supplies.join('\u0000')}`;
+    const entry = missing.get(key) ?? { scope: m.scope, supplies, materials: [] };
+    entry.materials.push(m);
+    missing.set(key, entry);
+  }
+  return [...missing.values()].map((e) => {
+    const where = e.scope === 'base' ? 'Base scope' : `"${e.scope}"`;
+    const names = e.materials.map((m) =>
+      `"${m.name}" (${`${m.quantity === null ? '—' : m.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${m.unit ?? ''}`.trimEnd()})`);
+    const one = e.materials.length === 1;
+    return {
+      severity: 'check' as const, kind: 'install' as const,
+      lines: e.materials.map((m) => ({ where: m.scope, name: m.name })),
+      text: `${where}: ${names.join(', ')} ${one ? 'is' : 'are'} kept without ${e.supplies.map((s) => `"${s}"`).join(' or ')}, which the template files beside ${one ? 'it' : 'them'} to fasten or finish ${one ? 'it' : 'them'}. ` +
+        `Keep it with a count in the same choice, or say in the basis why this work needs none.`,
+    };
+  });
 }
 
 /**

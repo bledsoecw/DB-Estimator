@@ -228,9 +228,9 @@ const DRAFT = {
   summary: 'Basement refresh with a flooring choice.',
   scopeTitle: 'Basement Finish', optionPlaces: [], scopeOfWork: 'Paint and floor.',
   lines: [
-    { lineId: '22PLhtLxcz9S', quantity: 24, basis: 'two painters', evidence: ev('painting'), option: null, confidence: 'low', lookBack: ['paint sub', 'Painting'] },
-    { lineId: '22PLhsr2Yx55', quantity: 706, basis: 'epoxy by the sub', evidence: ev('Epoxy Flooring'), option: 'Flooring — Epoxy', confidence: 'medium', lookBack: ['epoxy', 'floor coating'] },
-    { lineId: '22PLCchBuFMa', quantity: 6, basis: 'two coats', evidence: ev('painting'), option: null, confidence: 'medium', lookBack: [] },
+    { lineId: '22PLhtLxcz9S', quantity: 24, basis: 'two painters', purpose: '', evidence: ev('painting'), option: null, confidence: 'low', lookBack: ['paint sub', 'Painting'] },
+    { lineId: '22PLhsr2Yx55', quantity: 706, basis: 'epoxy by the sub', purpose: '', evidence: ev('Epoxy Flooring'), option: 'Flooring — Epoxy', confidence: 'medium', lookBack: ['epoxy', 'floor coating'] },
+    { lineId: '22PLCchBuFMa', quantity: 6, basis: 'two coats', purpose: '', evidence: ev('painting'), option: null, confidence: 'medium', lookBack: [] },
   ],
   gaps: [
     { scope: 'Skim-coat the concrete walls', why: 'no template line', unit: 'Hours', quantity: 24, costType: 'Labor', basis: 'guess', evidence: ev('skimming'), lookBack: ['skim coat', 'skim'], option: null },
@@ -1050,7 +1050,7 @@ test('lesson 2: a general line borrowed from another trade\'s section is flagged
 });
 
 test('lesson 3: an open item is a choice, so "pick one" stays pick one, and a lonely choice is flagged', async () => {
-  const lvp = { lineId: '22PLhsr2Yx55', quantity: 706, basis: 'LVP', evidence: ev('LVP'), option: 'Flooring — LVP', confidence: 'medium', lookBack: [] };
+  const lvp = { lineId: '22PLhsr2Yx55', quantity: 706, basis: 'LVP', purpose: '', evidence: ev('LVP'), option: 'Flooring — LVP', confidence: 'medium', lookBack: [] };
   const epoxy = { scope: 'Epoxy floor coating by sub', why: 'no template line', unit: 'Square Foot', quantity: 706, costType: 'Subcontractor', basis: 'the floor', evidence: ev('epoxy'), lookBack: [], option: 'Flooring — Epoxy' };
   const both = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, lines: [lvp], gaps: [epoxy] }]), { templateIds: [FIN, GR] });
   const flooring = both.totals.options.find((o) => o.group === 'Flooring')!;
@@ -1105,8 +1105,8 @@ test('every kept material needs labor to install it in its choice; wainscot gets
 });
 
 test('the draft page flags a material kept with no labor in its choice', async () => {
-  const mat = { lineId: '22PLCchBuFMU', quantity: 667, basis: 'board', evidence: ev('framed'), option: 'Walls — Framed', confidence: 'medium', lookBack: [] };
-  const hang = { lineId: '22PLCchBuFMV', quantity: 12, basis: 'hang', evidence: ev('framed'), option: 'Walls — Framed', confidence: 'medium', lookBack: [] };
+  const mat = { lineId: '22PLCchBuFMU', quantity: 667, basis: 'board', purpose: '', evidence: ev('framed'), option: 'Walls — Framed', confidence: 'medium', lookBack: [] };
+  const hang = { lineId: '22PLCchBuFMV', quantity: 12, basis: 'hang', purpose: '', evidence: ev('framed'), option: 'Walls — Framed', confidence: 'medium', lookBack: [] };
   const without = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, lines: [mat], gaps: [] }]), { templateIds: [FIN, GR] });
   const flag = draftFlags(without).find((f) => f.kind === 'install');
   assert.match(flag!.text, /"Walls — Framed": "Drywall Brd- Mat" \(667 [A-Za-z ]+\) is kept with no labor to install it; the template files "Drywall Brd- Labor"/);

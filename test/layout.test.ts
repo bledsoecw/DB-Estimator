@@ -16,7 +16,8 @@ import { readFileSync } from 'node:fs';
 import type { Template, TemplateLine } from '../src/draft/templates.ts';
 import { CONTINGENCY_FORMULA, CONTINGENCY_LINE } from '../src/draft/contingency.ts';
 import {
-  countItems, planBuild, planLines, scopeGroupName, sectionCode, selectionGroups, verifyBuild,
+  attachNotes, catalogIdsOf, countItems, groupMutation, jobNoteText, planBuild, planLines, scopeGroupName, sectionCode, selectionGroups,
+  verifyBuild, verifyNotes,
   type BuildPlan, type DraftFile, type NewGroup, type NewItem, type PricedInfo,
 } from '../src/draft/build.ts';
 import { namesFromFixture, type BuildFixture } from '../src/build-cli.ts';
@@ -253,7 +254,7 @@ const TWINS: Template = {
   ],
 };
 const replyLine = (lineId: string, quantity: number, basis = '') =>
-  ({ lineId, quantity, basis, evidence: [], option: null, confidence: 'medium' as const, lookBack: [] });
+  ({ lineId, quantity, basis, purpose: '', evidence: [], option: null, confidence: 'medium' as const, lookBack: [] });
 const reply = (lines: DraftReply['lines']): DraftReply =>
   ({ summary: '', scopeOfWork: '', scopeTitle: '', optionPlaces: [], lines, gaps: [], questions: [], contingency: { rate: 10, why: '', conditions: [] } }) as unknown as DraftReply;
 
@@ -302,4 +303,105 @@ test('a line created on the job takes the cost code of its section, never Genera
   const p = planBuild(DRAFT, new Map([[T, coded]]), names, priced);
   const epoxy = planLines(p.groups).find((x) => x.item.name.startsWith('Epoxy floor by sub'))!;
   assert.equal(epoxy.item.costCodeId, names.costCodes.get('finishes'));
+});
+
+// ---- fasteners and supplies go with their material ------------------------------------------
+
+test('a material kept without the fastener or supplies its section files with it is flagged, once per supply', async () => {
+  const { unfastenedMaterials, SUPPLY_LINE } = await import('../src/draft/checks.ts');
+  // 25-0000, 2026-10-02: Framing Wall in the framed-wall choice, Fastener - Framing Nails left in the template.
+  const framing = { scope: 'Walls — Framed walls', name: 'Framing Wall', quantity: 909, unit: 'Square Foot', sectionLabor: ['Framing/Sheathing Labor'], sectionSupplies: ['Fastener - Framing Nails'] };
+  const primer = { scope: 'Walls — Framed walls', name: 'Primer', quantity: 2, unit: 'Gallons', sectionLabor: ['Paint Labor'], sectionSupplies: ['Paint - Miscellaneous Mat'] };
+  const paint = { ...primer, name: 'Paint', quantity: 4 };
+  const kept = [
+    { scope: 'Walls — Framed walls', name: 'Framing Wall' }, { scope: 'Walls — Framed walls', name: 'Primer' }, { scope: 'Walls — Framed walls', name: 'Paint' },
+    { scope: 'Walls — Concrete paint', name: 'Paint - Miscellaneous Mat' },
+  ];
+  const flags = unfastenedMaterials([framing, primer, paint], kept);
+  assert.equal(flags.length, 2, 'one for the nails, one for the paint supplies naming both paint lines');
+  assert.match(flags[0]!.text, /^"Walls — Framed walls": "Framing Wall" \(909 Square Foot\) is kept without "Fastener - Framing Nails", which the template files beside it/);
+  assert.match(flags[1]!.text, /"Primer" \(2 Gallons\), "Paint" \(4 Gallons\) are kept without "Paint - Miscellaneous Mat"/, 'the other choice\'s supplies do not count');
+  assert.ok(flags.every((f) => f.severity === 'check' && f.kind === 'install'));
+
+  // Kept in the same choice, or in the base scope, it covers them; a supply line is never flagged for lacking another.
+  assert.deepEqual(unfastenedMaterials([framing], [...kept, { scope: 'Walls — Framed walls', name: 'Fastener - Framing Nails' }]), []);
+  assert.deepEqual(unfastenedMaterials([primer], [{ scope: 'base', name: 'Paint - Miscellaneous Mat' }]), []);
+  assert.deepEqual(unfastenedMaterials([{ ...framing, name: 'Fastener - Siding Nail', sectionSupplies: ['Siding - Caulking'] }], []), []);
+  assert.deepEqual(unfastenedMaterials([{ ...framing, sectionSupplies: [] }], []), [], 'no supplies in the section: nothing to say');
+  for (const name of ['Fastener - Framing Nails', 'Paint - Miscellaneous Mat', 'Flooring - Miscellaneous MAT', 'Siding - Trim Nails', 'Shower Caulk', 'Cabinet Misc Accessories']) {
+    assert.ok(SUPPLY_LINE.test(name), name);
+  }
+  for (const name of ['Framing Wall', 'Drywall Board- Mat', 'Wainscoting', 'Trim - Baseboard']) assert.ok(!SUPPLY_LINE.test(name), name);
+});
+
+test('the draft prompt keeps fasteners with their material and matches fastener gaps in the catalog', async () => {
+  const { DRAFT_SYSTEM, HISTORY_SYSTEM } = await import('../src/draft/prompt.ts');
+  assert.match(DRAFT_SYSTEM, /keep the fastener or supplies line its template section files with it \(Fastener - Framing Nails with Framing Wall/);
+  assert.match(DRAFT_SYSTEM, /a wall's bottom plate on a concrete floor needs Concrete Fasteners/);
+  assert.match(HISTORY_SYSTEM, /A fastener gap is matched to the catalog's fastener for that work/);
+});
+
+// ---- a note for the team on every line -----------------------------------------------------
+
+const NOTES_FIELD = 'cfInternalNotes';
+const NOTED: DraftFile = {
+  ...DRAFT,
+  lines: DRAFT.lines.map((l) => l.lineId === 'db'
+    ? { ...l, purpose: 'Hang 1/2-inch drywall on the new false walls, above the wainscot only.', basis: '909 SF of wall less the 242 SF wainscot band = 667 SF.',
+        history: { summary: 'Oechsle basement: 640 SF hung by the crew in 2025.' } }
+    : l.lineId === 'pm' ? { ...l, purpose: 'Run the job: order material, schedule the crew, walk it with the owners.', basis: 'Two weeks on site, about 3 hours a week.' }
+    : l.lineId === 'fw' ? { ...l, purpose: 'Studs and plates for the 2x4 false walls.' } : l),
+  contingency: { rate: 10, conditions: ['older-home-hidden-conditions'], base: '$0.00', amount: '$0.00', parameters: {}, line: null },
+};
+
+test('every line carries a note for the team: what it is for, how the count was reached, what DB did before', () => {
+  assert.equal(
+    jobNoteText({ purpose: 'Hang drywall on the false walls.', quantity: 667, unit: 'Square Foot', basis: '909 less 242 = 667 SF.', more: [null, ' DB history: x. '] }),
+    'For this job: Hang drywall on the false walls.\nQuantity 667 Square Foot: 909 less 242 = 667 SF.\nDB history: x.',
+  );
+  assert.equal(jobNoteText({ basis: 'two coats' }), 'For this job:\nQuantity: two coats', 'an older draft with no purpose still says how');
+  assert.equal(jobNoteText({ purpose: ' ', basis: '' }), undefined);
+
+  const p = build(NOTED);
+  const at = (name: string): NewItem => planLines(p.groups).find((x) => x.item.name === name)!.item;
+  assert.equal(at('Drywall Brd- Mat').jobNote,
+    'For this job: Hang 1/2-inch drywall on the new false walls, above the wainscot only.\nQuantity 667 Square Foot: 909 SF of wall less the 242 SF wainscot band = 667 SF.\nDB history: Oechsle basement: 640 SF hung by the crew in 2025.');
+  // A created line: the reasoning is in the note, nothing for the team in what an estimate may show.
+  const epoxy = at('Epoxy floor by sub (DRAFT - Carl confirms)');
+  assert.match(epoxy.jobNote!, /^For this job: Epoxy floor by sub\nNot in the template: No template line covers an epoxy floor\.\nPriced from DB history/);
+  assert.equal(epoxy.description, null);
+  // A found line says what it is for from its gap.
+  assert.match(at('Crew Labor').jobNote ?? '', /^For this job: Move contents/);
+  // Contingency: the policy condition the rate came from, and what the base is.
+  const cont = planLines(p.groups).filter((x) => x.item.name === CONTINGENCY_LINE);
+  assert.match(cont.find((x) => x.item.quantityFormula)!.item.jobNote!,
+    /^For this job: contingency at 10%, DB's policy rate for older home, more hidden conditions likely, on the \$[\d,.]+ base scope as built, without the customer's selections; each choice carries its own share\./);
+  assert.match(cont.find((x) => !x.item.quantityFormula)!.item.jobNote!, /^For this job: the 10% contingency share for "(Walls|Flooring) — \w+", DB's policy rate for older home/);
+});
+
+test('the note goes under the catalog\'s own Internal Notes, on the wire as the custom field, and is read back', () => {
+  const p = build(NOTED);
+  const ids = catalogIdsOf(p);
+  assert.ok(ids.includes('item-db') && ids.includes('crewItem'));
+  // JobTread copies the catalog's note only when none is sent, so it is read and written first.
+  const catalog = new Map(ids.map((id) => [id, id === 'item-db' ? '125 sf/hr' : '']));
+  catalog.delete('item-fw'); // not read: left to JobTread's own copy
+  assert.deepEqual(attachNotes(p, null, catalog), { noted: 0, left: 0 }, 'no field, no notes');
+  const n = attachNotes(p, NOTES_FIELD, catalog);
+  assert.ok(n.noted > 5);
+  const at = (name: string): NewItem => planLines(p.groups).find((x) => x.item.name === name)!.item;
+  assert.equal(at('Drywall Brd- Mat').customFieldValues![NOTES_FIELD], `125 sf/hr\n\n${at('Drywall Brd- Mat').jobNote}`);
+  assert.equal(at('Project Management').customFieldValues![NOTES_FIELD], at('Project Management').jobNote, 'no catalog note: the job note alone');
+  assert.ok(at('Framing Wall').jobNote);
+  assert.equal(at('Framing Wall').customFieldValues, undefined, 'its catalog note was not read, so JobTread copies it');
+  assert.equal(n.left, 1);
+
+  const wire = JSON.stringify(groupMutation(p.jobId, p.groups[0]!));
+  assert.ok(wire.includes(`"customFieldValues":{"${NOTES_FIELD}":"125 sf/hr\\n\\nFor this job: Hang 1/2-inch drywall`));
+  assert.ok(!wire.includes('"jobNote"'), 'the plan-only field never goes on the wire');
+
+  const want = planLines(p.groups).filter((x) => x.item.customFieldValues).length;
+  const read = planLines(p.groups).map((x) => ({ name: x.item.name, note: x.item.customFieldValues?.[NOTES_FIELD] ?? null }));
+  assert.equal(verifyNotes(p, read), `ok: ${want} lines carry their job note in Internal Notes`);
+  assert.equal(verifyNotes(p, read.map((r) => ({ ...r, note: null }))), `NOTES: 0 of ${want} lines carry their job note in Internal Notes; the rest have the catalog's note only`);
 });

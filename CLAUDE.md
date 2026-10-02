@@ -56,6 +56,12 @@ Also from Carl, 25-0000, 2026-10-02:
   Bathroom Remodel and Addition/House Build), never Trim Labor (Trim Labor is
   the trim) (rule 17 in `src/draft/prompt.ts`, `uninstalledMaterials` in
   `src/draft/checks.ts`).
+- **Every material needs what fastens or finishes it, in the same choice.**
+  The fastener or supplies line its template section files with it
+  (Fastener - Framing Nails with Framing Wall); where the template has none,
+  a gap the catalog places (Concrete Fasteners for a plate on concrete, trim
+  nails for trim and wainscot) (rule 17, `unfastenedMaterials` in
+  `src/draft/checks.ts`).
 - **Contingency follows DB's policy conditions; the highest wins.** The
   model names the conditions, the code sets the rate
   (`CONTINGENCY_CONDITIONS` in `src/draft/contingency.ts`). An older home
@@ -77,6 +83,11 @@ From Carl, 2026-10-02, with a picture of the NEW POOL HOUSE SCOPE budget:
 - **A line created on the job takes its section's cost code** (the code the
   section's own lines carry), never General Requirements by default
   (`sectionCode` in `src/draft/build.ts`).
+- **Every line carries a note for the team in Internal Notes**: the catalog
+  item's own note as written, then "For this job:" what the line is for
+  (the draft's `purpose`, rule 19), how the count was reached, and for a new
+  line why and where its price came from. The description stays what an
+  estimate may print (`jobNoteText`, `attachNotes` in `src/draft/build.ts`).
 - **Contingency: a share in each choice and the base line at the end of
   Phase 1 - General Requirements. No Phase 5.** The seven phased templates
   carry the line there too (moved 2026-10-02, `docs/contingency.md`).
