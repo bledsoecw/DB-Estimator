@@ -19,7 +19,8 @@ import {
   countItems, deleteMutation, gateBuild, groupMutation, parametersMutation, parseMoney, planBuild, planText, pricedIdsOf, verifyBuild,
   type BuildPlan, type BuildRecord, type DraftFile, type NewGroup, type NewItem,
 } from '../src/draft/build.ts';
-import { namesFromFixture, parseBuildArgs, planFile, type BuildFixture } from '../src/build-cli.ts';
+import { askYesNo, namesFromFixture, parseBuildArgs, planFile, type BuildFixture } from '../src/build-cli.ts';
+import { PassThrough, Readable } from 'node:stream';
 import { assertAllowed } from '../src/jobtread/writer.ts';
 import type { ApiBudget } from '../src/jobtread/types.ts';
 
@@ -486,7 +487,7 @@ test('parseMoney reads the page\'s dollars; parseBuildArgs the flags', () => {
   assert.equal(parseMoney('$0.45'), 0.45);
   assert.equal(parseMoney(null), null);
   assert.equal(parseMoney('n/a'), null);
-  assert.deepEqual(parseBuildArgs(['25-0000', '--apply', '--replace', '--out', 'r']), { job: '25-0000', draft: null, apply: true, live: false, replace: true, out: 'r', fixture: null });
+  assert.deepEqual(parseBuildArgs(['25-0000', '--apply', '--replace', '--out', 'r']), { job: '25-0000', draft: null, apply: true, live: false, replace: true, yes: false, out: 'r', fixture: null });
   assert.deepEqual(parseBuildArgs(['--draft', 'review/x.json', '--live']).draft, 'review/x.json');
   assert.deepEqual(parseBuildArgs(['--fixture', 'f.json']).fixture, 'f.json');
   assert.throws(() => parseBuildArgs([]), /usage: npm run build-budget/);
@@ -721,3 +722,27 @@ test('checks: a $0 time-tracking line is not "no count" or "unpriced"', async ()
   assert.equal(flags[0]!.text, '1 line has no count yet and cost nothing until the rep sets it: "Electrical Sub".');
 });
 
+
+// ---- 2026-10-02: --apply asks before it writes ------------------------------------------
+
+test('--apply asks y/n: only y or yes writes; no, anything else, or no answer writes nothing', async () => {
+  const ask = async (typed: string | null): Promise<{ yes: boolean; shown: string }> => {
+    const input = typed === null ? Readable.from([]) : Readable.from([typed]);
+    const output = new PassThrough();
+    let shown = '';
+    output.on('data', (c) => { shown += String(c); });
+    const yes = await askYesNo('Write this to 25-0000 Kay Oss_Test Job 1? (y/n) ', input, output);
+    return { yes, shown };
+  };
+  assert.deepEqual(await ask('y\n'), { yes: true, shown: 'Write this to 25-0000 Kay Oss_Test Job 1? (y/n) ' });
+  assert.equal((await ask('YES\n')).yes, true);
+  assert.equal((await ask(' y \r\n')).yes, true, 'Windows line ends and stray spaces');
+  assert.equal((await ask('n\n')).yes, false);
+  assert.equal((await ask('yep\n')).yes, false, 'only y or yes');
+  assert.equal((await ask('\n')).yes, false, 'just Enter is a no');
+  assert.equal((await ask(null)).yes, false, 'no answer at all is a no');
+
+  assert.equal(parseBuildArgs(['25-0000', '--apply', '--yes']).yes, true);
+  assert.equal(parseBuildArgs(['25-0000', '--apply', '-y']).yes, true);
+  assert.throws(() => parseBuildArgs(['25-0000', '--yes']), /--yes only answers the question --apply asks/);
+});

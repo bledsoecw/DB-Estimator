@@ -590,7 +590,11 @@ makes.
 ## Build it in JobTread
 
 `npm run build-budget -- <job>` does the page's "Build it in JobTread" steps
-on the job's Budget tab. It reads the last draft's JSON (`review/<jobId>-draft.json`,
+on the job's Budget tab. With `--apply` it prints the plan and the "check
+before you apply" list, writes the build-plan page, and asks "Write this to
+<job>? (y/n)" before it changes anything; only y or yes writes, and `--yes`
+skips the question (Carl, 2026-10-02: one run, not a dry run and then an
+apply). Without `--apply` it is a dry run. It reads the last draft's JSON (`review/<jobId>-draft.json`,
 or `--draft path`), reads the chosen templates and the catalog items the draft
 prices from again, and creates the budget as the rep would have:
 
@@ -708,7 +712,8 @@ npm run draft -- 261323 --templates 22PLCZU3cbqS,22PF3gnGCuiB   # skip the picke
 npm run draft -- 261323 --capture test/fixtures/haag-live.json  # save the job and templates
 npm run draft -- --fixture test/fixtures/haag-basement.json     # replay offline (still calls the model)
 npm run build-budget -- 25-0000                   # dry run: the tree and review/<jobId>-build-plan.json
-npm run build-budget -- 25-0000 --apply           # writes; needs JOBTREAD_WRITE_GRANT_KEY; test jobs only
+npm run build-budget -- 25-0000 --apply           # shows the plan and its checks, asks y/n, then writes; test jobs only
+npm run build-budget -- 25-0000 --apply --yes     # writes without asking
 npm run build-budget -- 261323 --apply --live     # a real job; the budget must be empty of scope
 npm run build-budget -- 25-0000 --apply --replace # take down this tool's last build there, build the new draft
 npm run build-budget -- --fixture test/fixtures/build-sample.json   # the plan from a saved fixture, offline

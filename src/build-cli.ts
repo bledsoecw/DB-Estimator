@@ -1,5 +1,5 @@
 /**
- * npm run build-budget -- [<job>] [--draft path] [--apply] [--live] [--replace] [--out review]
+ * npm run build-budget -- [<job>] [--draft path] [--apply [--yes]] [--live] [--replace] [--out review]
  *                         [--fixture path]
  *
  * Builds the last draft into the job's budget in JobTread: the "Build it in
@@ -22,6 +22,11 @@
  * mutations as JSON (review/<jobId>-build-plan.json), and changes nothing.
  * It needs only the read key.
  *
+ * With --apply it prints the plan and its checks, writes the page, and asks
+ * "Write this to <job>? (y/n)" before it changes anything (Carl, 2026-10-02:
+ * one run instead of a dry run and then an apply). Anything but y or yes,
+ * or no answer at all, writes nothing. --yes skips the question.
+ *
  * With --apply it needs JOBTREAD_WRITE_GRANT_KEY, writes, records what it
  * created in review/<jobId>-built.json after every write, reads the budget
  * back and says whether each group is there with as many lines as planned,
@@ -33,6 +38,7 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createInterface } from 'node:readline';
 import { join } from 'node:path';
 import { clientFromEnv } from './jobtread/client.ts';
 import { writerFromEnv } from './jobtread/writer.ts';
@@ -53,17 +59,20 @@ export interface BuildArgs {
   apply: boolean;
   live: boolean;
   replace: boolean;
+  /** Write without asking. */
+  yes: boolean;
   out: string;
   fixture: string | null;
 }
 
 export function parseBuildArgs(argv: string[]): BuildArgs {
-  const args: BuildArgs = { job: null, draft: null, apply: false, live: false, replace: false, out: 'review', fixture: null };
+  const args: BuildArgs = { job: null, draft: null, apply: false, live: false, replace: false, yes: false, out: 'review', fixture: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--apply') args.apply = true;
     else if (a === '--live') args.live = true;
     else if (a === '--replace') args.replace = true;
+    else if (a === '--yes' || a === '-y') args.yes = true;
     else if (a === '--out') args.out = argv[++i] ?? args.out;
     else if (a === '--draft') args.draft = argv[++i] ?? null;
     else if (a === '--fixture') args.fixture = argv[++i] ?? null;
@@ -72,10 +81,30 @@ export function parseBuildArgs(argv: string[]): BuildArgs {
     else throw new Error(`unexpected argument ${a}`);
   }
   if (args.job === null && args.draft === null && args.fixture === null) {
-    throw new Error('usage: npm run build-budget -- [<jobId | 250000 | 25-0000>] [--draft path] [--apply] [--live] [--replace] [--out review]');
+    throw new Error('usage: npm run build-budget -- [<jobId | 250000 | 25-0000>] [--draft path] [--apply [--yes]] [--live] [--replace] [--out review]');
   }
   if (args.fixture && args.apply) throw new Error('--fixture replays offline; it cannot --apply');
+  if (args.yes && !args.apply) throw new Error('--yes only answers the question --apply asks; add --apply');
   return args;
+}
+
+/**
+ * Ask on the terminal and wait for a line. Only y or yes is a yes; anything
+ * else, or the input closing with no answer, is a no. Reads the line plainly
+ * rather than as a terminal, because Git Bash on Windows hands node a pipe.
+ */
+export function askYesNo(question: string, input: NodeJS.ReadableStream = process.stdin, output: NodeJS.WritableStream = process.stderr): Promise<boolean> {
+  return new Promise((resolve) => {
+    const rl = createInterface({ input, terminal: false });
+    let answered = false;
+    output.write(question);
+    rl.once('line', (line) => {
+      answered = true;
+      rl.close();
+      resolve(/^\s*y(es)?\s*$/i.test(line));
+    });
+    rl.once('close', () => { if (!answered) resolve(false); });
+  });
 }
 
 /** Everything one build read, frozen to disk: the plan can be made and tested with no JobTread. */
@@ -217,7 +246,22 @@ async function main(): Promise<number> {
     return 0;
   }
 
+  // The write key is checked before the question, so a missing key is said before anyone answers yes.
   const writer = writerFromEnv();
+  if (!args.yes) {
+    const problems = plan.flags.filter((f) => f.severity === 'problem').length;
+    const checks = plan.flags.filter((f) => f.severity === 'check' && f.kind !== 'note').length;
+    if (problems || checks) {
+      log(`before you write: ${[problems ? `${problems} problem${problems === 1 ? '' : 's'}` : '', checks ? `${checks} to check` : ''].filter(Boolean).join(', ')}, listed above under CHECK BEFORE --apply and on ${pagePath}`);
+    }
+    const takeDown = gate.deletes.length ? `, taking down ${gate.deletes.length} group${gate.deletes.length === 1 ? '' : 's'} the last build made first` : '';
+    const yes = await askYesNo(`Write this to ${job.name}${takeDown}? (y/n) `);
+    if (!yes) {
+      log('not written: nothing changed in JobTread. The plan is on the page.');
+      return 0;
+    }
+  }
+
   const built: BuildRecord = {
     jobId: job.id, jobName: job.name, pass: plan.pass, builtAt: new Date().toISOString(),
     groups: [], parameters: plan.parameters.map((p) => p.name),

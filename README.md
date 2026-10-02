@@ -385,8 +385,9 @@ template (dry run by default; `--apply` needs a separate
 The page is written as the steps the rep takes in JobTread — add this
 template, keep these lines, delete those, set these quantities, put these in
 a selection group, write this in General Description — with a Copy button.
-A JSON copy of the draft sits beside it, and `npm run build-budget -- <job>`
-builds it onto the job's Budget tab: the template's scope group with the kept
+A JSON copy of the draft sits beside it, and `npm run build-budget -- <job> --apply`
+shows the plan and its checks, asks "Write this to <job>? (y/n)", and builds it
+onto the job's Budget tab: the template's scope group with the kept
 lines in their sections, the General Description, the options as selection
 groups, the open items tagged `(DRAFT - Carl confirms)`, and the contingency on
 the base scope as built with each option's share inside its choice, so it
