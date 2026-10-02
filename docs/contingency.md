@@ -8,7 +8,32 @@ This page is the record of what that changed in JobTread, why it has the
 shape it has, and how to undo it. It is the first thing this project has
 ever written to JobTread.
 
-## What is in JobTread now — VERIFIED 2026-09-30
+## Changed 2026-10-02: the line moved into Phase 1, no Phase 5 — VERIFIED
+
+At Carl's request ("move it to Phase 1 in all seven"), each template's
+Project Contingency line was moved, keeping its id, its catalog item and its
+formula, to the end of its `Phase 1 - General Requirements` group, after the
+last sub-section (`updateCostItem` with `costGroupId` and `positionAfter`),
+and the seven Phase 5 groups, then empty, were deleted (`deleteCostGroup`).
+Read back: every line in Phase 1, last, on item `22PfSjaGc6sB`, formula
+intact; no group named for contingency left in any template.
+
+| Template | Phase 1 group | Placed after | Line (position) | Phase 5 group deleted |
+|---|---|---|---|---|
+| Bathroom Remodel | `22PLm7f9eikF` | Site Clean Up `22PM628Ec9XL` | `22PfSmFvg9zb` (r) | `22PfSmFvXZM2` |
+| Kitchen Remodel | `22PHGfWHEStL` | Site Clean Up `22PSSgyfisLG` | `22PfSmFySfP8` (r) | `22PfSmFyKDRP` |
+| Addition/House Build | `22PLm9SCEZdd` | Drainage `22PLm9zvBKbn` | `22PfSmG2iSLg` (u) | `22PfSmG2biBX` |
+| Covered Porch/Outdoor Living Area | `22PLxKt8Jwii` | Drainage `22PLxKt8KKe7` | `22PfSmG579kp` (u) | `22PfSmG4wZ8E` |
+| Deck | `22PLxQwYMMGY` | Concrete `22PLxQwYMMHT` | `22PfSmG82nzn` (t) | `22PfSmG7pc5D` |
+| Door/Window Installation | `22PM23DTA74i` | Site Clean Up `22PM2585YBCE` | `22PfSmGBSxNM` (r) | `22PfSmGBLFDC` |
+| Countertop Replacement | `22PLxHbz3H3Q` | Site Clean Up `22PSSdFXu3ni` | `22PfSmGDrq7W` (q) | `22PfSmGDij45` |
+
+`npm run contingency` now puts the line in a template that lacks it the same
+way: one `createCostItem` at the end of Phase 1, no group, and its read-back
+fails if a contingency group is still there. The table below is the
+2026-09-30 state, kept as the record of what was first written.
+
+## What was in JobTread — VERIFIED 2026-09-30
 
 One new ungrouped catalog item, the price of record for the line:
 
@@ -157,14 +182,15 @@ dollars, since a formula cannot reference its group's cost.
 **Where on the job (2026-10-02).** Carl: keep a share in each choice and the
 base line, and no Phase 5. The build puts the base line, with the formula, at
 the end of Phase 1 - General Requirements (the main scope group when the
-template has no Phase 1), and each choice keeps its share. The seven
-templates still carry their Phase 5 group; a rep building by hand is told to
-move the line into Phase 1 and delete the group.
+template has no Phase 1), and each choice keeps its share. The same day the
+seven templates' lines were moved into Phase 1 and their Phase 5 groups
+deleted (above), so a rep building by hand finds the line where the build
+puts it.
 
 **In the templates?** No, and it cannot be. A template has no customer
 options in it: the selection groups are made on each job, from the draft, so
 there is nothing in a template to hang an option's share on. What the
-templates carry (Phase 5 - Contingency, the line on the formula) is right for
+templates carry (the line on the formula, at the end of Phase 1) is right for
 the base and stays as it is. The shares are made where the options are made:
 `build-budget` writes them into every budget it builds, and the draft page's
 hand-build step tells a rep building by hand to add a Project Contingency

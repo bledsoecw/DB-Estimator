@@ -176,69 +176,68 @@ export async function fetchContingencyIds(
 export interface ContingencyPlan {
   templateId: string;
   templateName: string;
-  /** The group Phase 4 sits in — where the new group goes. */
-  parentGroupId: string | null;
-  phase4: TemplateGroup | null;
-  /** Already there: the group, or a line, by name. */
+  /** Phase 1 - General Requirements: where the line goes, at the end (Carl, 2026-10-02: no Phase 5). */
+  phase1: TemplateGroup | null;
+  /** The last thing in Phase 1, which the line is placed after; null when Phase 1 is empty. */
+  after: { type: 'costGroup' | 'costItem'; id: string } | null;
+  /** Already there: a contingency group, or the line anywhere, by name. */
   existing: { group: TemplateGroup | null; line: TemplateLine | null };
   action: 'create' | 'skip';
   reason: string;
 }
 
+const PHASE_1 = /^phase\s*1\b/i;
+
 /**
- * What one template needs. A template with no Phase 4 is not a construction
- * template in the sense Carl meant ("below Phase 4") and is skipped; one that
- * already has the group or the line is skipped so the script can be run twice.
+ * What one template needs. Only a phased construction template (one with a
+ * Phase 4) gets the line; one that already has it, or a contingency group,
+ * is skipped so the script can be run twice. The line goes at the end of
+ * Phase 1 - General Requirements: 2026-09-30 it went in a Phase 5 group of
+ * its own, and on 2026-10-02 Carl moved it into Phase 1 in all seven
+ * templates and the groups were deleted.
  */
 export function planContingency(t: Template): ContingencyPlan {
   const phase4 = t.groups.find((g) => PHASE_4.test(g.name)) ?? null;
+  const phase1 = t.groups.find((g) => PHASE_1.test(g.name)) ?? null;
   const group = t.groups.find((g) => isContingencyGroup(g.name)) ?? null;
   const line = contingencyLine(t);
+  const byPos = (a: { position: string | null }, b: { position: string | null }): number => (a.position ?? '').localeCompare(b.position ?? '');
+  const last = phase1
+    ? [
+        ...t.groups.filter((g) => g.parentId === phase1.id).map((g) => ({ type: 'costGroup' as const, id: g.id, position: g.position })),
+        ...t.lines.filter((l) => l.groupId === phase1.id).map((l) => ({ type: 'costItem' as const, id: l.id, position: l.position })),
+      ].sort(byPos).at(-1) ?? null
+    : null;
   const base = {
-    templateId: t.id, templateName: t.name,
-    parentGroupId: phase4 ? phase4.parentId ?? t.id : null,
-    phase4, existing: { group, line },
+    templateId: t.id, templateName: t.name, phase1,
+    after: last ? { type: last.type, id: last.id } : null,
+    existing: { group, line },
   };
   if (group || line) {
-    return { ...base, action: 'skip', reason: group ? `already has "${group.name}"` : `already has a "${line!.name}" line` };
+    return { ...base, action: 'skip', reason: line ? `already has a "${line.name}" line` : `already has "${group!.name}"` };
   }
   if (!phase4) return { ...base, action: 'skip', reason: 'no Phase 4 group: not a phased construction template' };
-  return { ...base, action: 'create', reason: `after "${phase4.name}"` };
+  if (!phase1) return { ...base, action: 'skip', reason: 'no Phase 1 group to put the line in' };
+  return { ...base, action: 'create', reason: `at the end of "${phase1.name}"` };
 }
 
-/** The exact `createCostGroup` for a plan whose action is create. */
+/** The exact `createCostItem` for a plan whose action is create: the line at the end of Phase 1. */
 export function contingencyMutation(plan: ContingencyPlan, ids: ContingencyIds): Record<string, unknown> {
-  if (plan.action !== 'create' || !plan.phase4) throw new Error(`${plan.templateName}: nothing to create (${plan.reason})`);
+  if (plan.action !== 'create' || !plan.phase1) throw new Error(`${plan.templateName}: nothing to create (${plan.reason})`);
   return {
-    createCostGroup: {
+    createCostItem: {
       $: {
-        parentCostGroupId: plan.parentGroupId,
-        positionAfter: { type: 'costGroup', id: plan.phase4.id },
-        name: CONTINGENCY_GROUP,
-        description: CONTINGENCY_GROUP_DESCRIPTION,
-        lineItems: [
-          {
-            _type: 'costItem',
-            name: CONTINGENCY_LINE,
-            organizationCostItemId: ids.organizationCostItemId,
-            unitId: ids.unitId,
-            costTypeId: ids.costTypeId,
-            costCodeId: ids.costCodeId,
-            quantityFormula: CONTINGENCY_FORMULA,
-            description: CONTINGENCY_DESCRIPTION,
-          },
-        ],
+        costGroupId: plan.phase1.id,
+        ...(plan.after ? { positionAfter: plan.after } : {}),
+        name: CONTINGENCY_LINE,
+        organizationCostItemId: ids.organizationCostItemId,
+        unitId: ids.unitId,
+        costTypeId: ids.costTypeId,
+        costCodeId: ids.costCodeId,
+        quantityFormula: CONTINGENCY_FORMULA,
+        description: CONTINGENCY_DESCRIPTION,
       },
-      createdCostGroup: {
-        id: {},
-        name: {},
-        position: {},
-        parentCostGroup: { id: {} },
-        descendentCostItems: {
-          $: { size: 5 },
-          nodes: { id: {}, name: {}, quantityFormula: {}, organizationCostItem: { id: {} } },
-        },
-      },
+      createdCostItem: { id: {}, name: {}, position: {}, quantityFormula: {}, costGroup: { id: {}, name: {} } },
     },
   };
 }
@@ -264,6 +263,7 @@ export function contingencyItemMutation(
     },
   };
 }
+
 
 /** One option's share: what the customer's taking it adds to the contingency. */
 export interface ContingencyOption {

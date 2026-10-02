@@ -70,7 +70,8 @@ From Carl, 2026-10-02, with a picture of the NEW POOL HOUSE SCOPE budget:
   the template's order. No General Description line.
 - **Selections sit in the section of their work**, no CUSTOMER OPTIONS group.
 - **Contingency: a share in each choice and the base line at the end of
-  Phase 1 - General Requirements. No Phase 5.**
+  Phase 1 - General Requirements. No Phase 5.** The seven phased templates
+  carry the line there too (moved 2026-10-02, `docs/contingency.md`).
 
 ## What not to do
 

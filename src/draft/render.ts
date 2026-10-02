@@ -284,7 +284,14 @@ export function draftSteps(d: Draft): string {
     const because = c.conditions.length ? ` (${c.conditions.map((x) => CONTINGENCY_CONDITION_LABELS[x]).join('; ')})` : '';
     out.push(`${step}. Contingency at ${c.rate}%${because}${c.why ? `: ${c.why}` : '.'}`);
     // Carl, 2026-10-02: the base line sits at the end of Phase 1 - General Requirements; no Phase 5.
-    if (c.line) {
+    if (c.line && /^phase\s*1\b/i.test(c.line.group.at(-1) ?? '')) {
+      // Where the seven templates carry it since 2026-10-02.
+      out.push(
+        `   Keep ${[...c.line.group, CONTINGENCY_LINE].join(' › ')} from "${c.line.templateName}".` +
+          ` Set the job parameters ${CONTINGENCY_PARAMETERS.rate} = ${c.rate} and ${CONTINGENCY_PARAMETERS.base} = ${parameterDollars(c.base)}` +
+          ` (the base scope's cost before this line): the line comes to ${formatMoney(c.amount)}, at cost.`,
+      );
+    } else if (c.line) {
       out.push(
         `   Move ${[...c.line.group, CONTINGENCY_LINE].join(' › ')} to the end of ${BASE_CONTINGENCY_HOME} and delete the "${c.line.group.at(-1) ?? CONTINGENCY_GROUP}" group: no Phase 5.` +
           ` Set the job parameters ${CONTINGENCY_PARAMETERS.rate} = ${c.rate} and ${CONTINGENCY_PARAMETERS.base} = ${parameterDollars(c.base)}` +
@@ -809,7 +816,7 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
     <table class="math">
       <tr><td>line</td><td>${d.contingency.line
         ? `${esc([...d.contingency.line.group, CONTINGENCY_LINE].join(' › '))} in ${esc(d.contingency.line.templateName)}`
-        : `not in the chosen templates yet: add the catalog item "${esc(CONTINGENCY_LINE)}" at the end of ${esc(BASE_CONTINGENCY_HOME)} with the quantity formula <code>${esc(CONTINGENCY_FORMULA)}</code>`}${d.contingency.line ? `, moved to the end of ${esc(BASE_CONTINGENCY_HOME)}; no Phase 5` : ''}</td></tr>
+        : `not in the chosen templates yet: add the catalog item "${esc(CONTINGENCY_LINE)}" at the end of ${esc(BASE_CONTINGENCY_HOME)} with the quantity formula <code>${esc(CONTINGENCY_FORMULA)}</code>`}${d.contingency.line && !/^phase\s*1\b/i.test(d.contingency.line.group.at(-1) ?? '') ? `, moved to the end of ${esc(BASE_CONTINGENCY_HOME)}; no Phase 5` : ''}</td></tr>
       <tr><td>${esc(CONTINGENCY_PARAMETERS.rate)}</td><td>${d.contingency.rate}</td></tr>
       <tr><td>${esc(CONTINGENCY_PARAMETERS.base)}</td><td>${esc(parameterDollars(d.contingency.base))}${d.contingency.options.length ? ', the base scope only' : ''}</td></tr>
       ${d.contingency.options.map((o) => `<tr><td>${esc(optionLabel(o))}</td><td>+${formatMoney(o.amount)} contingency, its own line inside the choice (${esc(parameterDollars(o.cost))} of cost)</td></tr>`).join('\n      ')}

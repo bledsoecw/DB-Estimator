@@ -379,9 +379,9 @@ cost, at cost, with the two job parameters to type: `Contingency Rate` and
 `Contingency Base`. The build puts the base line at the end of Phase 1 -
 General Requirements and a share in each customer choice; there is no Phase
 5 on the job (Carl, 2026-10-02). The seven phased construction templates
-still carry a `Phase 5 - Contingency › Project Contingency` line; `npm run
-contingency` is the script that put it there and would put it in a new
-template (dry run by default; `--apply` needs a separate
+carry the same `Project Contingency` line at the end of `Phase 1 - General
+Requirements`; `npm run contingency` puts it there in a template that lacks
+it (dry run by default; `--apply` needs a separate
 `JOBTREAD_WRITE_GRANT_KEY`). `docs/contingency.md` records what changed.
 
 The page is written as the steps the rep takes in JobTread — add this

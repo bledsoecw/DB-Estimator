@@ -27,23 +27,27 @@ function line(id: string, name: string, groupId: string, extra: Partial<Template
   };
 }
 
-/** A phased construction template, the shape of Bathroom Remodel. */
-function phased(opts: { contingency?: boolean; noPhase4?: boolean } = {}): Template {
+/**
+ * A phased construction template, the shape of Bathroom Remodel. With
+ * `contingency` the line ends Phase 1 (since 2026-10-02); with `phase5` it
+ * sits in its own Phase 5 group, the shape of 2026-09-30.
+ */
+function phased(opts: { contingency?: boolean; phase5?: boolean; noPhase4?: boolean } = {}): Template {
   const groups = [
     { id: 'scope', name: 'BATHROOM REMODEL', position: 'l', parentId: null, isSelection: false },
     { id: 'p1', name: 'Phase 1 - General Requirements', position: 'm', parentId: 'scope', isSelection: false },
     { id: 'p3', name: 'Phase 3 - Interiors', position: 'o', parentId: 'scope', isSelection: false },
     ...(opts.noPhase4 ? [] : [{ id: 'p4', name: 'Phase 4 - Finishes', position: 'p', parentId: 'scope', isSelection: false }]),
     { id: 'clock', name: 'CLOCK IN ITEMS', position: 'p', parentId: null, isSelection: false },
-    ...(opts.contingency ? [{ id: 'p5', name: CONTINGENCY_GROUP, position: 'q', parentId: 'scope', isSelection: false }] : []),
+    ...(opts.phase5 ? [{ id: 'p5', name: CONTINGENCY_GROUP, position: 'q', parentId: 'scope', isSelection: false }] : []),
   ];
   const lines = [
     line('demo', 'Demolition', 'p1', { unit: 'Hours', costTypeName: 'Labor' }),
     line('paint', 'Paint', 'p3'),
     line('sos', 'Sales On-Site Support', 'clock', { priced: { id: 'p-sos', name: 'Sales On-Site Support', unitCost: 0, unitPrice: 0, costTypeName: 'Labor' } }),
-    ...(opts.contingency
-      ? [line('cont', CONTINGENCY_LINE, 'p5', {
-          unit: 'Lump Sum', costTypeName: 'Other', quantityFormula: CONTINGENCY_FORMULA,
+    ...(opts.contingency || opts.phase5
+      ? [line('cont', CONTINGENCY_LINE, opts.phase5 ? 'p5' : 'p1', {
+          position: 'z', unit: 'Lump Sum', costTypeName: 'Other', quantityFormula: CONTINGENCY_FORMULA,
           priced: { id: 'item1', name: CONTINGENCY_LINE, unitCost: 1, unitPrice: 1, costTypeName: 'Other' },
         })]
       : []),
@@ -95,7 +99,7 @@ test('the draft\'s contingency step: the snapped rate on the base cost, the temp
   assert.equal(withLine?.rate, 8);
   assert.equal(withLine?.why, 'The tub moves.');
   assert.equal(formatMoney(withLine!.amount), '$400.00');
-  assert.deepEqual(withLine?.line, { templateId: 'tpl', templateName: 'Bathroom Remodel', lineId: 'cont', group: ['BATHROOM REMODEL', CONTINGENCY_GROUP] });
+  assert.deepEqual(withLine?.line, { templateId: 'tpl', templateName: 'Bathroom Remodel', lineId: 'cont', group: ['BATHROOM REMODEL', 'Phase 1 - General Requirements'] });
 
   const byHand = contingencyStep({ jobType: null }, undefined, base, [phased()]);
   assert.equal(byHand?.rate, 8);
@@ -105,40 +109,36 @@ test('the draft\'s contingency step: the snapped rate on the base cost, the temp
   assert.equal(contingencyStep({ jobType: 'Roofing' }, { rate: 5, why: '' }, base, [phased()]), null);
 });
 
-test('a template with a Phase 4 and no contingency gets the group after Phase 4; the others are left alone', () => {
+test('a phased template with no contingency gets the line at the end of Phase 1; the others are left alone', () => {
   const create = planContingency(phased());
   assert.equal(create.action, 'create');
-  assert.equal(create.parentGroupId, 'scope');
-  assert.equal(create.phase4?.id, 'p4');
-  assert.equal(create.reason, 'after "Phase 4 - Finishes"');
+  assert.equal(create.phase1?.id, 'p1');
+  assert.deepEqual(create.after, { type: 'costItem', id: 'demo' }, 'after the last thing in Phase 1');
+  assert.equal(create.reason, 'at the end of "Phase 1 - General Requirements"');
 
   const has = planContingency(phased({ contingency: true }));
   assert.equal(has.action, 'skip');
-  assert.match(has.reason, /already has "Phase 5 - Contingency"/);
+  assert.match(has.reason, /already has a "Project Contingency" line/);
+  assert.match(planContingency(phased({ phase5: true })).reason, /already has a "Project Contingency" line/, 'the 2026-09-30 shape is left for a person');
 
   const flat = planContingency(phased({ noPhase4: true }));
   assert.equal(flat.action, 'skip');
   assert.match(flat.reason, /no Phase 4 group/);
 
-  assert.match(planText([create, has, flat]), /^\+ Bathroom Remodel \(tpl\): create — after "Phase 4 - Finishes"\n= .*\n= .*\n1 template to change, 2 left as they are\.$/);
+  assert.match(planText([create, has, flat]), /^\+ Bathroom Remodel \(tpl\): create — at the end of "Phase 1 - General Requirements"\n= .*\n= .*\n1 template to change, 2 left as they are\.$/);
 });
 
-test('the write is one createCostGroup beside Phase 4 with the line on the $1.00 item and the formula on quantity', () => {
-  const m = contingencyMutation(planContingency(phased()), IDS) as {
-    createCostGroup: { $: Record<string, unknown> & { lineItems: Record<string, unknown>[] }; createdCostGroup: unknown };
-  };
-  const $ = m.createCostGroup.$;
-  assert.equal($['parentCostGroupId'], 'scope');
-  assert.deepEqual($['positionAfter'], { type: 'costGroup', id: 'p4' });
-  assert.equal($['name'], CONTINGENCY_GROUP);
-  assert.equal($.lineItems.length, 1);
-  const l = $.lineItems[0]!;
-  assert.equal(l['_type'], 'costItem');
+test('the write is one createCostItem at the end of Phase 1 on the $1.00 item with the formula on quantity; no group', () => {
+  const m = contingencyMutation(planContingency(phased()), IDS) as { createCostItem: { $: Record<string, unknown>; createdCostItem: unknown } };
+  const l = m.createCostItem.$;
+  assert.equal(l['costGroupId'], 'p1');
+  assert.deepEqual(l['positionAfter'], { type: 'costItem', id: 'demo' });
   assert.equal(l['name'], CONTINGENCY_LINE);
   assert.equal(l['organizationCostItemId'], 'item1');
   assert.equal(l['quantityFormula'], '{Contingency Base} * {Contingency Rate} / 100');
   assert.equal(l['unitCost'], undefined, 'the price comes from the item, as on every template line');
-  assert.ok(m.createCostGroup.createdCostGroup, 'the write reads back what it made');
+  assert.ok(m.createCostItem.createdCostItem, 'the write reads back what it made');
+  assert.ok(!JSON.stringify(m).includes(CONTINGENCY_GROUP));
   assertAllowed(m);
 
   const item = contingencyItemMutation('org1', IDS) as { createCostItem: { $: Record<string, unknown> } };
@@ -148,14 +148,15 @@ test('the write is one createCostGroup beside Phase 4 with the line on the $1.00
   assert.throws(() => contingencyMutation(planContingency(phased({ contingency: true })), IDS), /nothing to create/);
 });
 
-test('after the write, the template is read back and the group must sit after Phase 4 with the line intact', () => {
-  assert.deepEqual(verifyContingency(phased({ contingency: true }), 'item1').ok, true);
-  assert.match(verifyContingency(phased(), 'item1').reason, /no "Phase 5 - Contingency" group/);
+test('after the write, the template is read back: the line must end Phase 1, intact, with no Phase 5 group', () => {
+  assert.deepEqual(verifyContingency(phased({ contingency: true }), 'item1'), { ok: true, reason: 'line cont at the end of "Phase 1 - General Requirements", on item item1' });
+  assert.match(verifyContingency(phased(), 'item1').reason, /no "Project Contingency" line/);
   assert.match(verifyContingency(phased({ contingency: true }), 'other').reason, /points at item1, not the catalog item/);
+  assert.match(verifyContingency(phased({ phase5: true }), 'item1').reason, /"Phase 5 - Contingency" is still there: no Phase 5/);
 
   const early = phased({ contingency: true });
-  early.groups.find((g) => g.id === 'p5')!.position = 'a';
-  assert.match(verifyContingency(early, 'item1').reason, /not after Phase 4/);
+  early.lines.find((l) => l.id === 'cont')!.position = 'a';
+  assert.match(verifyContingency(early, 'item1').reason, /not last in "Phase 1 - General Requirements"/);
 
   const wrongFormula = phased({ contingency: true });
   wrongFormula.lines.find((l) => l.id === 'cont')!.quantityFormula = '{Area}';

@@ -73,19 +73,23 @@ export function planText(plans: ContingencyPlan[]): string {
   return out.join('\n');
 }
 
-/** After a write the template is read again: the group must sit after Phase 4, its line on the item, formula intact. */
+/** After a write the template is read again: the line must end Phase 1 - General Requirements, on the item, formula intact; no contingency group. */
 export function verifyContingency(t: Template, itemId: string): { ok: boolean; reason: string } {
-  const phase4 = t.groups.find((g) => PHASE_4.test(g.name));
-  const group = t.groups.find((g) => g.name === CONTINGENCY_GROUP);
-  if (!phase4) return { ok: false, reason: 'no Phase 4 group' };
-  if (!group) return { ok: false, reason: `no "${CONTINGENCY_GROUP}" group` };
-  if (group.parentId !== phase4.parentId) return { ok: false, reason: 'the group is not beside Phase 4' };
-  if ((group.position ?? '') <= (phase4.position ?? '')) return { ok: false, reason: 'the group is not after Phase 4' };
-  const line = t.lines.find((l) => l.groupId === group.id && l.name === CONTINGENCY_LINE);
-  if (!line) return { ok: false, reason: `no "${CONTINGENCY_LINE}" line in the group` };
+  const phase1 = t.groups.find((g) => /^phase\s*1\b/i.test(g.name));
+  if (!phase1) return { ok: false, reason: 'no Phase 1 group' };
+  const group = t.groups.find((g) => /contingency/i.test(g.name));
+  if (group) return { ok: false, reason: `"${group.name}" is still there: no Phase 5` };
+  const line = t.lines.find((l) => l.name === CONTINGENCY_LINE);
+  if (!line) return { ok: false, reason: `no "${CONTINGENCY_LINE}" line` };
+  if (line.groupId !== phase1.id) return { ok: false, reason: `the line is not in "${phase1.name}"` };
+  const siblings = [
+    ...t.groups.filter((g) => g.parentId === phase1.id).map((g) => g.position ?? ''),
+    ...t.lines.filter((l) => l.groupId === phase1.id && l.id !== line.id).map((l) => l.position ?? ''),
+  ];
+  if (siblings.some((pos) => pos >= (line.position ?? ''))) return { ok: false, reason: `the line is not last in "${phase1.name}"` };
   if (line.priced?.id !== itemId) return { ok: false, reason: `the line points at ${line.priced?.id ?? 'nothing'}, not the catalog item` };
   if (line.quantityFormula !== CONTINGENCY_FORMULA) return { ok: false, reason: `the formula is ${JSON.stringify(line.quantityFormula)}` };
-  return { ok: true, reason: `"${group.name}" after "${phase4.name}", line ${line.id} on item ${itemId}` };
+  return { ok: true, reason: `line ${line.id} at the end of "${phase1.name}", on item ${itemId}` };
 }
 
 async function main(): Promise<number> {
@@ -142,10 +146,10 @@ async function main(): Promise<number> {
   let failures = 0;
   for (const p of plans) {
     if (p.action !== 'create') continue;
-    const r = await writer.mutate<{ createCostGroup: { createdCostGroup: { id: string } } }>(
+    const r = await writer.mutate<{ createCostItem: { createdCostItem: { id: string } } }>(
       contingencyMutation(p, { ...ids, organizationCostItemId: item }),
     );
-    log(`${p.templateName}: created "${CONTINGENCY_GROUP}" ${r.createCostGroup.createdCostGroup.id}`);
+    log(`${p.templateName}: created "${CONTINGENCY_LINE}" ${r.createCostItem.createdCostItem.id} at the end of "${p.phase1!.name}"`);
     const again = await fetchTemplate(client, p.templateId);
     const v = verifyContingency(again, item);
     log(`${p.templateName}: ${v.ok ? 'verified' : 'NOT VERIFIED'} — ${v.reason}`);
