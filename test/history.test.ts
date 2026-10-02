@@ -1080,7 +1080,7 @@ test('every kept material needs labor to install it in its choice; wainscot gets
   const bare = uninstalledMaterials([panels], [framed('Framing/Sheathing Labor'), framed('Drywall Brd- Labor')]);
   assert.equal(bare.length, 1);
   assert.equal(bare[0]!.severity, 'problem');
-  assert.match(bare[0]!.text, /"Walls — Framed": "Wainscoting" \(29 Each\) has no labor to install it\. Wainscot gets its own labor line: add wainscot install hours to this choice, once\./);
+  assert.match(bare[0]!.text, /"Walls — Framed": "Wainscoting" \(29 Each\) has no labor to install it\. Wainscot gets its own labor line: add Wainscot Labor hours to this choice, once\./);
   // The run before: Trim Labor carried the panels. That is not wainscot labor.
   assert.match(uninstalledMaterials([panels], [framed('Trim Labor')])[0]!.text, /Trim Labor is for the trim, not the panels/);
   // Its own line covers it: an open item, or a catalog line found for it.
@@ -1099,7 +1099,9 @@ test('every kept material needs labor to install it in its choice; wainscot gets
 
   assert.match(DRAFT_SYSTEM, /17\. Every material kept needs the labor that installs it/);
   assert.match(DRAFT_SYSTEM, /Trim Labor is trim .* and never wainscot panels/);
-  assert.match(HISTORY_SYSTEM, /Wainscot install labor is its own line: never match it to Trim Labor/);
+  assert.match(HISTORY_SYSTEM, /Wainscot install labor is Wainscot Labor: never match it to Trim Labor/);
+  assert.match(DRAFT_SYSTEM, /keep Wainscot Labor \(Hours\) beside Wainscoting, under the same option/);
+  assert.deepEqual(uninstalledMaterials([{ ...panels, sectionLabor: ['Wainscot Labor', 'Trim Labor'] }], [framed('Wainscot Labor')]), [], 'the catalog line, 2026-10-02');
 });
 
 test('the draft page flags a material kept with no labor in its choice', async () => {

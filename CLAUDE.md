@@ -46,9 +46,10 @@ Also from Carl, 25-0000, 2026-10-02:
   `src/draft/render.ts`).
 - **Every material needs labor to install it, counted once.** A labor line
   of its own trade or the sub line that installs it, in the same choice.
-  Wainscot gets its own labor line, never Trim Labor (Trim Labor is the
-  trim); with no wainscot labor item in the catalog, it is an open item on
-  the job (rule 17 in `src/draft/prompt.ts`, `uninstalledMaterials` in
+  Wainscot gets its own labor line, Wainscot Labor (catalog item
+  `22PfZZt5r3C2`, $55 cost / $100 price, beside Wainscoting in X-Division 06,
+  Bathroom Remodel and Addition/House Build), never Trim Labor (Trim Labor is
+  the trim) (rule 17 in `src/draft/prompt.ts`, `uninstalledMaterials` in
   `src/draft/checks.ts`).
 - **Contingency follows DB's policy conditions; the highest wins.** The
   model names the conditions, the code sets the rate

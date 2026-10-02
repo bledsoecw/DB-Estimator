@@ -281,9 +281,12 @@ So, for every job: every material kept needs the labor that installs it in
 the same choice or the base scope, a labor line of its own trade or the sub
 line that installs it, counted once (rule 17 of the draft prompt). Trim
 Labor is trim (casing, baseboard, chair rail, a wainscot cap), never the
-panels. The catalog has no wainscot labor item, so wainscot install hours go
-in as an open item under the wainscot's option, and the catalog step never
-matches them to Trim Labor. The check box on both pages flags a kept
+panels. At Carl's request the same day, the catalog got a Wainscot Labor
+item, Hours, $55 cost and $100 price, and each template that carries
+Wainscoting got a Wainscot Labor line right after it (see
+`docs/catalog-corrections.md`). The drafter keeps it beside the panels;
+where a template lacks it, the hours go in as an open item and the catalog
+search places Wainscot Labor, never Trim Labor. The check box on both pages flags a kept
 material with no install labor in its choice (`uninstalledMaterials` in
 `src/draft/checks.ts`): it counts a labor or sub line of the material's
 trade, or the labor the template files beside it ("Paint Labor" for

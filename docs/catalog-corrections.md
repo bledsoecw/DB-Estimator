@@ -200,3 +200,26 @@ also returns items with no unit), plus `unit.id = null` with
 `job` and `document` null and `costGroup` set. More than five such aliased
 queries at 30 a page in one request is refused as too large; five is not.
 
+## Added 2026-10-02: Wainscot Labor
+
+Found on test job 25-0000: the framed-wall choice kept 29 wainscot panels with
+no labor to hang them, and the run before had put the panels in Trim Labor.
+Carl: wainscot needs its own labor line, not counted twice in Trim Labor. The
+catalog had Wainscoting (material) and no labor item for it. Added at Carl's
+request through the JobTread API (`createCostItem`), then read back.
+
+| | |
+|---|---|
+| Catalog item | `Wainscot Labor` — id `22PfZZt5r3C2`, ungrouped |
+| Unit · cost type · cost code | Hours · Labor · Interior Trim/Casing/Paneling (06WP-2), as Trim Labor |
+| Unit cost · unit price | $55.00 · $100.00 · not taxable |
+| Description | Labor to install wainscot panels. Wainscot only: the trim (cap, baseboard, chair rail) is Trim Labor. |
+
+One template line in each template that carries Wainscoting, placed right
+after it in Interior Trims & Finishes and pricing from the item:
+
+| Template | Group | Wainscoting | New line `Wainscot Labor` |
+|---|---|---|---|
+| X-Division 06 Wood & Plastics (Framing/Decks) | `22PL8UPjRNaj` | `22PL8aDkhk9R` (p) | `22PfZZtxdNVE` (pn) |
+| Bathroom Remodel › Phase 4 - Finishes | `22PR7qasE9ti` | `22PLm7f9eikv` (n) | `22PfZZtxdjPX` (nn) |
+| Addition/House Build › Phase 4 - Finishes | `22PLwk8fHWyc` | `22PLwk8fHWym` (p) | `22PfZZtxfbsy` (pn) |

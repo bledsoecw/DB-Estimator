@@ -224,7 +224,7 @@ export function uninstalledMaterials(materials: MaterialUse[], labor: LaborUse[]
     out.push({
       severity: 'problem', kind: 'install', lines: [{ where: m.scope, name: m.name }],
       text: own
-        ? `${where}: "${m.name}" (${count}) has no labor to install it. Wainscot gets its own labor line${trimKept ? '; Trim Labor is for the trim, not the panels' : ''}: add wainscot install hours to this choice, once.`
+        ? `${where}: "${m.name}" (${count}) has no labor to install it. Wainscot gets its own labor line${trimKept ? '; Trim Labor is for the trim, not the panels' : ''}: add Wainscot Labor hours to this choice, once.`
         : `${where}: "${m.name}" (${count}) is kept with no labor to install it; the template files ${m.sectionLabor.map((s) => `"${s}"`).join(', ')} beside it and none is kept here. Add the install labor, or the sub line that installs it.`,
     });
   }
