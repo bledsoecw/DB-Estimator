@@ -227,13 +227,57 @@ work but could not put it per unit ("$5,712 lump sum, no size shown") is
 never served from the book; it is searched every time, so a quote read
 since can price it.
 
+### Three lessons from 25-0000 (2026-10-02)
+
+Carl read the draft and asked that each fix be a habit for every estimate,
+not a patch to this one.
+
+**A learned answer belongs to the line it was found for.** The book kept one
+answer per search word, so lines sharing a word overwrote each other: the
+board-hanging labor line (16 hours) showed the taping line's answer and that
+run's remark "24 hrs for 606 SF is on the high side"; ceiling paint labor
+showed the remark written for painting concrete walls. The rate was right;
+the words were wrong. Now an answer is kept per word and line. A template
+line reuses only what was learned for a line of the same name; a gap, whose
+name the model writes fresh each time, takes the newest answer for its word.
+And the history call writes two things apart: `summary`, `pastWork` and
+`suggestionBasis` say what the past work was and are kept; `thisJob` says
+what it means for the job being drafted and is shown on that draft only.
+Answers kept the old way are set aside on load (the log says how many) and
+searched again.
+
+**A general line stays in its own section.** The draft kept "Crew Labor"
+from Thermal & Moisture › Roofing › DB Duration Shingle System for the batts
+and for moving contents, because that is where the template files DB's crew
+hours. Both were options, which are built in their choice group, so on the
+job no harm was done. But in the base scope those hours would sit under
+Roofing on a job with no roof. Rule 16 of the draft prompt: keep a general
+line in the base scope only for its section's work; other base-scope crew
+hours go in as a gap, and the catalog search places DB's Crew Labor in the
+section the work is in. A line whose name is the work (Insulation - Batt) is
+kept wherever the template files it. The check box on both pages flags a
+general line (crew labor, delivery, hauling) that is the only line kept in
+a section named for a trade.
+
+**"Choose one" means two or more choices.** The General Description said
+the customer chooses LVP or epoxy, but the page called Flooring an add-on
+the customer may skip: the epoxy floor had no template line, only an open
+item, and only lines were counted. The build already put both in the group.
+Now an open item with an option is a choice: the group is "one choice
+required", the open item is listed under its choice in the selection-group
+step, its totals say it is not priced yet, and its contingency share says it
+grows once the item is priced. A choice written "Flooring — LVP" in a group
+with no other choice is flagged, and the draft prompt says every alternative
+the scope offers gets its lines or a gap.
+
 ### The learned price book
 
 Carl's second rule, the same day: once a past price has been found for a
 kind of work, keep it, and only look again after a long time, a year, in
 case the sub's pricing moved. So every history finding is written to a
 price book, `learned-prices.json`, under the search terms that
-produced it, with when it was learned and on which job. On the next job a
+produced it and the line it was found for, with when it was learned and on
+which job. On the next job a
 target whose terms hit a fresh entry is answered from the book: no search,
 no model call, and the page says "Learned 2026-09-30 on 261323 Haag_Remodel;
 not searched again until 2027-09-30". A learned cost per square foot is not

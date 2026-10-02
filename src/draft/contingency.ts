@@ -238,6 +238,8 @@ export interface ContingencyOption {
   cost: Money;
   /** contingency(base + this option) − contingency(base), so the shares add up to the cent. */
   amount: Money;
+  /** Open items in the choice are not priced yet, so its share grows once they are. */
+  open: number;
 }
 
 /** What the recipe tells the rep, given the template's state and the amount. */

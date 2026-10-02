@@ -15,11 +15,11 @@ import { marginOf } from '../domain.ts';
 import { CSS } from '../report.ts';
 import { STRUCTURAL_GROUPS, groupPath } from './templates.ts';
 import type { JobEvidence } from './evidence.ts';
-import { parseOption, type Draft, type DraftGap, type DraftLine, type FoundLine, type GapProposals, type TemplatePlan, type Totals } from './draft.ts';
+import { parseOption, type Draft, type DraftGap, type DraftLine, type FoundLine, type GapProposals, type OptionChoice, type OptionGroup, type TemplatePlan, type Totals } from './draft.ts';
 import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
 import { changesText, reviseCommand } from './revise.ts';
 import type { HistoryFinding } from './prompt.ts';
-import { CHECKS_CSS, doubleCounts, flagsHtml, sortFlags, unitConflictFlag, type CheckLine, type ReviewFlag } from './checks.ts';
+import { CHECKS_CSS, borrowedLines, doubleCounts, flagsHtml, sortFlags, unitConflictFlag, type CheckLine, type ReviewFlag } from './checks.ts';
 import { readingText } from './readings.ts';
 
 /**
@@ -27,10 +27,13 @@ import { readingText } from './readings.ts';
  * option's choice group, the section a found line was placed in, or its own
  * template section. Lines with the same place are side by side.
  */
+/** Where option lines are built: their choice group, under this, wherever the line came from. */
+const OPTIONS_ROOT = 'CUSTOMER OPTIONS';
+
 function placeOf(l: DraftLine, found: Map<string, FoundLine>): string {
   if (l.option) {
     const { group, choice } = parseOption(l.option);
-    return ['CUSTOMER OPTIONS', group, choice ?? group].join(' › ');
+    return [OPTIONS_ROOT, group, choice ?? group].join(' › ');
   }
   const f = found.get(l.lineId);
   if (f?.placeIn) return [f.placeIn.templateName, ...f.placeIn.groupPath].join(' › ');
@@ -48,11 +51,30 @@ export function draftFlags(d: Draft): ReviewFlag[] {
     unit: l.unit,
     cost: l.priced ? toNumber(l.cost) : null,
   }));
-  const flags = doubleCounts(lines);
+  const flags = [...doubleCounts(lines), ...borrowedLines(lines, OPTIONS_ROOT)];
   for (const l of d.lines) {
     if (l.pricedUnit) flags.push(unitConflictFlag(placeOf(l, found), l.name, l.unit, l.pricedUnit, l.quantity, l.priced ? toNumber(l.unitCost) : null));
   }
+  flags.push(...optionFlags(d.totals?.options ?? []));
   return sortFlags(flags);
+}
+
+/**
+ * A choice with nothing to choose between: written "Flooring — LVP", one of
+ * several alternatives, but the group has no other choice, so it would be
+ * built as an add-on the customer may skip. Either the other choice lost its
+ * lines or the option is really an add-on; the General Description says which.
+ */
+export function optionFlags(options: OptionGroup[]): ReviewFlag[] {
+  return options
+    .filter((o) => o.writtenAsChoice && !o.required)
+    .map((o) => ({
+      severity: 'check' as const,
+      kind: 'option' as const,
+      lines: [],
+      text: `"${o.group} — ${o.choices[0]!.name}" is written as one of several choices, but "${o.group}" has no other choice, so it would be built as an add-on the customer may skip. ` +
+        `If the customer must pick one, give the other choice its lines or an open item under "${o.group} — <choice>"; if it is optional, name it "${o.group}" alone.`,
+    }));
 }
 
 /** What the rep types into the Contingency Base parameter: plain dollars, no symbol or commas. */
@@ -66,6 +88,13 @@ function proposalMoney(p: GapProposals): string {
 }
 
 const REGIONAL_NOTE = 'NOTE TO REP: an estimate for our area, not DB pricing; confirm with Carl or a sub bid before it goes out';
+
+/** A choice's totals, and its open items, which are not in them until priced. */
+function choiceLine(c: OptionChoice): string {
+  if (!c.open.length) return totalsLine(c.totals);
+  const open = `${c.open.length} open item${c.open.length === 1 ? '' : 's'} not priced yet (${c.open.map((x) => `"${x}"`).join(', ')})`;
+  return c.totals.lines ? `${totalsLine(c.totals)} + ${open}` : open;
+}
 
 /** "Flooring — LVP" for one of several choices; the bare name for an add-on. */
 function optionLabel(o: { group: string; name: string; required: boolean }): string {
@@ -132,7 +161,7 @@ export function draftSteps(d: Draft): string {
         ` with it the base scope is ${formatMoney(add(d.totals.base.price, c.amount))} price (step ${contingencyStepNumber(d)})`,
     );
     if (c.options.length) {
-      out.push(`   Options add their own share: ${c.options.map((o) => `${optionLabel(o)} +${formatMoney(o.amount)}`).join(' · ')}`);
+      out.push(`   Options add their own share: ${c.options.map((o) => `${optionLabel(o)} +${formatMoney(o.amount)}${o.open ? ' (more once its open item is priced)' : ''}`).join(' · ')}`);
     }
   }
   if (d.totals.proposedForGaps.gaps > 0) {
@@ -152,9 +181,9 @@ export function draftSteps(d: Draft): string {
   for (const o of d.totals.options) {
     if (o.required) {
       out.push(`Option "${o.group}", one choice required:`);
-      for (const c of o.choices) out.push(`   ${c.name}: ${totalsLine(c.totals)}`);
+      for (const c of o.choices) out.push(`   ${c.name}: ${choiceLine(c)}`);
     } else {
-      out.push(`Add-on "${o.group}", customer may decline: ${totalsLine(o.choices[0]!.totals)}`);
+      out.push(`Add-on "${o.group}", customer may decline: ${choiceLine(o.choices[0]!)}`);
     }
   }
   // One required choice is the common case (the floor); the customer's real number is base + that choice.
@@ -167,7 +196,7 @@ export function draftSteps(d: Draft): string {
         group.choices.map((ch) => {
           const share = c.options.find((o) => o.required && o.group === group.group && o.name === ch.name);
           const price = add(add(d.totals.base.price, ch.totals.price), add(c.amount, share?.amount ?? ZERO));
-          return `${group.group} — ${ch.name} ${formatMoney(price)}`;
+          return `${group.group} — ${ch.name} ${formatMoney(price)}${ch.open.length ? ' + its open item' : ''}`;
         }).join(' · '),
     );
   }
@@ -234,7 +263,7 @@ export function draftSteps(d: Draft): string {
       out.push(
         `   Each option carries its own share, so the contingency follows what the customer picks: in each choice group add` +
           ` "${CONTINGENCY_LINE}" (Lump Sum, $1.00 cost and price, no formula) with the quantity ` +
-          c.options.map((o) => `${optionLabel(o)} ${parameterDollars(o.amount)}`).join('; ') + '.',
+          c.options.map((o) => `${optionLabel(o)} ${parameterDollars(o.amount)}${o.open ? ` (raise it by ${c.rate}% of the open item's cost once it is priced)` : ''}`).join('; ') + '.',
       );
     }
     out.push('   Unused contingency is credited at closeout.');
@@ -244,11 +273,13 @@ export function draftSteps(d: Draft): string {
     out.push(`${step}. Selection groups, so the customer picks on the estimate:`);
     for (const o of d.totals.options) {
       const linesOf = (choice: string): string =>
-        d.lines
-          .filter((l) => l.option !== null && parseOption(l.option).group === o.group &&
-            (parseOption(l.option).choice ?? o.group) === choice)
-          .map((l) => l.name)
-          .join('; ');
+        [
+          ...d.lines
+            .filter((l) => l.option !== null && parseOption(l.option).group === o.group &&
+              (parseOption(l.option).choice ?? o.group) === choice)
+            .map((l) => l.name),
+          ...(o.choices.find((c) => c.name === choice)?.open ?? []).map((scope) => `"${scope}" (open item, below)`),
+        ].join('; ');
       if (o.required) {
         out.push(`   - "${o.group}", one choice required: ${o.choices.map((c) => `${c.name}: ${linesOf(c.name)}`).join(' · ')}`);
       } else {
@@ -326,6 +357,11 @@ function originNote(h: { origin: { kind: string; learnedAt?: string; fromJob?: s
     (o.unitMismatch ? ` (${o.unitMismatch})` : '');
 }
 
+/** What the past work means for this job: only when it was read for this job, never from the book. */
+function thisJobNote(h: { thisJob?: string; origin: { kind: string } }): string {
+  return h.origin.kind === 'searched' && h.thisJob?.trim() ? ` For this job: ${h.thisJob.trim()}` : '';
+}
+
 function historyLineText(l: DraftLine): string {
   const h = l.history!;
   let out = h.summary;
@@ -341,7 +377,7 @@ function historyLineText(l: DraftLine): string {
   } else if (h.match !== 'none') {
     out += ` ${h.suggestionBasis}`;
   }
-  return `${out}${originNote(h)} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
+  return `${out}${thisJobNote(h)}${originNote(h)} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
 }
 
 function historyGapText(g: DraftGap): string {
@@ -361,7 +397,7 @@ function historyGapText(g: DraftGap): string {
   } else if (h.match !== 'none') {
     out += ` ${h.suggestionBasis}`;
   }
-  return `${out}${originNote(h)} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
+  return `${out}${thisJobNote(h)}${originNote(h)} (${h.match}, ${CONFIDENCE_LABEL[h.confidence]})`;
 }
 
 function pastWorkRows(h: HistoryFinding): string {
@@ -536,7 +572,7 @@ export function draftJson(d: Draft): unknown {
       options: d.totals.options.map((o) => ({
         group: o.group,
         required: o.required,
-        choices: o.choices.map((c) => ({ name: c.name, ...(t(c.totals) as object) })),
+        choices: o.choices.map((c) => ({ name: c.name, ...(t(c.totals) as object), open: c.open })),
       })),
       all: t(d.totals.all),
       proposedForGaps: {
@@ -644,8 +680,8 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
   ${d.totals.options.length ? `<section class="options">
     <h2>Options the customer picks</h2>
     <ul>${d.totals.options.map((o) => o.required
-      ? `<li><strong>${esc(o.group)}</strong>, one choice required:<ul>${o.choices.map((c) => `<li>${esc(c.name)} &mdash; ${esc(totalsLine(c.totals))}</li>`).join('')}</ul></li>`
-      : `<li><strong>${esc(o.group)}</strong>, optional add-on &mdash; ${esc(totalsLine(o.choices[0]!.totals))}</li>`).join('')}</ul>
+      ? `<li><strong>${esc(o.group)}</strong>, one choice required:<ul>${o.choices.map((c) => `<li>${esc(c.name)} &mdash; ${esc(choiceLine(c))}</li>`).join('')}</ul></li>`
+      : `<li><strong>${esc(o.group)}</strong>, optional add-on &mdash; ${esc(choiceLine(o.choices[0]!))}</li>`).join('')}</ul>
   </section>` : ''}
 
   <section class="summary">

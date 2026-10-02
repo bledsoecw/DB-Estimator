@@ -26,6 +26,25 @@ one quote.
 - **A unit conflict between a template line and its catalog item is flagged,
   never switched automatically.**
 
+## How a draft is put together
+
+Also from Carl, 25-0000, 2026-10-02:
+
+- **A learned answer belongs to the line it was found for.** The price book
+  keeps answers per search word and line; a template line reuses only its own
+  line's answer. Only facts about the past work are kept; what it meant for
+  that job (`thisJob`) is shown once and never carried to the next job
+  (`src/draft/learned.ts`).
+- **A general line stays in its own section.** Crew Labor filed under Roofing
+  is the roofing crew's time; base-scope hours for other work go in as a gap
+  so DB's Crew Labor is placed where the work is. Option lines are built in
+  their choice group, so they are exempt (`borrowedLines` in
+  `src/draft/checks.ts`, rule 16 in `src/draft/prompt.ts`).
+- **"Choose one" means two or more choices.** An open item (a gap with an
+  option) is a choice; a "Group — Choice" with no other choice is flagged
+  (`totalsByOption` in `src/draft/draft.ts`, `optionFlags` in
+  `src/draft/render.ts`).
+
 ## What not to do
 
 - Change catalog templates only when Carl asks. Leave roofing templates

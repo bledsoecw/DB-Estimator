@@ -225,11 +225,14 @@ async function main(): Promise<number> {
   if (learned && book.shared && existsSync(LOCAL_LEARNED_PATH)) {
     const took = learned.merge(LearnedStore.load(LOCAL_LEARNED_PATH));
     mergedLocal = true;
-    log(`this computer's old book (${LOCAL_LEARNED_PATH}) merged in: ${took.entries} term${took.entries === 1 ? '' : 's'}, ${took.files} quote reading${took.files === 1 ? '' : 's'}`);
+    log(`this computer's old book (${LOCAL_LEARNED_PATH}) merged in: ${took.entries} answer${took.entries === 1 ? '' : 's'}, ${took.files} quote reading${took.files === 1 ? '' : 's'}`);
+  }
+  if (learned?.dropped) {
+    log(`learned price book: ${learned.dropped} answer${learned.dropped === 1 ? '' : 's'} kept the old way (one per search word, with that job's remarks) set aside; those lines are searched again and kept per line`);
   }
   if (learned) {
     log(
-      `learned price book: ${book.path} (${book.why}): ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}${args.relearn ? ' (ignored this run: --relearn)' : ''}, ` +
+      `learned price book: ${book.path} (${book.why}): ${learned.entries.size} answer${learned.entries.size === 1 ? '' : 's'}${args.relearn ? ' (ignored this run: --relearn)' : ''}, ` +
         `${learned.files.size} past quote${learned.files.size === 1 ? '' : 's'} read${args.reread ? ' (read again this run: --reread)' : ''}`,
     );
   }
@@ -376,7 +379,7 @@ async function main(): Promise<number> {
 
   if (learned && draft.history) {
     learned.save(book.path);
-    log(`learned price book saved to ${book.path}: ${learned.entries.size} term${learned.entries.size === 1 ? '' : 's'}, ${learned.files.size} past quote${learned.files.size === 1 ? '' : 's'} read`);
+    log(`learned price book saved to ${book.path}: ${learned.entries.size} answer${learned.entries.size === 1 ? '' : 's'}, ${learned.files.size} past quote${learned.files.size === 1 ? '' : 's'} read`);
     if (mergedLocal) {
       // Merged once; renamed so a hand edit to the shared book is not undone by merging the old one again.
       const moved = LOCAL_LEARNED_PATH.replace(/\.json$/, '.moved-to-shared.json');

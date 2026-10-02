@@ -22,7 +22,7 @@ export type Severity = 'problem' | 'check' | 'info';
 export interface ReviewFlag {
   severity: Severity;
   /** What kind of check raised it; stable, for tests and for the page's ordering. */
-  kind: 'double-count' | 'unit' | 'unit-conflict' | 'no-count' | 'unpriced' | 'draft' | 'contingency' | 'note';
+  kind: 'double-count' | 'unit' | 'unit-conflict' | 'no-count' | 'unpriced' | 'draft' | 'contingency' | 'option' | 'section' | 'note';
   /** One or two sentences for the rep, with the names and the money. */
   text: string;
   /** The lines it is about, by where they sit and their name, so the page can mark the rows. */
@@ -130,6 +130,42 @@ export function openLines(lines: CheckLine[]): ReviewFlag[] {
     const total = drafts.reduce((n, l) => n + (l.cost ?? 0), 0);
     out.push({ severity: 'check', kind: 'draft', lines: drafts.map((l) => ({ where: l.where, name: l.name })),
       text: `${drafts.length} line${drafts.length === 1 ? ' was' : 's were'} created for Carl to confirm, ${usd(total)} of cost: ${list(drafts)}.` });
+  }
+  return out;
+}
+
+/** A line that is general crew time or handling, not one trade's work. */
+const GENERAL_LINE = /^(crew labor|general labor|labor|delivery|hauling)\b/i;
+/** A section named for one trade. */
+const TRADE = /\b(roof\w*|siding|gutters?|soffit|fascia|decks?|windows?|doors?|tile|flooring|plumbing|electrical|hvac|concrete|masonry|cabinets?|countertops?)\b/i;
+
+/**
+ * A general line borrowed from another trade's section. 25-0000, 2026-10-02:
+ * the drafter kept "Crew Labor" from Thermal & Moisture › Roofing › DB
+ * Duration Shingle System for batts and for moving contents, because that is
+ * where the template files DB's crew hours. Those two were options, built in
+ * their choice groups, so no harm; but in the base scope the hours would sit
+ * under Roofing on a job with no roof. Flagged when the line is the only one
+ * kept in a section named for a trade; option lines (under `optionsRoot`)
+ * are built in their choice group and are not.
+ */
+export function borrowedLines(lines: CheckLine[], optionsRoot: string): ReviewFlag[] {
+  const out: ReviewFlag[] = [];
+  const byWhere = new Map<string, CheckLine[]>();
+  for (const l of lines) {
+    if (l.where.startsWith(optionsRoot)) continue;
+    byWhere.set(l.where, [...(byWhere.get(l.where) ?? []), l]);
+  }
+  for (const [where, group] of byWhere) {
+    if (group.length !== 1 || !GENERAL_LINE.test(group[0]!.name.replace(DRAFT_SUFFIX, ''))) continue;
+    const trade = where.split(' › ').map((seg) => TRADE.exec(seg)?.[1]).find(Boolean);
+    if (!trade) continue;
+    const l = group[0]!;
+    out.push({
+      severity: 'check', kind: 'section', lines: [{ where, name: l.name }],
+      text: `"${l.name}" (${amount(l)}) is the only line kept under ${where}: on the job it sits in that ${trade} section with nothing else from it. ` +
+        `If the work is not ${trade.toLowerCase()} work, put DB's "${l.name}" from the catalog in the section the work is in.`,
+    });
   }
   return out;
 }

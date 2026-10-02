@@ -140,18 +140,29 @@ export interface Totals {
 
 export interface OptionChoice {
   name: string;
+  /** Its lines; an open item in it is not in here until it is priced. */
   totals: Totals;
+  /** Open items in this choice: work no template line covers yet, created on the job (the epoxy floor by a sub). */
+  open: string[];
 }
 
 /**
  * One selection the rep builds. Two or more choices means the customer picks
  * one ("Flooring": LVP or Epoxy). One choice is a yes-or-no add-on the
  * customer may decline ("Ceiling paint").
+ *
+ * An open item is a choice too. On 25-0000 (2026-10-02) the epoxy floor had
+ * no template line, only an open item, so "Flooring" counted one choice and
+ * the page called it an add-on the customer may skip, while the General
+ * Description said "choose one". The build put both choices in the group;
+ * the page did not.
  */
 export interface OptionGroup {
   group: string;
   required: boolean;
   choices: OptionChoice[];
+  /** Some line or open item was written "Group — Choice": one of several alternatives, not an add-on. */
+  writtenAsChoice: boolean;
 }
 
 /** What is proposed for the gaps from one source. Shown beside the total, never inside it. */
@@ -417,7 +428,7 @@ export async function draftEstimate(
     const toSearch: HistoryTarget[] = [];
     const renewed: { target: string; what: string }[] = [];
     for (const t of allTargets) {
-      const e = opts.history ? (store?.lookup(t.lookBack) ?? null) : null;
+      const e = opts.history ? (store?.lookup(t.lookBack, { kind: t.kind, name: t.name }) ?? null) : null;
       if (!e) { toSearch.push(t); continue; }
       // A quote that came in since the book learned this is read, not missed for a year.
       const since = opts.history?.newSince ? await opts.history.newSince(t.lookBack, e.learnedAt) : null;
@@ -547,7 +558,7 @@ export async function draftEstimate(
     };
   });
 
-  const byOption = totalsByOption(lines);
+  const byOption = totalsByOption(lines, gaps);
   return withRevision({
     jobId: evidence.jobId,
     jobName: evidence.jobName,
@@ -720,6 +731,7 @@ export function contingencyStep(
       required: o.required,
       cost: c.totals.cost,
       amount: sub(contingencyAmount(add(base, c.totals.cost), rate), amount),
+      open: c.open.length,
     })),
   );
   return { rate, why: reply?.why?.trim() ?? '', base, amount, options: shares, line };
@@ -907,7 +919,7 @@ function rememberNone(store: LearnedStore | undefined, targets: HistoryTarget[],
       finding: {
         target: { kind: t.kind, id: t.id }, match: 'none',
         summary: 'No past DB work matched this when it was last searched.',
-        pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low',
+        pastWork: [], suggestedUnitCost: null, suggestionBasis: '', thisJob: '', confidence: 'low',
         typicallySubbed: null, usualVendor: null, regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG_MATCH,
       },
     });
@@ -1028,22 +1040,35 @@ export function parseOption(option: string): { group: string; choice: string | n
   return { group: option.trim(), choice: null };
 }
 
-/** Base scope, then each option group with its choices, then everything together. */
-export function totalsByOption(lines: DraftLine[]): Pick<Draft['totals'], 'base' | 'options' | 'all'> {
+/**
+ * Base scope, then each option group with its choices, then everything
+ * together. A choice may hold only open items (gaps not covered by any line):
+ * it is still a choice, so the group is still one the customer must pick in.
+ */
+export function totalsByOption(
+  lines: DraftLine[],
+  gaps: Pick<DraftGap, 'option' | 'scope' | 'resolved'>[] = [],
+): Pick<Draft['totals'], 'base' | 'options' | 'all'> {
   const base = lines.filter((l) => l.option === null);
-  const groups = new Map<string, Map<string, DraftLine[]>>();
-  for (const l of lines) {
-    if (l.option === null) continue;
-    const { group, choice } = parseOption(l.option);
-    const byChoice = groups.get(group) ?? new Map<string, DraftLine[]>();
+  const groups = new Map<string, { byChoice: Map<string, { lines: DraftLine[]; open: string[] }>; writtenAsChoice: boolean }>();
+  const slot = (option: string) => {
+    const { group, choice } = parseOption(option);
+    const g = groups.get(group) ?? { byChoice: new Map(), writtenAsChoice: false };
+    if (choice !== null) g.writtenAsChoice = true;
     const key = choice ?? group;
-    byChoice.set(key, [...(byChoice.get(key) ?? []), l]);
-    groups.set(group, byChoice);
-  }
-  const options: OptionGroup[] = [...groups.entries()].map(([group, byChoice]) => ({
+    const c = g.byChoice.get(key) ?? { lines: [], open: [] };
+    g.byChoice.set(key, c);
+    groups.set(group, g);
+    return c;
+  };
+  for (const l of lines) if (l.option !== null) slot(l.option).lines.push(l);
+  // A covered gap is a found line, already in `lines`; an open one is a choice of its own.
+  for (const g of gaps) if (g.option && !g.resolved) slot(g.option).open.push(g.scope);
+  const options: OptionGroup[] = [...groups.entries()].map(([group, g]) => ({
     group,
-    required: byChoice.size >= 2,
-    choices: [...byChoice.entries()].map(([name, ls]) => ({ name, totals: totalsOf(ls) })),
+    required: g.byChoice.size >= 2,
+    writtenAsChoice: g.writtenAsChoice,
+    choices: [...g.byChoice.entries()].map(([name, c]) => ({ name, totals: totalsOf(c.lines), open: c.open })),
   }));
   // The choices the customer must make come before the add-ons they may decline.
   options.sort((a, b) => Number(b.required) - Number(a.required));

@@ -165,14 +165,14 @@ const DRAFT = {
   contingency: { rate: 10, why: 'Moisture on the block.' },
 };
 const finding = (id: string, extra: Record<string, unknown>) => ({
-  target: { kind: 'gap', id }, match: 'none', summary: 'Nothing in DB history.', pastWork: [], suggestedUnitCost: null, suggestionBasis: '',
+  target: { kind: 'gap', id }, match: 'none', summary: 'Nothing in DB history.', pastWork: [], suggestedUnitCost: null, thisJob: '', suggestionBasis: '',
   confidence: 'medium', typicallySubbed: null, usualVendor: null, regionalUnitCost: null, regionalBasis: '',
   catalog: { kind: 'none', id: null, quantity: null, basis: '', sectionGroupId: null }, ...extra,
 });
 const REPLY = {
   findings: [
     finding('gap-0', {
-      match: 'match', summary: 'DB bought R15 wall batts from Fidelity for the Myers sunroom at about $0.91/SF.', suggestedUnitCost: 0.91, suggestionBasis: '$62/bag over 67.81 SF.',
+      match: 'match', summary: 'DB bought R15 wall batts from Fidelity for the Myers sunroom at about $0.91/SF.', suggestedUnitCost: 0.91, thisJob: '', suggestionBasis: '$62/bag over 67.81 SF.',
       catalog: { kind: 'templateLine', id: 'lineBattAdd', quantity: 909, basis: 'Same 909 SF of gross wall; the line is per square foot.', sectionGroupId: '22PLCchBuFMT' },
     }),
     finding('gap-1', { catalog: { kind: 'catalogItem', id: 'itemVapor', quantity: 4, basis: '909 SF of wall; a 10 × 25 roll covers 250 SF, so 4 rolls with laps.', sectionGroupId: '22PLCchBuFMT' } }),
@@ -316,7 +316,7 @@ test('a gap the price book already priced still goes to the model for the catalo
     fromJob: '261323 Haag_Remodel', targetName: 'Batt insulation in the false wall cavities', unit: 'Square Foot',
     finding: {
       target: { kind: 'gap', id: 'gap-0' }, match: 'match', summary: 'DB bought R15 wall batts from Fidelity for the Myers sunroom at about $0.91/SF.',
-      pastWork: [], suggestedUnitCost: 0.91, suggestionBasis: '$62/bag over 67.81 SF.', confidence: 'medium', typicallySubbed: null, usualVendor: null,
+      pastWork: [], suggestedUnitCost: 0.91, thisJob: '', suggestionBasis: '$62/bag over 67.81 SF.', confidence: 'medium', typicallySubbed: null, usualVendor: null,
       regionalUnitCost: null, regionalBasis: '', catalog: { kind: 'none', id: null, quantity: null, basis: '', sectionGroupId: null },
     },
   });
@@ -347,7 +347,7 @@ test('a gap the price book already priced still goes to the model for the catalo
   assert.equal(d.gaps[0]!.proposed, null);
   assert.equal(d.history?.learned, 1);
   assert.match(draftSteps(d), /Into X-Division 09 Finishes › FINISHES › Drywall\/Plaster: Insulation - Batt, 909 Square Foot[^\n]*\n       history: DB bought R15 wall batts[^\n]*History says \$0\.91\/Square Foot cost[^\n]*against the template's \$13\.93\.[^\n]*Learned 2026-09-30/);
-  assert.equal(store.entries.get('insulation')!.finding.suggestedUnitCost, 0.91, 'the book is not rewritten by a catalog-only pass');
+  assert.equal(store.forTerm('insulation')[0]!.finding.suggestedUnitCost, 0.91, 'the book is not rewritten by a catalog-only pass');
 });
 
 test('a fixture replays the catalog by term, and the CLI can turn the search off', async () => {

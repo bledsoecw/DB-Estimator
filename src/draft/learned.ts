@@ -27,6 +27,16 @@
  *
  * A finding that matched past work but could not put it per unit is not served
  * from the book. It is searched again, so a quote read since can price it.
+ *
+ * An answer belongs to the line it was found for. 25-0000, 2026-10-02: the
+ * book kept one answer per search word, so "Drywall Brd- Labor" (hanging)
+ * was handed the answer learned for "Drywall Mud Labor" (taping), and with
+ * it that run's remark "24 hrs for 606 SF is on the high side" on a line of
+ * 16 hours. Now an answer is kept per word AND line: a template line reuses
+ * only what was learned for a line of the same name; a gap, which has no
+ * fixed name, takes the newest answer for its word. And only what is true of
+ * the past work is kept (`thisJob` is dropped). Answers kept before this
+ * (no `format`) are set aside on load and searched again.
  */
 
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
@@ -43,6 +53,8 @@ export interface LearnedEntry {
   /** The unit the finding's suggestedUnitCost is per; null when it gave none. */
   unit: string | null;
   finding: HistoryFinding;
+  /** 2: kept per line, past-work facts only. Entries without it are from before and are not used. */
+  format?: 2;
 }
 
 /** What one past file said, read once and kept. */
@@ -80,6 +92,11 @@ export const DEFAULT_RELEARN_NONE_DAYS = 30;
 const DAY = 24 * 60 * 60 * 1000;
 
 export const normalizeTerm = (t: string): string => t.trim().toLowerCase();
+const normalizeName = (n: string): string => n.trim().toLowerCase().replace(/\s+/g, ' ');
+const kindOf = (e: LearnedEntry): 'line' | 'gap' => e.finding.target.kind;
+/** One answer per search word and line. */
+export const entryKey = (e: Pick<LearnedEntry, 'term' | 'targetName' | 'finding'>): string =>
+  `${normalizeTerm(e.term)}|${kindOf(e as LearnedEntry)}|${normalizeName(e.targetName)}`;
 
 /**
  * Past work was found but not put per unit: "$5,712 lump sum; the square
@@ -92,6 +109,8 @@ export const unpriced = (e: LearnedEntry): boolean => e.finding.match !== 'none'
 export class LearnedStore {
   readonly entries: Map<string, LearnedEntry>;
   readonly files: Map<string, ReadFile>;
+  /** Answers set aside on load because they were kept the old way (one per word, with that job's remarks). */
+  readonly dropped: number;
   readonly relearnAfterDays: number;
   readonly relearnNoneAfterDays: number;
   readonly ignore: boolean;
@@ -99,7 +118,9 @@ export class LearnedStore {
   readonly #now: () => Date;
 
   constructor(entries: LearnedEntry[] = [], opts: LearnedOptions = {}, files: ReadFile[] = []) {
-    this.entries = new Map(entries.map((e) => [normalizeTerm(e.term), e]));
+    const current = entries.filter((e) => e.format === 2);
+    this.dropped = entries.length - current.length;
+    this.entries = new Map(current.map((e) => [entryKey(e), e]));
     this.files = new Map(files.map((f) => [f.fileId, f]));
     this.relearnAfterDays = opts.relearnAfterDays ?? DEFAULT_RELEARN_DAYS;
     this.relearnNoneAfterDays = opts.relearnNoneAfterDays ?? DEFAULT_RELEARN_NONE_DAYS;
@@ -180,26 +201,40 @@ export class LearnedStore {
     return this.expiresAt(e).getTime() > this.#now().getTime();
   }
 
+  /** Every answer kept for a search word, newest first, fresh or not. */
+  forTerm(term: string): LearnedEntry[] {
+    const t = normalizeTerm(term);
+    return [...this.entries.values()].filter((e) => e.term === t).sort((a, b) => b.learnedAt.localeCompare(a.learnedAt));
+  }
+
   /**
-   * The first fresh entry among the terms, in the order given, that can be
-   * used without a search. Null when the run ignores the store.
+   * The answer to use without a search: the first of the terms, in order,
+   * with a fresh, priced answer for this target. A template line takes only
+   * an answer learned for a line of the same name; a gap takes one learned
+   * for a gap of the same name, else the newest for the word. With no target,
+   * the newest for the word. Null when the run ignores the store.
    */
-  lookup(terms: string[]): LearnedEntry | null {
+  lookup(terms: string[], target?: { kind: 'line' | 'gap'; name: string }): LearnedEntry | null {
     if (this.ignore) return null;
     for (const t of terms) {
-      const e = this.entries.get(normalizeTerm(t));
-      if (e && this.isFresh(e) && !unpriced(e)) return e;
+      const usable = this.forTerm(t).filter((e) => this.isFresh(e) && !unpriced(e));
+      if (!usable.length) continue;
+      if (!target) return usable[0]!;
+      const same = usable.find((e) => kindOf(e) === target.kind && normalizeName(e.targetName) === normalizeName(target.name));
+      if (same) return same;
+      if (target.kind === 'gap') return usable[0]!;
     }
     return null;
   }
 
-  /** Remember one finding under every term that led to it. */
-  remember(terms: string[], entry: Omit<LearnedEntry, 'term' | 'learnedAt'>): void {
+  /** Remember one finding under every term that led to it, for the line or gap it was found for. */
+  remember(terms: string[], entry: Omit<LearnedEntry, 'term' | 'learnedAt' | 'format'>): void {
     const learnedAt = this.#now().toISOString();
     for (const t of terms) {
       const term = normalizeTerm(t);
       if (!term) continue;
-      this.entries.set(term, { ...entry, term, learnedAt });
+      const e: LearnedEntry = { ...entry, finding: { ...entry.finding, thisJob: '' }, term, learnedAt, format: 2 };
+      this.entries.set(entryKey(e), e);
     }
   }
 }

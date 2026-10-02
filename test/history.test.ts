@@ -18,13 +18,14 @@ import type { Reader } from '../src/jobtread/queries.ts';
 import { chooseAttachments, fileDocIds, fileRank, historyText, newSince, searchHistory, selectHistoryFiles, strengthOf, whereOf, type HistoryHits, type HistoryReport } from '../src/draft/history.ts';
 import { LearnedStore } from '../src/draft/learned.ts';
 import { READ_SYSTEM } from '../src/draft/readings.ts';
-import { mkdtempSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { StructuredArgs, StructuredCall } from '../src/draft/model.ts';
 import { MAX_TERMS, attachHistory, draftEstimate, historyTargets, keyWord, searchedTargets, uniqueTerms, withKeyWord, type DraftFixture } from '../src/draft/draft.ts';
-import { historyTargetsText } from '../src/draft/prompt.ts';
-import { draftJson, draftSteps, renderDraft } from '../src/draft/render.ts';
+import { DRAFT_SYSTEM, HISTORY_SYSTEM, historyTargetsText } from '../src/draft/prompt.ts';
+import { draftFlags, draftJson, draftSteps, optionFlags, renderDraft } from '../src/draft/render.ts';
+import { borrowedLines, type CheckLine } from '../src/draft/checks.ts';
 import { LOCAL_LEARNED_PATH, SHARED_LEARNED_DIR, SHARED_LEARNED_PATH, marginsOf, parseDraftArgs, resolveLearnedPath } from '../src/draft-cli.ts';
 
 const fx = JSON.parse(readFileSync('test/fixtures/haag-basement.json', 'utf8')) as DraftFixture;
@@ -241,33 +242,33 @@ const HISTORY = {
   findings: [
     { target: { kind: 'line', id: '22PLhsr2Yx55' }, match: 'match', summary: 'DB subbed one epoxy floor, the Myers sunroom, to Rhino Concrete Coatings for $5,712 in August 2026.',
       pastWork: [{ jobName: '246466 Dennis Myers_Sunroom', what: 'Epoxy Sub Pckg', where: 'change order', when: '2026-08-31', vendor: 'Rhino Concrete Coatings', quantity: 1, unit: 'Lump Sum', unitCost: 5712, lineCost: 5712 }],
-      suggestedUnitCost: 13.6, suggestionBasis: '$5,712 for the ~420 SF sunroom floor named in its description = $13.60/SF.', confidence: 'medium', typicallySubbed: true, usualVendor: 'Rhino Concrete Coatings',
+      suggestedUnitCost: 13.6, thisJob: '', suggestionBasis: '$5,712 for the ~420 SF sunroom floor named in its description = $13.60/SF.', confidence: 'medium', typicallySubbed: true, usualVendor: 'Rhino Concrete Coatings',
       regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
     { target: { kind: 'line', id: '22PLhtLxcz9S' }, match: 'partial', summary: 'DB has subbed interior painting to Jeff Southworth on four recent jobs, as lump sums.',
-      pastWork: [], suggestedUnitCost: null, suggestionBasis: 'Lump sums with no wall area shown; nothing per hour.', confidence: 'low', typicallySubbed: true, usualVendor: "Jeff Southworth's Drywall & Painting",
+      pastWork: [], suggestedUnitCost: null, thisJob: '', suggestionBasis: 'Lump sums with no wall area shown; nothing per hour.', confidence: 'low', typicallySubbed: true, usualVendor: "Jeff Southworth's Drywall & Painting",
       regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
     { target: { kind: 'gap', id: 'gap-0' }, match: 'partial', summary: 'No skim coat in DB history; the nearest is a drywall sub at $920 lump sum.',
       pastWork: [{ jobName: '261282 McComas_Misc.', what: 'Drywall Sub', where: 'estimate', when: '2026-07-14', vendor: null, quantity: 1, unit: 'Lump Sum', unitCost: 920, lineCost: 920 }],
-      suggestedUnitCost: 45, suggestionBasis: 'A drywall sub at $920 for about 20 hours of work = $45/hour, if the trade is the same.', confidence: 'low', typicallySubbed: null, usualVendor: null,
+      suggestedUnitCost: 45, thisJob: '', suggestionBasis: 'A drywall sub at $920 for about 20 hours of work = $45/hour, if the trade is the same.', confidence: 'low', typicallySubbed: null, usualVendor: null,
       regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
     // History has nothing, so the model gave a regional ballpark; the gap has no quantity, so it cannot total.
-    { target: { kind: 'gap', id: 'gap-1' }, match: 'none', summary: 'Nothing in DB history for moving contents.', pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
+    { target: { kind: 'gap', id: 'gap-1' }, match: 'none', summary: 'Nothing in DB history for moving contents.', pastWork: [], suggestedUnitCost: null, thisJob: '', suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
       regionalUnitCost: 55, regionalBasis: 'Two of DB\'s own people at about $27.50/hour loaded, the going small-contractor rate around Van Wert.', catalog: NO_CATALOG },
-    { target: { kind: 'line', id: 'nope' }, match: 'none', summary: 'ignored', pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
+    { target: { kind: 'line', id: 'nope' }, match: 'none', summary: 'ignored', pastWork: [], suggestedUnitCost: null, thisJob: '', suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
       regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
   ],
 };
 /** The same, with the painting lump sums put per hour, so every finding carries a unit cost. */
 const PRICED = {
   findings: HISTORY.findings.map((f) =>
-    f.target.id === '22PLhtLxcz9S' ? { ...f, suggestedUnitCost: 48, suggestionBasis: '$1,920 for 40 hours on the Hunter quote = $48/hour.' } : f),
+    f.target.id === '22PLhtLxcz9S' ? { ...f, suggestedUnitCost: 48, thisJob: '', suggestionBasis: '$1,920 for 40 hours on the Hunter quote = $48/hour.' } : f),
 };
 /** History finds nothing at all; the model prices the skim coat from the area instead. */
 const REGIONAL_ONLY = {
   findings: [
-    { target: { kind: 'gap', id: 'gap-0' }, match: 'none', summary: 'No skim coat anywhere in DB history.', pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
+    { target: { kind: 'gap', id: 'gap-0' }, match: 'none', summary: 'No skim coat anywhere in DB history.', pastWork: [], suggestedUnitCost: null, thisJob: '', suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
       regionalUnitCost: 45, regionalBasis: 'A finisher at about $45/hour loaded is what a small crew costs around Van Wert; skim coat is slow work.', catalog: NO_CATALOG },
-    { target: { kind: 'gap', id: 'gap-1' }, match: 'none', summary: 'Nothing for moving contents.', pastWork: [], suggestedUnitCost: null, suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
+    { target: { kind: 'gap', id: 'gap-1' }, match: 'none', summary: 'Nothing for moving contents.', pastWork: [], suggestedUnitCost: null, thisJob: '', suggestionBasis: '', confidence: 'low', typicallySubbed: null, usualVendor: null,
       regionalUnitCost: null, regionalBasis: '', catalog: NO_CATALOG },
   ],
 };
@@ -309,7 +310,7 @@ test('targets are subcontracted lines, lines the model wanted looked up, and eve
 
   // A crew-labor rate from history prices at the Labor margin, and one equal to the template's reads as agreement.
   const agree = await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, { findings: [
-    { ...HISTORY.findings[1]!, suggestedUnitCost: 55, suggestionBasis: '$550 / 10 hrs on Miller.' },
+    { ...HISTORY.findings[1]!, suggestedUnitCost: 55, thisJob: '', suggestionBasis: '$550 / 10 hrs on Miller.' },
   ] }]), { templateIds: [FIN, GR], history: { search: async () => report(true), margins: MARGINS } });
   const laborLine = agree.lines.find((l) => l.name === 'Paint Labor')!;
   assert.equal(formatMoney(laborLine.historyUnitPrice!), '$100.00', '55 at the Labor margin, not the sub margin');
@@ -388,9 +389,9 @@ test('when nothing in history matches, the third call runs for the gaps alone an
   assert.equal(json.totals.regionalForGaps.gaps, 1);
 
   // The book keeps what DB did, not a guess about the area.
-  assert.equal(store.entries.get('skim coat')!.finding.match, 'none');
-  assert.equal(store.entries.get('skim coat')!.finding.regionalUnitCost, null);
-  assert.equal(store.entries.get('epoxy')!.finding.match, 'none');
+  assert.equal(store.forTerm('skim coat')[0]!.finding.match, 'none');
+  assert.equal(store.forTerm('skim coat')[0]!.finding.regionalUnitCost, null);
+  assert.equal(store.forTerm('epoxy')[0]!.finding.match, 'none');
 
   // Without gaps there is nothing to price, so no third call at all.
   const noGaps = fake([{ ...DRAFT, gaps: [] }]);
@@ -561,10 +562,10 @@ test('the second job with the same trades is answered from the price book: no se
   });
   assert.equal(first.calls.length, 2);
   assert.equal(d1.history?.learned, 0);
-  assert.deepEqual([...store.entries.keys()].sort(), ['epoxy', 'floor coating', 'paint sub', 'painting', 'skim', 'skim coat'],
+  assert.deepEqual([...new Set([...store.entries.values()].map((e) => e.term))].sort(), ['epoxy', 'floor coating', 'paint sub', 'painting', 'skim', 'skim coat'],
     'the gap with no terms is not stored; the ignored finding for "nope" is not stored');
-  assert.equal(store.entries.get('epoxy')!.unit, 'Square Foot');
-  assert.equal(store.entries.get('skim coat')!.finding.match, 'partial');
+  assert.equal(store.forTerm('epoxy')[0]!.unit, 'Square Foot');
+  assert.equal(store.forTerm('skim coat')[0]!.finding.match, 'partial');
 
   // Second job, same trades: the book answers, nothing is searched. (The
   // gap with no quantity and no terms is left out here: it would still be
@@ -587,14 +588,24 @@ test('the second job with the same trades is answered from the price book: no se
   assert.match(steps, /Learned 2026-09-30 on 261323 Haag_Remodel; not searched again until 2027-09-30\./);
   assert.match(renderDraft(fx.evidence, d2), /nothing searched &middot; 3 from the learned price book/);
 
-  // A learned per-square-foot cost is not carried onto an hours line.
+  // Another line with the same search words is not handed this line's answer: it is searched.
   const hoursDraft = { ...DRAFT, lines: [{ ...DRAFT.lines[1]!, lineId: '22PLhsr2Yx56', option: null }], gaps: [] }; // Flooring Labor, Hours, same terms
-  const third = fake([hoursDraft]);
-  const d3 = await draftEstimate(fx.evidence, fx.index, load, third, { templateIds: [FIN, GR], history: src(async () => report(true)) });
-  const labor = d3.lines[0]!;
-  assert.equal(labor.history?.origin.kind, 'learned');
-  assert.equal(labor.historyUnitCost, null);
-  assert.match(draftSteps(d3), /learned per Square Foot; this is in Hours, so the unit cost is not carried over/);
+  const third = fake([hoursDraft, PRICED]);
+  const before = searches.length;
+  const d3 = await draftEstimate(fx.evidence, fx.index, load, third, {
+    templateIds: [FIN, GR], history: src(async (t) => { searches.push(t); return report(true); }),
+  });
+  assert.equal(searches.length, before + 1, 'Flooring Labor is not answered by what was learned for Flooring - Sub');
+  assert.equal(d3.lines[0]!.history, null, 'and the reply about another target is not pinned on it');
+
+  // A gap has no fixed name, so it takes the newest answer for its word; a per-square-foot
+  // cost is still not carried onto a gap counted in hours.
+  const hoursGap = { ...DRAFT, lines: [], gaps: [{ ...DRAFT.gaps[0]!, scope: 'Epoxy touch-up labor', unit: 'Hours', lookBack: ['epoxy'] }] };
+  const d4 = await draftEstimate(fx.evidence, fx.index, load, fake([hoursGap, REGIONAL_ONLY]), { templateIds: [FIN, GR], history: src(async () => report(true)) });
+  const gap = d4.gaps[0]!;
+  assert.equal(gap.history?.origin.kind, 'learned');
+  assert.notEqual(gap.proposed?.source, 'history', 'left without a history price, so it goes for a ballpark instead');
+  assert.match(draftSteps(d4), /learned per Square Foot; this is in Hours, so the unit cost is not carried over/);
 });
 
 test('"nothing found" is remembered briefly, so the same empty search is not repeated next week', async () => {
@@ -603,7 +614,7 @@ test('"nothing found" is remembered briefly, so the same empty search is not rep
   const src = { search: async (t: string[]) => { searches.push(t); return report(false); }, margins: MARGINS, learned: store };
   await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, REGIONAL_ONLY]), { templateIds: [FIN, GR], history: src });
   assert.equal(searches.length, 1);
-  assert.equal(store.entries.get('epoxy')!.finding.match, 'none');
+  assert.equal(store.forTerm('epoxy')[0]!.finding.match, 'none');
   const again = fake([DRAFT, REGIONAL_ONLY]);
   const d = await draftEstimate(fx.evidence, fx.index, load, again, { templateIds: [FIN, GR], history: src });
   assert.equal(searches.length, 1, 'answered from the book');
@@ -744,8 +755,8 @@ test('a target whose terms were not searched is not remembered as "nothing found
   });
   assert.equal(searches[0]!.length, 16);
   assert.ok(!searches[0]!.includes('word16'));
-  assert.equal(store.entries.get('word0')!.finding.match, 'none', 'searched and nothing found: remembered briefly');
-  assert.equal(store.entries.get('word16'), undefined, 'never searched: nothing to remember');
+  assert.equal(store.forTerm('word0')[0]!.finding.match, 'none', 'searched and nothing found: remembered briefly');
+  assert.equal(store.forTerm('word16').length, 0, 'never searched: nothing to remember');
   const asked = call.calls[1]!.content.map((c) => (c.type === 'text' ? c.text : '')).join('\n');
   assert.match(asked, /- gap-16 · gap · Gap 16[^\n]*\n  basis: guess\n  note: Its terms were not searched this run \(at most 16 are\)/);
   assert.doesNotMatch(asked, /- gap-15 · gap · Gap 15[^\n]*\n  basis: guess\n  note: Its terms were not searched/);
@@ -873,10 +884,10 @@ test('a file\'s reading never goes stale, survives --relearn and the disk, and -
 
 test('a lump sum the book could not put per unit is searched again every time, so a quote read since can price it', async () => {
   const store = new LearnedStore([], { now: () => T0 });
-  const unpriced = { ...HISTORY.findings[0]!, suggestedUnitCost: null, suggestionBasis: 'The square footage is not shown.' } as Parameters<LearnedStore['remember']>[1]['finding'];
+  const unpriced = { ...HISTORY.findings[0]!, suggestedUnitCost: null, thisJob: '', suggestionBasis: 'The square footage is not shown.' } as Parameters<LearnedStore['remember']>[1]['finding'];
   store.remember(['epoxy', 'floor coating'], { fromJob: '25-0000', targetName: 'Flooring - Sub', unit: 'Square Foot', finding: unpriced });
   assert.equal(store.lookup(['epoxy']), null, 'kept on record, not used in place of a search');
-  assert.ok(store.entries.get('epoxy'));
+  assert.equal(store.forTerm('epoxy').length, 1);
   const searches: string[][] = [];
   await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, HISTORY]), {
     templateIds: [FIN, GR],
@@ -967,8 +978,8 @@ test('two computers saving one book keep each other\'s answers; the newer answer
   work.save(path);
 
   const back = LearnedStore.load(path, { now: later(2) });
-  assert.equal(back.entries.get('epoxy')?.fromJob, 'laptop run', 'the newer answer wins');
-  assert.equal(back.entries.get('insulation')?.fromJob, 'work run');
+  assert.equal(back.forTerm('epoxy')[0]?.fromJob, 'laptop run', 'the newer answer wins');
+  assert.equal(back.forTerm('insulation')[0]?.fromJob, 'work run');
   assert.equal(back.files.get('fQuote')?.jobName, 'Myers', 'the laptop\'s quote reading is kept');
   assert.deepEqual(readdirSync(dir), ['learned-prices.json'], 'written through a temporary file, nothing left behind');
 
@@ -976,6 +987,84 @@ test('two computers saving one book keep each other\'s answers; the newer answer
   const old = new LearnedStore([], { now: () => new Date('2026-09-01T00:00:00Z') });
   old.remember(['epoxy', 'skim'], entry('old book'));
   assert.deepEqual(back.merge(old), { entries: 1, files: 0 });
-  assert.equal(back.entries.get('epoxy')?.fromJob, 'laptop run');
-  assert.equal(back.entries.get('skim')?.fromJob, 'old book');
+  assert.equal(back.forTerm('epoxy')[0]?.fromJob, 'laptop run');
+  assert.equal(back.forTerm('skim')[0]?.fromJob, 'old book');
+});
+
+// ---- 25-0000, 2026-10-02: three lessons, kept for every estimate ---------------------------
+
+test('lesson 1: an answer belongs to the line it was found for, and only the past-work facts are kept', async () => {
+  const store = new LearnedStore([], { now: () => T0 });
+  const mud = {
+    ...HISTORY.findings[1]!, target: { kind: 'line' as const, id: 'mud' }, match: 'match' as const, suggestedUnitCost: 55,
+    summary: 'DB\'s crew has taped and mudded drywall at $52.50–$55/hr.',
+    thisJob: '24 hrs for 606 SF is on the high side.',
+  } as Parameters<LearnedStore['remember']>[1]['finding'];
+  store.remember(['drywall'], { fromJob: '25-0000', targetName: 'Drywall Mud Labor', unit: 'Hours', finding: mud });
+
+  assert.equal(store.lookup(['drywall'], { kind: 'line', name: 'Drywall Brd- Labor' }), null, 'the hanging line is not handed the taping answer');
+  assert.equal(store.lookup(['drywall'], { kind: 'line', name: 'drywall mud labor' })?.targetName, 'Drywall Mud Labor', 'the same line, however it is cased');
+  assert.equal(store.lookup(['drywall'], { kind: 'gap', name: 'Patch drywall' })?.targetName, 'Drywall Mud Labor', 'a gap takes the newest for its word');
+  assert.equal(store.forTerm('drywall')[0]!.finding.thisJob, '', 'what it meant for that job is not kept');
+
+  // Answers kept the old way (one per word, with that job's remarks) are set aside and searched again.
+  const dir = mkdtempSync(join(tmpdir(), 'old-book-'));
+  const path = join(dir, 'learned-prices.json');
+  const old = { term: 'drywall', learnedAt: T0.toISOString(), fromJob: '25-0000', targetName: 'Drywall Mud Labor', unit: 'Hours', finding: mud };
+  writeFileSync(path, JSON.stringify({ version: 1, entries: { drywall: old } }));
+  const back = LearnedStore.load(path, { now: () => T0 });
+  assert.equal(back.dropped, 1);
+  assert.equal(back.entries.size, 0);
+});
+
+test('lesson 1: "for this job" shows on the draft it was read for, never on a later job from the book', async () => {
+  const store = new LearnedStore([], { now: () => T0 });
+  const withNote = { findings: PRICED.findings.map((f) => f.target.id === '22PLhsr2Yx55' ? { ...f, thisJob: 'This slab is painted and needs grinding.' } : f) };
+  const d1 = await draftEstimate(fx.evidence, fx.index, load, fake([DRAFT, withNote]), {
+    templateIds: [FIN, GR], history: { search: async () => report(true), margins: MARGINS, learned: store },
+  });
+  assert.match(draftSteps(d1), /For this job: This slab is painted and needs grinding\./);
+  const d2 = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, gaps: [DRAFT.gaps[0]!] }]), {
+    templateIds: [FIN, GR], history: { search: async () => report(true), margins: MARGINS, learned: store },
+  });
+  assert.equal(d2.lines.find((l) => l.name === 'Flooring - Sub')!.history?.origin.kind, 'learned');
+  assert.doesNotMatch(draftSteps(d2), /For this job/);
+  assert.match(HISTORY_SYSTEM, /never carried to another job/);
+});
+
+test('lesson 2: a general line borrowed from another trade\'s section is flagged; an option line or the work\'s own line is not', () => {
+  const l = (where: string, name: string): CheckLine => ({ where, name, costType: 'Labor', quantity: 8, unit: 'Hours', cost: 440 });
+  const roof = 'X-Division 07 Thermal & Moisture › THERMAL & MOISTURE › Roofing › DB (DONE BETTER) Duration Shingle System';
+  const flags = borrowedLines([
+    l(roof, 'Crew Labor'),
+    l('X-Division 07 Thermal & Moisture › THERMAL & MOISTURE › Siding', 'Insulation - Batt'),
+    l('CUSTOMER OPTIONS › Move contents › Move contents', 'Crew Labor'),
+    l('X-Division 01 General Requirements › GENERAL REQUIREMENTS › Project/Site Management', 'Project Management'),
+  ], 'CUSTOMER OPTIONS');
+  assert.equal(flags.length, 1);
+  assert.equal(flags[0]!.kind, 'section');
+  assert.match(flags[0]!.text, /"Crew Labor" \(8 Hours\) is the only line kept under .*Roofing.*: on the job it sits in that Roofing section/);
+  assert.equal(borrowedLines([l(roof, 'Crew Labor'), l(roof, 'OC Duration Shingles')], 'CUSTOMER OPTIONS').length, 0, 'on a roof job it is roofing work');
+  assert.match(DRAFT_SYSTEM, /16\. A line belongs to the section it sits in/);
+});
+
+test('lesson 3: an open item is a choice, so "pick one" stays pick one, and a lonely choice is flagged', async () => {
+  const lvp = { lineId: '22PLhsr2Yx55', quantity: 706, basis: 'LVP', evidence: ev('LVP'), option: 'Flooring — LVP', confidence: 'medium', lookBack: [] };
+  const epoxy = { scope: 'Epoxy floor coating by sub', why: 'no template line', unit: 'Square Foot', quantity: 706, costType: 'Subcontractor', basis: 'the floor', evidence: ev('epoxy'), lookBack: [], option: 'Flooring — Epoxy' };
+  const both = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, lines: [lvp], gaps: [epoxy] }]), { templateIds: [FIN, GR] });
+  const flooring = both.totals.options.find((o) => o.group === 'Flooring')!;
+  assert.equal(flooring.required, true, 'LVP or the epoxy open item: the customer picks one');
+  assert.deepEqual(flooring.choices.map((c) => [c.name, c.open]), [['LVP', []], ['Epoxy', ['Epoxy floor coating by sub']]]);
+  const steps = draftSteps(both);
+  assert.match(steps, /Option "Flooring", one choice required:\n   LVP: .*\n   Epoxy: 1 open item not priced yet \("Epoxy floor coating by sub"\)/);
+  assert.match(steps, /- "Flooring", one choice required: LVP: Flooring - Sub · Epoxy: "Epoxy floor coating by sub" \(open item, below\)/);
+  assert.match(steps, /Flooring — Epoxy 0\.00 \(raise it by 8% of the open item's cost once it is priced\)/);
+  assert.deepEqual(optionFlags(both.totals.options), []);
+
+  const alone = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, lines: [lvp], gaps: [] }]), { templateIds: [FIN, GR] });
+  const flags = optionFlags(alone.totals.options);
+  assert.equal(flags.length, 1);
+  assert.match(flags[0]!.text, /"Flooring — LVP" is written as one of several choices, but "Flooring" has no other choice/);
+  assert.ok(draftFlags(alone).some((f) => f.kind === 'option'), 'and it is in the box at the top of the page');
+  assert.match(DRAFT_SYSTEM, /never write a choice that has neither lines nor a gap/);
 });

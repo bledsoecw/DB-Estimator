@@ -45,7 +45,7 @@
 
 import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_GROUP_DESCRIPTION, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
 import { STRUCTURAL_GROUPS, groupPath, orderedLines, type Template, type TemplateLine } from './templates.ts';
-import { doubleCounts, openLines, sortFlags, unitConflictFlag, type CheckLine, type ReviewFlag } from './checks.ts';
+import { borrowedLines, doubleCounts, openLines, sortFlags, unitConflictFlag, type CheckLine, type ReviewFlag } from './checks.ts';
 import { isTestJob, type Reader } from '../jobtread/queries.ts';
 import type { ApiBudget } from '../jobtread/types.ts';
 
@@ -601,7 +601,11 @@ export function reviewPlan(groups: NewGroup[], contingency: BuildPlan['contingen
     cost: item.unitCost === null ? null : Math.round((item.quantity ?? 1) * item.unitCost * 100) / 100,
     tracking: item.unitCost === 0 && (item.unitPrice === 0 || item.unitPrice === null) && item.organizationCostItemId !== undefined,
   }));
-  const flags: ReviewFlag[] = [...doubleCounts(lines), ...openLines(lines.filter((l) => l.name !== CONTINGENCY_LINE))];
+  const flags: ReviewFlag[] = [
+    ...doubleCounts(lines),
+    ...openLines(lines.filter((l) => l.name !== CONTINGENCY_LINE)),
+    ...borrowedLines(lines, OPTIONS_GROUP),
+  ];
   for (const { where, item } of all) {
     if (item.draftUnit && item.unitName) {
       const q = item.quantity ?? 0;
