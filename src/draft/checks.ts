@@ -41,6 +41,8 @@ export interface CheckLine {
   cost: number | null;
   /** A $0 line kept so the crew can clock to it: never "no count" or "unpriced". */
   tracking?: boolean;
+  /** Inside a customer selection: built in its choice group, wherever the line came from. */
+  inOption?: boolean;
 }
 
 const DRAFT_SUFFIX = /\s*\(DRAFT - Carl confirms\)\s*$/i;
@@ -149,11 +151,11 @@ const TRADE = /\b(roof\w*|siding|gutters?|soffit|fascia|decks?|windows?|doors?|t
  * kept in a section named for a trade; option lines (under `optionsRoot`)
  * are built in their choice group and are not.
  */
-export function borrowedLines(lines: CheckLine[], optionsRoot: string): ReviewFlag[] {
+export function borrowedLines(lines: CheckLine[], optionsRoot?: string): ReviewFlag[] {
   const out: ReviewFlag[] = [];
   const byWhere = new Map<string, CheckLine[]>();
   for (const l of lines) {
-    if (l.where.startsWith(optionsRoot)) continue;
+    if (l.inOption || (optionsRoot && l.where.startsWith(optionsRoot))) continue;
     byWhere.set(l.where, [...(byWhere.get(l.where) ?? []), l]);
   }
   for (const [where, group] of byWhere) {

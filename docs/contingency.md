@@ -154,6 +154,13 @@ and the budget's contingency follows the selection the way the rest of the
 option does. The main line keeps the formula; the shares carry only their
 dollars, since a formula cannot reference its group's cost.
 
+**Where on the job (2026-10-02).** Carl: keep a share in each choice and the
+base line, and no Phase 5. The build puts the base line, with the formula, at
+the end of Phase 1 - General Requirements (the main scope group when the
+template has no Phase 1), and each choice keeps its share. The seven
+templates still carry their Phase 5 group; a rep building by hand is told to
+move the line into Phase 1 and delete the group.
+
 **In the templates?** No, and it cannot be. A template has no customer
 options in it: the selection groups are made on each job, from the draft, so
 there is nothing in a template to hang an option's share on. What the

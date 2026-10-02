@@ -43,8 +43,8 @@
  * bottom read JobTread; the CLI (build-cli.ts) does the writing.
  */
 
-import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_GROUP_DESCRIPTION, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
-import { STRUCTURAL_GROUPS, groupPath, orderedLines, type Template, type TemplateLine } from './templates.ts';
+import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
+import { STRUCTURAL_GROUPS, groupPath, orderedLines, type Template, type TemplateGroup, type TemplateLine } from './templates.ts';
 import { borrowedLines, doubleCounts, openLines, sortFlags, uninstalledMaterials, unitConflictFlag, type CheckLine, type LaborUse, type MaterialUse, type ReviewFlag } from './checks.ts';
 import { isTestJob, type Reader } from '../jobtread/queries.ts';
 import type { ApiBudget } from '../jobtread/types.ts';
@@ -57,6 +57,10 @@ export interface DraftFile {
   summary?: string;
   noFit?: string | null;
   scopeOfWork?: string | null;
+  /** What the job is, two to four words: the top group is "<SCOPETITLE> SCOPE". Absent in older drafts. */
+  scopeTitle?: string | null;
+  /** Where each option group's selection sits on the budget. Absent in older drafts. */
+  optionPlaces?: { group: string; placeIn: { template: string; group: string; groupId: string } | null }[];
   templates: { id: string; name: string; role: string }[];
   lines: {
     lineId: string;
@@ -196,6 +200,8 @@ export interface BuildPlan {
   parameters: { name: string; value: number }[];
   /** The contingency quantity in dollars on the base scope, when the plan carries the line; what a verify looks for. */
   contingencyQuantity: number | null;
+  /** The group the base contingency line sits in (Phase 1 - General Requirements); what a verify looks in. */
+  contingencyGroup?: string | null;
   /**
    * The contingency as built: the rate, the base-scope cost it applies to,
    * and each option's share, which sits inside that option's choice group so
@@ -230,6 +236,80 @@ export function costCents(g: NewGroup): number {
   return n;
 }
 export const DRAFT_TAG = '(DRAFT - Carl confirms)';
+
+/** "Basement Finish" → "BASEMENT FINISH SCOPE"; a title that already ends in "scope" is not doubled. */
+export function scopeGroupName(title: string): string {
+  const t = title.trim().replace(/\s+/g, ' ').toUpperCase();
+  return /\bSCOPE$/.test(t) ? t : `${t} SCOPE`;
+}
+
+/** The template's one scope group under its root (NEW HOME BUILD SCOPE), or null when it has none or several. */
+export function scopeGroupOf(t: Template): TemplateGroup | null {
+  const top = t.groups.filter((g) => (g.parentId ?? t.id) === t.id && !STRUCTURAL_GROUPS.has(g.name.toUpperCase()) && !/contingency/i.test(g.name));
+  return top.length === 1 ? top[0]! : null;
+}
+
+/** A template's groups, ancestors first, without the template root. */
+function chainOf(t: Template, groupId: string | null): TemplateGroup[] {
+  const byId = new Map(t.groups.map((g) => [g.id, g]));
+  const out: TemplateGroup[] = [];
+  let id = groupId;
+  const seen = new Set<string>();
+  while (id && id !== t.id && !seen.has(id)) {
+    seen.add(id);
+    const g = byId.get(id);
+    if (!g) break;
+    out.unshift(g);
+    id = g.parentId;
+  }
+  return out;
+}
+
+/** Every group's place in its template, depth first by position, keyed the way `groupFor` keys the job's groups. */
+export function templateGroupOrder(t: Template): Map<string, number> {
+  const kids = new Map<string, TemplateGroup[]>();
+  for (const g of t.groups) {
+    const parent = g.parentId ?? t.id;
+    kids.set(parent, [...(kids.get(parent) ?? []), g]);
+  }
+  const byPos = (a: TemplateGroup, b: TemplateGroup): number => (a.position ?? '~').localeCompare(b.position ?? '~');
+  const out = new Map<string, number>();
+  const scope = scopeGroupOf(t);
+  let n = 0;
+  const walk = (parent: string, key: string): void => {
+    for (const g of (kids.get(parent) ?? []).sort(byPos)) {
+      // The scope group itself is the job's root group: its children start the keys.
+      const k = g.id === scope?.id ? '' : `${key}›${g.name}`;
+      if (g.id !== scope?.id) out.set(k, n++);
+      walk(g.id, k);
+    }
+  };
+  walk(t.id, '');
+  return out;
+}
+
+/** The phase a template group sits in: the scope group's child on its path. Null at or above the scope group. */
+function phaseOf(t: Template, groupId: string | null): string | null {
+  const chain = chainOf(t, groupId);
+  const scope = scopeGroupOf(t);
+  const below = scope && chain[0]?.id === scope.id ? chain.slice(1) : chain;
+  return below[0]?.id ?? null;
+}
+
+/** The template's "Phase 1 - General Requirements", where the base contingency line goes. */
+function phaseOne(t: Template): string | null {
+  const scope = scopeGroupOf(t);
+  if (!scope) return null;
+  return t.groups.find((g) => g.parentId === scope.id && /^phase\s*1\b/i.test(g.name))?.id ?? null;
+}
+
+/** Sub-groups in template order first, then lines and selections in the order they were added. Recursive. */
+function sortByTemplate(g: NewGroup, orderOf: Map<NewGroup, number>): void {
+  const keyed = g.lineItems.map((li, i) => ({ li, i, k: li._type === 'costGroup' ? orderOf.get(li) ?? Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER }));
+  keyed.sort((a, b) => a.k - b.k || a.i - b.i);
+  g.lineItems = keyed.map((x) => x.li);
+  for (const li of g.lineItems) if (li._type === 'costGroup') sortByTemplate(li, orderOf);
+}
 
 const need = (m: Map<string, string>, what: string, name: string | null, notes: string[]): string | null => {
   if (name === null || name === '') return null;
@@ -298,15 +378,27 @@ export function planBuild(
   // ---- template scope groups, base lines in template order --------------------------
   /** One job group per template root; subgroups are created on demand along each line's path. */
   const roots = new Map<string, { group: NewGroup; subgroups: Map<string, NewGroup>; template: Template }>();
+  const primaryId = draft.templates.find((t) => t.role === 'primary')?.id ?? draft.templates[0]?.id;
+  /** Where each job group sits in its template's order, so phases and sections come out as the template has them. */
+  const orderOf = new Map<NewGroup, number>();
   const rootFor = (t: Template): NewGroup => {
     const have = roots.get(t.id);
     if (have) return have.group;
-    const top = t.groups.filter((g) => (g.parentId ?? t.id) === t.id && !STRUCTURAL_GROUPS.has(g.name.toUpperCase()) && !/contingency/i.test(g.name));
-    // A template has one scope group under its root (FINISHES, BATHROOM REMODEL); it becomes the job's group.
-    const name = top.length === 1 ? top[0]!.name : t.name;
-    const group: NewGroup = { _type: 'costGroup', name, description: t.description, lineItems: [] };
+    // A template has one scope group under its root (NEW HOME BUILD SCOPE, FINISHES); it becomes the job's group.
+    // Carl, 2026-10-02: the main one is named for the job ("NEW POOL HOUSE SCOPE") and carries the job's description.
+    const scope = scopeGroupOf(t);
+    const primary = t.id === primaryId;
+    const name = primary && draft.scopeTitle?.trim() ? scopeGroupName(draft.scopeTitle) : scope ? scope.name : t.name;
+    const description = primary && draft.scopeOfWork?.trim() ? draft.scopeOfWork.trim() : t.description;
+    const group: NewGroup = { _type: 'costGroup', name, description, lineItems: [] };
     roots.set(t.id, { group, subgroups: new Map(), template: t });
     return group;
+  };
+  const rank = new Map<string, Map<string, number>>(); // template id -> group path key -> order
+  const rankOf = (t: Template): Map<string, number> => {
+    let r = rank.get(t.id);
+    if (!r) { r = templateGroupOrder(t); rank.set(t.id, r); }
+    return r;
   };
   /** The job group for a template group id, creating the path of groups below the scope group. */
   const groupFor = (t: Template, groupId: string | null): NewGroup => {
@@ -314,7 +406,9 @@ export function planBuild(
     const entry = roots.get(t.id)!;
     const path = groupPath(t, groupId);
     // The first name on the path is the scope group itself when the template has one; skip it.
-    const steps = path.length && root.name === path[0] ? path.slice(1) : path;
+    // (The job's group may be renamed for the job, so compare with the template's own name.)
+    const scope = scopeGroupOf(t);
+    const steps = path.length && scope && scope.name === path[0] ? path.slice(1) : path;
     let cur = root;
     let key = '';
     for (const name of steps) {
@@ -324,13 +418,13 @@ export function planBuild(
         sub = { _type: 'costGroup', name, lineItems: [] };
         entry.subgroups.set(key, sub);
         cur.lineItems.push(sub);
+        orderOf.set(sub, rankOf(t).get(key) ?? Number.MAX_SAFE_INTEGER);
       }
       cur = sub;
     }
     return cur;
   };
 
-  const primaryId = draft.templates.find((t) => t.role === 'primary')?.id ?? draft.templates[0]?.id;
   for (const td of draft.templates) {
     const t = templates.get(td.id);
     if (!t) { notes.push(`template ${td.name} (${td.id}) was not read; its lines are skipped`); continue; }
@@ -338,15 +432,23 @@ export function planBuild(
   }
 
   // Options: lines with an option go into choice groups, not their template group.
-  const optionGroups = new Map<string, { choices: Map<string, NewGroup> }>();
-  const choiceFor = (option: string): NewGroup => {
+  const optionGroups = new Map<string, { choices: Map<string, NewGroup>; home: { t: Template; groupId: string | null } | null }>();
+  const choiceFor = (option: string, home: { t: Template; groupId: string | null } | null = null): NewGroup => {
     const { group, choice } = parseOption(option);
     let og = optionGroups.get(group);
-    if (!og) { og = { choices: new Map() }; optionGroups.set(group, og); }
+    if (!og) { og = { choices: new Map(), home: null }; optionGroups.set(group, og); }
+    if (!og.home && home) og.home = home;
     const name = choice ?? group;
     let cg = og.choices.get(name);
     if (!cg) { cg = { _type: 'costGroup', name, lineItems: [] }; og.choices.set(name, cg); }
     return cg;
+  };
+
+  /** The template and section a found line or open item was placed in, for where its selection goes. */
+  const homeOf = (placeIn: { groupId: string } | null): { t: Template; groupId: string | null } | null => {
+    if (!placeIn) return null;
+    for (const t of templates.values()) if (t.groups.some((g) => g.id === placeIn.groupId)) return { t, groupId: placeIn.groupId };
+    return null;
   };
 
   // Found lines also appear in `lines`; they are built from `found`, with their section and price.
@@ -362,33 +464,12 @@ export function planBuild(
       continue;
     }
     const item = itemFrom(hit.t, hit.l, d.quantity, d.unit);
-    const dest = d.option ? choiceFor(d.option) : groupFor(hit.t, hit.l.groupId);
+    const dest = d.option ? choiceFor(d.option, { t: hit.t, groupId: hit.l.groupId }) : groupFor(hit.t, hit.l.groupId);
     dest.lineItems.push(item);
     lines++;
   }
 
-  // ---- the scope text, first in the primary's group -------------------------------
-  if (draft.scopeOfWork && primaryId && templates.has(primaryId)) {
-    const root = rootFor(templates.get(primaryId)!);
-    if (names.generalDescriptionItemId) {
-      root.lineItems.unshift({
-        _type: 'costItem',
-        name: GENERAL_DESCRIPTION,
-        organizationCostItemId: names.generalDescriptionItemId,
-        unitId: names.units.get('lump sum') ?? null,
-        costTypeId: names.costTypes.get('other') ?? null,
-        costCodeId: codeOf('General Requirements'),
-        quantity: null,
-        unitCost: 0,
-        unitPrice: 0,
-        description: draft.scopeOfWork,
-        unitName: 'Lump Sum',
-      });
-    } else {
-      notes.push(`no "${GENERAL_DESCRIPTION}" catalog item; the scope text goes on the group description instead`);
-      root.description = draft.scopeOfWork;
-    }
-  }
+  // The scope text is the description of the job's scope group (rootFor), as Carl's budgets carry it.
 
   // ---- found lines: into their section, priced from the catalog item -------------------
   let found = 0;
@@ -410,7 +491,7 @@ export function planBuild(
       unitName: p.unit,
       ...(f.unit !== null && p.unit !== null && f.unit !== p.unit ? { draftUnit: f.unit } : {}),
     };
-    const dest = f.option ? choiceFor(f.option) : placeFor(f.placeIn, templates, groupFor, rootFor, primaryId, notes, `found line "${p.name}"`);
+    const dest = f.option ? choiceFor(f.option, homeOf(f.placeIn)) : placeFor(f.placeIn, templates, groupFor, rootFor, primaryId, notes, `found line "${p.name}"`);
     dest.lineItems.push(item);
     found++;
   }
@@ -419,7 +500,7 @@ export function planBuild(
   let created = 0;
   for (const g of draft.gaps ?? []) {
     if (g.resolved) continue;
-    const dest = g.option ? choiceFor(g.option) : placeFor(g.placeIn, templates, groupFor, rootFor, primaryId, notes, `open item "${g.scope}"`);
+    const dest = g.option ? choiceFor(g.option, homeOf(g.placeIn)) : placeFor(g.placeIn, templates, groupFor, rootFor, primaryId, notes, `open item "${g.scope}"`);
     if (g.catalogMatch) {
       const p = priced.get(g.catalogMatch.lineId) ?? [...priced.values()].find((x) => x.name === g.catalogMatch!.name);
       if (p) {
@@ -467,6 +548,37 @@ export function planBuild(
     created++;
   }
 
+  // ---- selection groups, each in the section of its work -----------------------------
+  // Carl, 2026-10-02: no CUSTOMER OPTIONS group; a selection sits in the phase and section
+  // where its work is, as the draft named it, else in the phase of its first line.
+  // Two or more choices means one is required; one means an add-on.
+  let options = 0;
+  const selections: NewGroup[] = [];
+  for (const [group, og] of optionGroups) {
+    const choices = [...og.choices.values()];
+    const required = choices.length >= 2;
+    choices.forEach((c, i) => { c.isSelected = required && i === 0; });
+    const sel: NewGroup = {
+      _type: 'costGroup',
+      name: group,
+      description: required ? 'One choice required.' : 'Optional add-on; the customer may decline it.',
+      minSelectionsRequired: required ? 1 : 0,
+      maxSelectionsAllowed: 1,
+      showChildDeltas: true,
+      lineItems: choices,
+    };
+    const named = (draft.optionPlaces ?? []).find((p) => p.group.trim().toLowerCase() === group.toLowerCase())?.placeIn ?? null;
+    let section: NewGroup;
+    if (named) section = placeFor(named, templates, groupFor, rootFor, primaryId, notes, `the "${group}" selection`);
+    else if (og.home) {
+      const phase = phaseOf(og.home.t, og.home.groupId);
+      section = phase ? groupFor(og.home.t, phase) : rootFor(og.home.t);
+    } else section = placeFor(null, templates, groupFor, rootFor, primaryId, notes, `the "${group}" selection`);
+    section.lineItems.push(sel);
+    selections.push(sel);
+    options++;
+  }
+
   // ---- the top-level groups, in order ------------------------------------------------
   const groups: NewGroup[] = [];
   // Primary first, then the others in the draft's order.
@@ -477,39 +589,19 @@ export function planBuild(
   }
   for (const r of roots.values()) if (!groups.includes(r.group) && r.group.lineItems.length > 0) groups.push(r.group);
 
-  // Options: a selection group per option group. Two or more choices means one is required; one means an add-on.
-  let options = 0;
-  if (optionGroups.size) {
-    const holder: NewGroup = { _type: 'costGroup', name: OPTIONS_GROUP, description: 'What the customer picks on the estimate. A group with one choice required shows its choices; an add-on may be declined.', lineItems: [] };
-    for (const [group, og] of optionGroups) {
-      const choices = [...og.choices.values()];
-      const required = choices.length >= 2;
-      choices.forEach((c, i) => { c.isSelected = required && i === 0; });
-      holder.lineItems.push({
-        _type: 'costGroup',
-        name: group,
-        description: required ? 'One choice required.' : 'Optional add-on; the customer may decline it.',
-        minSelectionsRequired: required ? 1 : 0,
-        maxSelectionsAllowed: 1,
-        showChildDeltas: true,
-        lineItems: choices,
-      });
-      options++;
-    }
-    groups.push(holder);
-  }
-
   // Contingency. The base is the base-scope cost AS BUILT (the template groups, the found lines and the
-  // created lines, not the options), so the figure matches the budget JobTread shows, and each option
+  // created lines, not the selections), so the figure matches the budget JobTread shows, and each option
   // carries its own share inside its choice group, so the budget's contingency follows what the customer
-  // picks. The API stores the formula without evaluating it, so the quantity goes too.
+  // picks. The base line sits at the end of Phase 1 - General Requirements: Carl, 2026-10-02, no Phase 5.
+  // The API stores the formula without evaluating it, so the quantity goes too.
   const parameters: { name: string; value: number }[] = [];
   let contingencyQuantity: number | null = null;
+  let contingencyGroup: string | null = null;
   let contingency: BuildPlan['contingency'] = null;
   if (draft.contingency) {
     const rate = draft.contingency.rate;
     if (names.contingencyItemId) {
-      const baseCents = groups.filter((g) => g.name !== OPTIONS_GROUP).reduce((n, g) => n + costCents(g), 0);
+      const baseCents = groups.reduce((n, g) => n + costCents(g), 0) - selections.reduce((n, g) => n + costCents(g), 0);
       const amountCents = Math.round((baseCents * rate) / 100);
       const line = (quantity: number, description: string, formula?: string): NewItem => ({
         _type: 'costItem',
@@ -526,9 +618,7 @@ export function planBuild(
         unitName: 'Lump Sum',
       });
       const shares: ContingencyShare[] = [];
-      const holder = groups.find((g) => g.name === OPTIONS_GROUP);
-      for (const og of holder?.lineItems ?? []) {
-        if (og._type !== 'costGroup') continue;
+      for (const og of selections) {
         for (const choice of og.lineItems) {
           if (choice._type !== 'costGroup') continue;
           const choiceCents = costCents(choice);
@@ -543,21 +633,25 @@ export function planBuild(
       }
       contingencyQuantity = amountCents / 100;
       contingency = { rate, base: baseCents / 100, amount: contingencyQuantity, shares };
-      groups.push({
-        _type: 'costGroup',
-        name: CONTINGENCY_GROUP,
-        description: CONTINGENCY_GROUP_DESCRIPTION,
-        lineItems: [line(
-          contingencyQuantity,
-          `Contingency at ${rate}% on the base scope, at cost; unused contingency is credited at closeout. ${CONTINGENCY_PARAMETERS.base} is the base-scope cost as built${shares.length ? '; each option carries its own share inside its choice, so the total follows what the customer picks' : ''}.`,
-          CONTINGENCY_FORMULA,
-        )],
-      });
+      const primary = primaryId ? templates.get(primaryId) : undefined;
+      const phase1 = primary ? phaseOne(primary) : null;
+      const home = primary ? (phase1 ? groupFor(primary, phase1) : rootFor(primary)) : groups[0];
+      if (!home) throw new Error('nothing to put the contingency line in: the plan has no group');
+      if (!groups.includes(home) && primary && !groups.includes(rootFor(primary))) groups.unshift(rootFor(primary));
+      contingencyGroup = home.name;
+      home.lineItems.push(line(
+        contingencyQuantity,
+        `Contingency at ${rate}% on the base scope, at cost; unused contingency is credited at closeout. ${CONTINGENCY_PARAMETERS.base} is the base-scope cost as built${shares.length ? '; each option carries its own share inside its choice, so the total follows what the customer picks' : ''}.`,
+        CONTINGENCY_FORMULA,
+      ));
       parameters.push({ name: CONTINGENCY_PARAMETERS.rate, value: rate }, { name: CONTINGENCY_PARAMETERS.base, value: baseCents / 100 });
     } else {
       notes.push(`no "${CONTINGENCY_LINE}" catalog item; contingency was not built`);
     }
   }
+
+  // Phases and sections in the template's order, whatever order lines arrived in; lines and selections after.
+  for (const g of groups) sortByTemplate(g, orderOf);
 
   return {
     jobId: draft.job.id,
@@ -566,6 +660,7 @@ export function planBuild(
     groups,
     parameters,
     contingencyQuantity,
+    contingencyGroup,
     contingency,
     notes,
     flags: reviewPlan(groups, contingency, notes, installFlags(draft, lineIndex, priced)),
@@ -609,17 +704,29 @@ export function installFlags(
   return uninstalledMaterials(materials, labor);
 }
 
-/** Every line of the plan with the path of groups it sits in, for the checks and the page. */
-export function planLines(groups: NewGroup[]): { where: string; item: NewItem }[] {
-  const out: { where: string; item: NewItem }[] = [];
-  const walk = (g: NewGroup, path: string[]): void => {
+/** Every line of the plan with the path of groups it sits in, and whether it is inside a customer selection. */
+export function planLines(groups: NewGroup[]): { where: string; item: NewItem; inOption: boolean }[] {
+  const out: { where: string; item: NewItem; inOption: boolean }[] = [];
+  const walk = (g: NewGroup, path: string[], inOption: boolean): void => {
     const here = [...path, g.name];
+    const inside = inOption || g.minSelectionsRequired !== undefined;
     for (const li of g.lineItems) {
-      if (li._type === 'costGroup') walk(li, here);
-      else out.push({ where: here.join(' › '), item: li });
+      if (li._type === 'costGroup') walk(li, here, inside);
+      else out.push({ where: here.join(' › '), item: li, inOption: inside });
     }
   };
-  for (const g of groups) walk(g, []);
+  for (const g of groups) walk(g, [], false);
+  return out;
+}
+
+/** Every selection group in the plan, wherever it sits. */
+export function selectionGroups(groups: NewGroup[]): NewGroup[] {
+  const out: NewGroup[] = [];
+  const walk = (g: NewGroup): void => {
+    if (g.minSelectionsRequired !== undefined) { out.push(g); return; }
+    for (const li of g.lineItems) if (li._type === 'costGroup') walk(li);
+  };
+  for (const g of groups) walk(g);
   return out;
 }
 
@@ -628,8 +735,9 @@ const dollars = (n: number): string => `$${n.toLocaleString('en-US', { minimumFr
 /** The checks on a plan: double counts, units, open lines, the plan's notes, and what the contingency comes to. */
 export function reviewPlan(groups: NewGroup[], contingency: BuildPlan['contingency'], notes: string[], extra: ReviewFlag[] = []): ReviewFlag[] {
   const all = planLines(groups);
-  const lines: CheckLine[] = all.map(({ where, item }) => ({
+  const lines: CheckLine[] = all.map(({ where, item, inOption }) => ({
     where,
+    inOption,
     name: item.name,
     costType: costTypeOf(item),
     quantity: item.quantity,
@@ -640,7 +748,7 @@ export function reviewPlan(groups: NewGroup[], contingency: BuildPlan['contingen
   const flags: ReviewFlag[] = [
     ...doubleCounts(lines),
     ...openLines(lines.filter((l) => l.name !== CONTINGENCY_LINE)),
-    ...borrowedLines(lines, OPTIONS_GROUP),
+    ...borrowedLines(lines),
   ];
   for (const { where, item } of all) {
     if (item.draftUnit && item.unitName) {
@@ -655,9 +763,8 @@ export function reviewPlan(groups: NewGroup[], contingency: BuildPlan['contingen
   for (const n of notes) flags.push({ severity: 'check', kind: 'note', text: n, lines: [] });
   flags.push(...extra);
   if (contingency) {
-    const holder = groups.find((g) => g.name === OPTIONS_GROUP);
-    const picked = (holder?.lineItems ?? []).flatMap((og) =>
-      og._type === 'costGroup' ? og.lineItems.filter((c): c is NewGroup => c._type === 'costGroup' && c.isSelected === true).map((c) => ({ og: og.name, c })) : []);
+    const picked = selectionGroups(groups).flatMap((og) =>
+      og.lineItems.filter((c): c is NewGroup => c._type === 'costGroup' && c.isSelected === true).map((c) => ({ og: og.name, c })));
     const pickedCost = picked.reduce((n, p) => n + costCents(p.c), 0) / 100;
     const pickedShares = picked.reduce((n, p) => n + (contingency.shares.find((s) => s.group === p.og && s.choice === p.c.name)?.amount ?? 0), 0);
     const baseCost = contingency.base;
@@ -722,7 +829,9 @@ export function planText(plan: BuildPlan): string {
       if (li._type === 'costGroup') walk(li, depth + 1);
       else {
         const q = li.quantityFormula ? `${li.quantity ?? '—'} = ${li.quantityFormula}` : li.quantity === null ? 'qty —' : `${li.quantity}`;
-        const price = li.unitCost === null ? 'unpriced' : `$${li.unitCost} / $${li.unitPrice ?? '—'}`;
+        // Prices of record are to four places; a catalog figure like 5 × 1.45 prints as 7.25, not 7.249999999999999.
+        const four = (n: number): string => String(Number(n.toFixed(4)));
+        const price = li.unitCost === null ? 'unpriced' : `$${four(li.unitCost)} / $${li.unitPrice === null ? '—' : four(li.unitPrice)}`;
         out.push(`${'  '.repeat(depth + 1)}- ${li.name}: ${q} · ${price}${li.organizationCostItemId ? '' : ' · no catalog item'}`);
       }
     }
@@ -901,8 +1010,9 @@ export function verifyBuild(plan: BuildPlan, budget: ApiBudget, parameters: JobP
   }
   if (plan.contingencyQuantity !== null) {
     const all = budget.costItems.nodes.filter((it) => it.name === CONTINGENCY_LINE);
-    const line = all.find((it) => it.costGroup?.name === CONTINGENCY_GROUP);
-    if (!line) { ok = false; lines.push(`MISSING: the "${CONTINGENCY_LINE}" line in "${CONTINGENCY_GROUP}"`); }
+    const holder = plan.contingencyGroup ?? CONTINGENCY_GROUP;
+    const line = all.find((it) => it.costGroup?.name === holder);
+    if (!line) { ok = false; lines.push(`MISSING: the "${CONTINGENCY_LINE}" line in "${holder}"`); }
     else if (line.quantity !== plan.contingencyQuantity) { ok = false; lines.push(`MISMATCH: "${CONTINGENCY_LINE}" quantity is ${line.quantity}, the plan ${plan.contingencyQuantity}`); }
     else lines.push(`ok: "${CONTINGENCY_LINE}" at ${line.quantity} on the base scope (cost $${line.cost})`);
     const shares = plan.contingency?.shares ?? [];

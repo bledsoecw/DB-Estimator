@@ -57,6 +57,21 @@ Also from Carl, 25-0000, 2026-10-02:
   with signs of more hidden unknowns (water staining, cracks, efflorescence,
   peeling paint, old wiring or plumbing) is 10%.
 
+## How a budget is laid out on the job
+
+From Carl, 2026-10-02, with a picture of the NEW POOL HOUSE SCOPE budget:
+
+- **Built on Addition/House Build.** Every non-roofing draft uses it alone
+  (`BASE_TEMPLATE_ID`); a line it lacks comes from the catalog into the right
+  phase and section.
+- **One top group that reads what the job is** ("BASEMENT FINISH SCOPE",
+  from the draft's `scopeTitle`), with the job's description (the scope of
+  work) as its description. Under it the template's phases and sections, in
+  the template's order. No General Description line.
+- **Selections sit in the section of their work**, no CUSTOMER OPTIONS group.
+- **Contingency: a share in each choice and the base line at the end of
+  Phase 1 - General Requirements. No Phase 5.**
+
 ## What not to do
 
 - Change catalog templates only when Carl asks. Leave roofing templates

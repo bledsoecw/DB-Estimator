@@ -598,11 +598,16 @@ apply). Without `--apply` it is a dry run. It reads the last draft's JSON (`revi
 or `--draft path`), reads the chosen templates and the catalog items the draft
 prices from again, and creates the budget as the rep would have:
 
-- **one group per chosen template**, named for the template's scope group
-  (`FINISHES`, `BATHROOM REMODEL`), with the kept lines in their template
-  sections in template order, each a job line pointing at its catalog item
-  and priced at today's price of record. The primary's group starts with the
-  **General Description** line carrying the scope text;
+- **one group per chosen template**, and for a construction job that is
+  one: Addition/House Build. Carl, 2026-10-02, with a picture of the NEW POOL
+  HOUSE SCOPE budget: the top group reads what the job is (the draft's
+  `scopeTitle`, so `BASEMENT FINISH SCOPE`) and carries the job's description
+  (the scope of work) as its description; under it the template's phases
+  (Phase 1 - General Requirements to Phase 4 - Finishes) and their sections,
+  in the template's order whatever order the lines arrived in, each kept line
+  a job line pointing at its catalog item and priced at today's price of
+  record. A phase or section with nothing in it is not made. There is no
+  General Description line;
 - **found lines** in the section the model named (or the primary's group when
   it named none), priced from the catalog item they came from;
 - **open items** created on the job as lines tagged `(DRAFT - Carl confirms)`:
@@ -610,11 +615,14 @@ prices from again, and creates the budget as the rep would have:
   count, otherwise a new line priced from DB history or the regional ballpark
   with the basis and the warning in its description, under General
   Requirements;
-- **CUSTOMER OPTIONS**, one selection group per option group: two or more
-  choices make a required pick (`min 1 / max 1`) with the first choice
+- **each selection in the section of its work**, no CUSTOMER OPTIONS group:
+  the draft names the section (`optionPlaces`: a floor choice in Phase 3 -
+  Interiors › Flooring), else it goes in the phase of its first line. Two or
+  more choices make a required pick (`min 1 / max 1`) with the first choice
   pre-selected, one choice is an add-on (`min 0 / max 1`) nobody has picked;
-- **Phase 5 - Contingency** with the Project Contingency line on the
-  base scope: `Contingency Base` is the base-scope cost **as built** (the
+- **the base Project Contingency line at the end of Phase 1 - General
+  Requirements**, no Phase 5 (the main scope group itself when the template
+  has no Phase 1): `Contingency Base` is the base-scope cost **as built** (the
   template groups, the found lines and the created lines, not the options),
   so the figure matches the budget JobTread shows; the formula is stored and,
   because the API does not evaluate it, the quantity in dollars goes too.
@@ -701,6 +709,19 @@ theirs to confirm with Carl and to give counts to, the options are the
 customer's to pick on the estimate, and Kristen still reviews before anything
 goes out. Building the estimate document from the budget is JobTread's own
 step, as today.
+
+## Every construction budget on Addition/House Build (2026-10-02)
+
+Carl: most if not all budgets can be built off the new home/addition
+template, and a line the template lacks is pulled from the catalog into the
+right phase and section. So a draft for any job that is not roofing skips the
+template pick and uses Addition/House Build (`BASE_TEMPLATE_ID` in
+`src/draft-cli.ts`) alone; `--templates` still chooses others by hand, and
+a roofing job still goes to the picker and Shawn's templates. The draft call
+now gets the template's sections with their ids, so it can say where each
+customer selection sits, and a scope title for the top group. Work the
+template has no line for goes in gaps as before, and the catalog search
+places the line it finds in the phase and section the model names.
 
 ## Running it
 

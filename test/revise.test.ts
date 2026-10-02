@@ -40,7 +40,7 @@ const line = (lineId: string, quantity: number, basis: string, option: string | 
 
 const PASS1 = {
   summary: 'Basement refresh: skim and paint the walls, new floor.',
-  scopeOfWork: 'Skim-coat and paint the basement walls.',
+  scopeTitle: 'Basement Finish', optionPlaces: [], scopeOfWork: 'Skim-coat and paint the basement walls.',
   lines: [
     line('22PLCchBuFMa', 6, 'two coats on 909 SF'),
     line('22PLCchBuFMW', 909, 'skim the concrete'),
@@ -54,7 +54,7 @@ const PASS1 = {
 const DIRECTION = 'Forget the skim coating. Go with a mold-resistant concrete paint, or an option to frame out false walls 6-8" off the foundation with plastic, drywall above wainscot, batt insulation, painted.';
 const PASS2 = {
   summary: 'Basement refresh: mold-resistant paint on the block, or framed false walls as an option.',
-  scopeOfWork: 'Paint the block with a mold-resistant concrete paint. Option: framed false walls.',
+  scopeTitle: 'Basement Finish', optionPlaces: [], scopeOfWork: 'Paint the block with a mold-resistant concrete paint. Option: framed false walls.',
   lines: [
     line('22PLCchBuFMa', 8, "per the rep's direction: mold-resistant concrete paint, two coats on rough block"),
     line('22PLhtLxcz9S', 24, "per the rep's direction: roll two coats on 909 SF of block"),

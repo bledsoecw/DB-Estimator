@@ -66,7 +66,7 @@ const PICK = {
 const ev = (quote: string) => [{ source: 'Robert Switzer, 2026-07-23', quote }];
 const DRAFT = {
   summary: 'Basement refresh, 18\'4" × 38\'6", paint plus a flooring choice.',
-  scopeOfWork: 'Skim-coat and paint the basement walls.\nFlooring as the option chosen.',
+  scopeTitle: 'Basement Finish', optionPlaces: [], scopeOfWork: 'Skim-coat and paint the basement walls.\nFlooring as the option chosen.',
   lines: [
     { lineId: '22PLCchBuFMa', quantity: 6, basis: '909 SF of wall, two coats, ~300 SF a gallon', evidence: ev('8-foot walls'), option: null, confidence: 'medium', lookBack: [] },
     { lineId: '22PLhtLxcz9S', quantity: 24, basis: 'two painters, a day and a half', evidence: ev('primarily through painting'), option: null, confidence: 'low', lookBack: ['paint sub', 'painting'] },
@@ -255,8 +255,8 @@ test('the steps read as a recipe for JobTread, and the page carries them', async
   assert.match(steps, /Sales On-Site Support: 0 Hours \[time tracking, \$0\]/);
   assert.match(steps, /Delete: Trim - Crown Molding; Trim - Casing/);
   assert.match(steps, /2\. Budget tab › Add from catalog › "X-Division 01 General Requirements"\./);
-  assert.match(steps, /4\. Selection groups, so the customer picks on the estimate:\n   - "Flooring", one choice required: LVP: Flooring; Flooring - Miscellaneous MAT; Flooring Labor · Epoxy: Flooring - Sub\n   - "Ceiling paint", optional add-on \(may pick none\): Paint Labor - Sub/);
-  assert.match(steps, /5\. General Description:\n   Skim-coat and paint/);
+  assert.match(steps, /4\. Selection groups, so the customer picks on the estimate, each in the section of its work:\n   - "Flooring" \(in the phase of its first line\), one choice required: LVP: Flooring; Flooring - Miscellaneous MAT; Flooring Labor · Epoxy: Flooring - Sub\n   - "Ceiling paint" \(in the phase of its first line\), optional add-on \(may pick none\): Paint Labor - Sub/);
+  assert.match(steps, /5\. Name the main scope group "BASEMENT FINISH SCOPE" and give it this description:\n   Skim-coat and paint/);
   assert.match(steps, /6\. Still open — on the job, under the section named, add the catalog line where one covers it or create the line and price it; take these to Carl before the estimate goes out:\n   - Under the section the rep sees fit, create "Move basement contents before and after" \(Labor, 4 Hours\)/);
   assert.match(steps, /7\. Confirm before it goes out:\n   - Paint the ceiling or not\?/);
   assert.match(steps, /named 2 lines that are not in these templates; they were NOT added/);
@@ -552,7 +552,7 @@ test('every construction draft ends its template steps with contingency: the sna
   assert.match(steps, /^Contingency 8% on \$4,120\.79 base cost = \$329\.66, at cost; with it the base scope is \$7,195\.81 price \(step 3\)\n   Options add their own share: Flooring — LVP \+\$430\.36 · Flooring — Epoxy \+\$423\.60 · Ceiling paint \+\$223\.10$/m);
   assert.match(steps, /^With each choice \(base \+ choice \+ contingency; add-ons not included\): Flooring — LVP \$15,912\.45 · Flooring — Epoxy \$15,297\.16$/m,
     '6,866.15 + 8,286.28 + 8% of (4,120.79 + 5,379.50); 6,866.15 + 7,677.75 + 8% of (4,120.79 + 5,295.00)');
-  assert.match(steps, /^3\. Contingency at 8%: The walls are skimmed to the concrete, so hidden conditions are likely\.\n   No chosen template carries the contingency group yet\. On the job's budget, add a group "Phase 5 - Contingency" at the end of the scope \(after Phase 4 where the template has one\) and put the catalog item "Project Contingency" in it \(1 Lump Sum at \$1\.00 cost and \$1\.00 price\) with the quantity formula \{Contingency Base\} \* \{Contingency Rate\} \/ 100; then set the job parameters Contingency Rate = 8 and Contingency Base = 4120\.79: \$329\.66, at cost\.\n   Each option carries its own share, so the contingency follows what the customer picks: in each choice group add "Project Contingency" \(Lump Sum, \$1\.00 cost and price, no formula\) with the quantity Flooring — LVP 430\.36; Flooring — Epoxy 423\.60; Ceiling paint 223\.10\.\n   Unused contingency is credited at closeout\.$/m);
+  assert.match(steps, /^3\. Contingency at 8%: The walls are skimmed to the concrete, so hidden conditions are likely\.\n   At the end of Phase 1 - General Requirements \(the main scope group where the template has no Phase 1\), add the catalog item "Project Contingency" \(1 Lump Sum at \$1\.00 cost and \$1\.00 price\) with the quantity formula \{Contingency Base\} \* \{Contingency Rate\} \/ 100; then set the job parameters Contingency Rate = 8 and Contingency Base = 4120\.79: \$329\.66, at cost\. No Phase 5\.\n   Each option carries its own share, so the contingency follows what the customer picks: in each choice group add "Project Contingency" \(Lump Sum, \$1\.00 cost and price, no formula\) with the quantity Flooring — LVP 430\.36; Flooring — Epoxy 423\.60; Ceiling paint 223\.10\.\n   Unused contingency is credited at closeout\.$/m);
   assert.match(steps, /^4\. Selection groups/m);
   assert.match(steps, /leaves out 1 flagged item still open, to add or create on the job and price \(step 6\)/);
   assert.match(steps, /^Base scope: [^\n]* · 1 line to price by hand — leaves out/m, 'the Permit, not the tracking line');

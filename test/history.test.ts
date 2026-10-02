@@ -226,7 +226,7 @@ const ev = (quote: string) => [{ source: 'Robert Switzer, 2026-07-23', quote }];
 const NO_CATALOG = { kind: 'none', id: null, quantity: null, basis: '', sectionGroupId: null };
 const DRAFT = {
   summary: 'Basement refresh with a flooring choice.',
-  scopeOfWork: 'Paint and floor.',
+  scopeTitle: 'Basement Finish', optionPlaces: [], scopeOfWork: 'Paint and floor.',
   lines: [
     { lineId: '22PLhtLxcz9S', quantity: 24, basis: 'two painters', evidence: ev('painting'), option: null, confidence: 'low', lookBack: ['paint sub', 'Painting'] },
     { lineId: '22PLhsr2Yx55', quantity: 706, basis: 'epoxy by the sub', evidence: ev('Epoxy Flooring'), option: 'Flooring — Epoxy', confidence: 'medium', lookBack: ['epoxy', 'floor coating'] },
@@ -1058,7 +1058,7 @@ test('lesson 3: an open item is a choice, so "pick one" stays pick one, and a lo
   assert.deepEqual(flooring.choices.map((c) => [c.name, c.open]), [['LVP', []], ['Epoxy', ['Epoxy floor coating by sub']]]);
   const steps = draftSteps(both);
   assert.match(steps, /Option "Flooring", one choice required:\n   LVP: .*\n   Epoxy: 1 open item not priced yet \("Epoxy floor coating by sub"\)/);
-  assert.match(steps, /- "Flooring", one choice required: LVP: Flooring - Sub · Epoxy: "Epoxy floor coating by sub" \(open item, below\)/);
+  assert.match(steps, /- "Flooring" \(in the phase of its first line\), one choice required: LVP: Flooring - Sub · Epoxy: "Epoxy floor coating by sub" \(open item, below\)/);
   assert.match(steps, /Flooring — Epoxy 0\.00 \(raise it by 8% of the open item's cost once it is priced\)/);
   assert.deepEqual(optionFlags(both.totals.options), []);
 

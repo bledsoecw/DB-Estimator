@@ -17,6 +17,10 @@ import { STRUCTURAL_GROUPS, groupPath } from './templates.ts';
 import type { JobEvidence } from './evidence.ts';
 import { parseOption, type Draft, type DraftGap, type DraftLine, type FoundLine, type GapProposals, type OptionChoice, type OptionGroup, type TemplatePlan, type Totals } from './draft.ts';
 import { CONTINGENCY_CONDITION_LABELS, CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
+import { scopeGroupName } from './build.ts';
+
+/** Where the base contingency line goes (Carl, 2026-10-02): no Phase 5. */
+const BASE_CONTINGENCY_HOME = 'Phase 1 - General Requirements';
 import { changesText, reviseCommand } from './revise.ts';
 import type { HistoryFinding } from './prompt.ts';
 import { CHECKS_CSS, borrowedLines, doubleCounts, flagsHtml, sortFlags, uninstalledMaterials, unitConflictFlag, type CheckLine, type LaborUse, type MaterialUse, type ReviewFlag } from './checks.ts';
@@ -279,19 +283,19 @@ export function draftSteps(d: Draft): string {
     const c = d.contingency;
     const because = c.conditions.length ? ` (${c.conditions.map((x) => CONTINGENCY_CONDITION_LABELS[x]).join('; ')})` : '';
     out.push(`${step}. Contingency at ${c.rate}%${because}${c.why ? `: ${c.why}` : '.'}`);
+    // Carl, 2026-10-02: the base line sits at the end of Phase 1 - General Requirements; no Phase 5.
     if (c.line) {
       out.push(
-        `   Keep ${[...c.line.group, CONTINGENCY_LINE].join(' › ')} from "${c.line.templateName}".` +
+        `   Move ${[...c.line.group, CONTINGENCY_LINE].join(' › ')} to the end of ${BASE_CONTINGENCY_HOME} and delete the "${c.line.group.at(-1) ?? CONTINGENCY_GROUP}" group: no Phase 5.` +
           ` Set the job parameters ${CONTINGENCY_PARAMETERS.rate} = ${c.rate} and ${CONTINGENCY_PARAMETERS.base} = ${parameterDollars(c.base)}` +
-          ` (the budget's cost total before this line): the line comes to ${formatMoney(c.amount)}, at cost.`,
+          ` (the base scope's cost before this line): the line comes to ${formatMoney(c.amount)}, at cost.`,
       );
     } else {
       out.push(
-        `   No chosen template carries the contingency group yet. On the job's budget, add a group "${CONTINGENCY_GROUP}" at the end of the scope` +
-          ` (after Phase 4 where the template has one) and put the catalog item` +
-          ` "${CONTINGENCY_LINE}" in it (1 Lump Sum at $1.00 cost and $1.00 price) with the quantity formula ${CONTINGENCY_FORMULA};` +
+        `   At the end of ${BASE_CONTINGENCY_HOME} (the main scope group where the template has no Phase 1), add the catalog item` +
+          ` "${CONTINGENCY_LINE}" (1 Lump Sum at $1.00 cost and $1.00 price) with the quantity formula ${CONTINGENCY_FORMULA};` +
           ` then set the job parameters ${CONTINGENCY_PARAMETERS.rate} = ${c.rate} and ${CONTINGENCY_PARAMETERS.base} = ${parameterDollars(c.base)}:` +
-          ` ${formatMoney(c.amount)}, at cost.`,
+          ` ${formatMoney(c.amount)}, at cost. No Phase 5.`,
       );
     }
     if (c.options.length) {
@@ -305,8 +309,10 @@ export function draftSteps(d: Draft): string {
   }
   if (d.totals.options.length) {
     step++;
-    out.push(`${step}. Selection groups, so the customer picks on the estimate:`);
+    out.push(`${step}. Selection groups, so the customer picks on the estimate, each in the section of its work:`);
     for (const o of d.totals.options) {
+      const at = d.optionPlaces?.find((p) => p.group.toLowerCase() === o.group.toLowerCase())?.placeIn;
+      const where = at ? ` (in ${at.groupPath.slice(1).join(' › ') || at.groupPath.join(' › ')})` : ' (in the phase of its first line)';
       const linesOf = (choice: string): string =>
         [
           ...d.lines
@@ -316,15 +322,17 @@ export function draftSteps(d: Draft): string {
           ...(o.choices.find((c) => c.name === choice)?.open ?? []).map((scope) => `"${scope}" (open item, below)`),
         ].join('; ');
       if (o.required) {
-        out.push(`   - "${o.group}", one choice required: ${o.choices.map((c) => `${c.name}: ${linesOf(c.name)}`).join(' · ')}`);
+        out.push(`   - "${o.group}"${where}, one choice required: ${o.choices.map((c) => `${c.name}: ${linesOf(c.name)}`).join(' · ')}`);
       } else {
-        out.push(`   - "${o.group}", optional add-on (may pick none): ${linesOf(o.choices[0]!.name)}`);
+        out.push(`   - "${o.group}"${where}, optional add-on (may pick none): ${linesOf(o.choices[0]!.name)}`);
       }
     }
   }
   if (d.scopeOfWork) {
     step++;
-    out.push(`${step}. General Description:`);
+    out.push(d.scopeTitle
+      ? `${step}. Name the main scope group "${scopeGroupName(d.scopeTitle)}" and give it this description:`
+      : `${step}. The main scope group's description:`);
     for (const line of d.scopeOfWork.split('\n')) out.push(`   ${line}`);
   }
   if (open.length) {
@@ -501,6 +509,11 @@ export function draftJson(d: Draft): unknown {
     pickSummary: d.pickSummary,
     noFit: d.noFit,
     scopeOfWork: d.scopeOfWork,
+    scopeTitle: d.scopeTitle,
+    optionPlaces: d.optionPlaces.map((o) => ({
+      group: o.group,
+      placeIn: o.placeIn ? { template: o.placeIn.templateName, group: o.placeIn.groupPath.join(' › '), groupId: o.placeIn.groupId } : null,
+    })),
     templates: d.plans.map((p) => ({
       id: p.template.id,
       name: p.template.name,
@@ -796,7 +809,7 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
     <table class="math">
       <tr><td>line</td><td>${d.contingency.line
         ? `${esc([...d.contingency.line.group, CONTINGENCY_LINE].join(' › '))} in ${esc(d.contingency.line.templateName)}`
-        : `not in the chosen templates yet: add "${esc(CONTINGENCY_GROUP)}" after Phase 4 with the catalog item "${esc(CONTINGENCY_LINE)}" and the quantity formula <code>${esc(CONTINGENCY_FORMULA)}</code>`}</td></tr>
+        : `not in the chosen templates yet: add the catalog item "${esc(CONTINGENCY_LINE)}" at the end of ${esc(BASE_CONTINGENCY_HOME)} with the quantity formula <code>${esc(CONTINGENCY_FORMULA)}</code>`}${d.contingency.line ? `, moved to the end of ${esc(BASE_CONTINGENCY_HOME)}; no Phase 5` : ''}</td></tr>
       <tr><td>${esc(CONTINGENCY_PARAMETERS.rate)}</td><td>${d.contingency.rate}</td></tr>
       <tr><td>${esc(CONTINGENCY_PARAMETERS.base)}</td><td>${esc(parameterDollars(d.contingency.base))}${d.contingency.options.length ? ', the base scope only' : ''}</td></tr>
       ${d.contingency.options.map((o) => `<tr><td>${esc(optionLabel(o))}</td><td>+${formatMoney(o.amount)} contingency, its own line inside the choice (${esc(parameterDollars(o.cost))} of cost)</td></tr>`).join('\n      ')}
@@ -804,7 +817,7 @@ export function renderDraft(e: JobEvidence, d: Draft, opts: RenderOptions = {}):
   </section>` : ''}
 
   ${d.scopeOfWork ? `<section class="scope">
-    <h2>General Description</h2>
+    <h2>${d.scopeTitle ? `${esc(scopeGroupName(d.scopeTitle))}: its description` : 'The scope group\'s description'}</h2>
     <blockquote>${esc(d.scopeOfWork).replace(/\n/g, '<br>')}</blockquote>
   </section>` : ''}
 

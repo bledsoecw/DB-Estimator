@@ -16,7 +16,7 @@ import type { Template } from '../src/draft/templates.ts';
 import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE } from '../src/draft/contingency.ts';
 import {
   DRAFT_TAG, GENERAL_DESCRIPTION, OPTIONS_GROUP,
-  countItems, deleteMutation, gateBuild, groupMutation, parametersMutation, parseMoney, planBuild, planText, pricedIdsOf, verifyBuild,
+  countItems, deleteMutation, gateBuild, groupMutation, parametersMutation, parseMoney, planBuild, planLines, planText, pricedIdsOf, selectionGroups, verifyBuild,
   type BuildPlan, type BuildRecord, type DraftFile, type NewGroup, type NewItem,
 } from '../src/draft/build.ts';
 import { askYesNo, namesFromFixture, parseBuildArgs, planFile, type BuildFixture } from '../src/build-cli.ts';
@@ -42,18 +42,25 @@ const sub = (g: NewGroup, name: string): NewGroup => {
 };
 const items = (g: NewGroup): NewItem[] => g.lineItems.filter((li): li is NewItem => li._type === 'costItem');
 const allItems = (g: NewGroup): NewItem[] => g.lineItems.flatMap((li) => (li._type === 'costGroup' ? allItems(li) : [li]));
+/** The selection group called `name`, wherever it sits. */
+const sel = (p: BuildPlan, name: string): NewGroup => {
+  const hit = selectionGroups(p.groups).find((g) => g.name === name);
+  if (!hit) throw new Error(`no selection "${name}" (has ${selectionGroups(p.groups).map((g) => g.name).join(', ')})`);
+  return hit;
+};
 const top = (p: BuildPlan, name: string): NewGroup => {
   const g = p.groups.find((x) => x.name === name);
   if (!g) throw new Error(`no top-level group "${name}" (has ${p.groups.map((x) => x.name).join(', ')})`);
   return g;
 };
 
-test('the plan: the templates\' scope groups first, then the options, then the contingency; every line counted once', () => {
+test('the plan: one group per template, selections inside their sections, no options or contingency group; every line counted once', () => {
   const p = plan();
-  assert.deepEqual(p.groups.map((g) => g.name), ['FINISHES', 'GENERAL REQUIREMENTS', OPTIONS_GROUP, CONTINGENCY_GROUP]);
+  // Carl, 2026-10-02: no CUSTOMER OPTIONS group and no Phase 5.
+  assert.deepEqual(p.groups.map((g) => g.name), ['FINISHES', 'GENERAL REQUIREMENTS']);
   assert.deepEqual(p.counts, { lines: 11, found: 3, created: 3, options: 3 });
-  // 11 kept + 3 found + 3 created + the General Description + the contingency line + a contingency share in each of the 5 choices.
-  assert.equal(p.groups.reduce((n, g) => n + countItems(g), 0), 24);
+  // 11 kept + 3 found + 3 created + the base contingency line + a contingency share in each of the 5 choices.
+  assert.equal(p.groups.reduce((n, g) => n + countItems(g), 0), 23);
   assert.equal(p.pass, 2);
   assert.equal(p.jobId, '22PDZbwDdZfq');
   assert.deepEqual(p.notes, []);
@@ -77,27 +84,20 @@ test('a kept line goes into its template section, in template order, as a job li
   assert.equal(items(sub(gr, 'Project/Site Management'))[0]!.quantity, 8);
 });
 
-test('the General Description is the first line of the primary\'s group and carries the scope text at $0', () => {
-  const fin = top(plan(), 'FINISHES');
-  const first = fin.lineItems[0]!;
-  assert.equal(first._type, 'costItem');
-  const gd = first as NewItem;
-  assert.equal(gd.name, GENERAL_DESCRIPTION);
-  assert.equal(gd.organizationCostItemId, fx.names.generalDescriptionItemId);
-  assert.equal(gd.description, fx.draft.scopeOfWork);
-  assert.equal(gd.unitCost, 0);
-  assert.equal(gd.unitPrice, 0);
-  assert.equal(gd.unitId, UNITS['Lump Sum']);
-  assert.equal(gd.costTypeId, TYPES['Other']);
-  assert.equal(gd.costCodeId, CODES['General Requirements']);
-});
-
-test('without the General Description item the scope text goes on the group', () => {
-  const p = planBuild(fx.draft, templates, { ...names, generalDescriptionItemId: null }, priced);
-  const fin = top(p, 'FINISHES');
-  assert.equal(fin.description, fx.draft.scopeOfWork);
-  assert.ok(!allItems(fin).some((i) => i.name === GENERAL_DESCRIPTION));
-  assert.ok(p.notes.some((n) => /General Description/.test(n)));
+test('the job\'s description goes on the main scope group, named for the job; no General Description line', () => {
+  const p = plan();
+  assert.equal(top(p, 'FINISHES').description, fx.draft.scopeOfWork);
+  assert.ok(!p.groups.flatMap(allItems).some((i) => i.name === GENERAL_DESCRIPTION));
+  // Carl, 2026-10-02 (the NEW POOL HOUSE SCOPE budget): the top reads what the job is.
+  const named = plan({ ...fx.draft, scopeTitle: 'Basement finish' });
+  assert.deepEqual(named.groups.map((g) => g.name), ['BASEMENT FINISH SCOPE', 'GENERAL REQUIREMENTS']);
+  assert.equal(named.groups[0]!.description, fx.draft.scopeOfWork);
+  assert.equal(plan({ ...fx.draft, scopeTitle: 'Pool house scope' }).groups[0]!.name, 'POOL HOUSE SCOPE');
+  // Renamed, it still holds the template's own sections, in the template's order, not a second scope group.
+  assert.deepEqual(
+    named.groups[0]!.lineItems.filter((li) => li._type === 'costGroup').map((li) => li.name),
+    ['Flooring', 'Drywall/Plaster', 'Paint'],
+  );
 });
 
 test('a found line is built once, priced from today\'s catalog item, in the section the model named or the primary\'s group', () => {
@@ -115,7 +115,7 @@ test('a found line is built once, priced from today\'s catalog item, in the sect
   assert.equal(crew.unitPrice, 100);
   assert.equal(crew.costCodeId, CODES['General Requirements']);
   // With an option: the choice group, priced from the item the template line points at (Siding is the item's code).
-  const framed = sub(sub(top(p, OPTIONS_GROUP), 'Walls'), 'Framed false walls');
+  const framed = sub(sel(p, 'Walls'), 'Framed false walls');
   const batt = items(framed).find((i) => i.name === 'Insulation - Batt')!;
   assert.equal(batt.organizationCostItemId, '22PL8kUmtfhn');
   assert.equal(batt.quantity, 909);
@@ -135,10 +135,19 @@ test('a found line whose section is in no template that was read lands in the pr
   assert.ok(p.notes.some((n) => /not-read .*X-Division 06.*no template that was read/.test(n)), p.notes.join('\n'));
 });
 
-test('options: two choices make one required pick with the first selected; one choice is an add-on nobody has picked', () => {
-  const opts = top(plan(), OPTIONS_GROUP);
-  assert.deepEqual(opts.lineItems.map((li) => li.name), ['Flooring', 'Walls', 'Ceiling paint']);
-  const flooring = sub(opts, 'Flooring');
+test('options: each selection sits in the section of its work; two choices make one required pick, one choice an add-on', () => {
+  const p = plan();
+  assert.deepEqual(selectionGroups(p.groups).map((g) => g.name), ['Flooring', 'Walls', 'Ceiling paint']);
+  // No section named in this draft: each goes where its first line's work is.
+  const fin = top(p, 'FINISHES');
+  assert.ok(sub(fin, 'Flooring').lineItems.includes(sel(p, 'Flooring')));
+  assert.ok(sub(fin, 'Drywall/Plaster').lineItems.includes(sel(p, 'Walls')));
+  assert.ok(sub(fin, 'Paint').lineItems.includes(sel(p, 'Ceiling paint')));
+  // A section the draft names wins.
+  const placed = plan({ ...fx.draft, optionPlaces: [{ group: 'Walls', placeIn: { template: 'X-Division 09 Finishes', group: 'FINISHES › Paint', groupId: '22PLCchBuFMY' } }] });
+  assert.ok(sub(top(placed, 'FINISHES'), 'Paint').lineItems.includes(sel(placed, 'Walls')));
+  assert.ok(!top(placed, 'FINISHES').lineItems.some((li) => li.name === 'Drywall/Plaster'), 'no empty section is made');
+  const flooring = sel(p, 'Flooring');
   assert.equal(flooring.minSelectionsRequired, 1);
   assert.equal(flooring.maxSelectionsAllowed, 1);
   assert.equal(flooring.showChildDeltas, true);
@@ -146,7 +155,7 @@ test('options: two choices make one required pick with the first selected; one c
   // Each choice ends with its own contingency share (tested on its own below).
   assert.deepEqual(items(sub(flooring, 'LVP')).map((i) => [i.name, i.quantity]), [['Flooring', 650], ['Flooring Labor', 20], [CONTINGENCY_LINE, 348]]);
   assert.deepEqual(items(sub(flooring, 'Epoxy')).map((i) => [i.name, i.quantity, i.costTypeId]), [['Flooring - Sub', 650, TYPES['Subcontractor']], [CONTINGENCY_LINE, 390, TYPES['Other']]]);
-  const ceiling = sub(opts, 'Ceiling paint');
+  const ceiling = sel(p, 'Ceiling paint');
   assert.equal(ceiling.minSelectionsRequired, 0);
   assert.equal(ceiling.maxSelectionsAllowed, 1);
   assert.deepEqual(ceiling.lineItems.map((li) => [li.name, (li as NewGroup).isSelected]), [['Ceiling paint', false]]);
@@ -154,7 +163,7 @@ test('options: two choices make one required pick with the first selected; one c
 
 test('open items are created on the job, tagged, priced from history or the ballpark; a catalog match at quantity 0', () => {
   const p = plan();
-  const walls = sub(top(p, OPTIONS_GROUP), 'Walls');
+  const walls = sel(p, 'Walls');
   const framed = items(sub(walls, 'Framed false walls'));
   // The catalog match: the item, no count yet, so 0 — a null quantity would bill one unit.
   const elec = framed.find((i) => i.name === `Electrical Labor ${DRAFT_TAG}`)!;
@@ -182,7 +191,7 @@ test('open items are created on the job, tagged, priced from history or the ball
   assert.equal(paint[0]!.unitPrice, 0.6525);
   assert.match(paint[0]!.description!, /regional ballpark, NOT DB pricing/);
   // The sections named for a line with an option do not pull it out of its choice group.
-  assert.ok(!allItems(top(p, 'FINISHES')).some((i) => i.name.endsWith(DRAFT_TAG)));
+  assert.deepEqual(planLines(p.groups).filter((x) => !x.inOption && x.item.name.endsWith(DRAFT_TAG)), []);
 });
 
 test('a gap the catalog resolved is not created again; a gap with no quantity is created at 0 and says so', () => {
@@ -204,11 +213,12 @@ test('an open item without a section and without an option goes into the primary
   assert.ok(line);
 });
 
-test('the contingency is on the base scope AS BUILT, with the formula and the parameters; the group is last', () => {
+test('the contingency is on the base scope AS BUILT, with the formula and the parameters, in the scope group; no Phase 5', () => {
   const p = plan();
-  const c = p.groups.at(-1)!;
-  assert.equal(c.name, CONTINGENCY_GROUP);
-  const line = items(c)[0]!;
+  assert.ok(!p.groups.some((g) => g.name === CONTINGENCY_GROUP));
+  // This template has no Phase 1, so the base line ends the main scope group (the Phase 1 case is tested below).
+  assert.equal(p.contingencyGroup, 'FINISHES');
+  const line = items(top(p, 'FINISHES')).at(-1)!;
   assert.equal(line.name, CONTINGENCY_LINE);
   assert.equal(line.organizationCostItemId, fx.names.contingencyItemId);
   // FINISHES $2,280 + GENERAL REQUIREMENTS $440 of cost as built (the draft's own base figure, $2,380, is not used), at 8%.
@@ -234,8 +244,8 @@ test('each option carries its own contingency share inside its choice group, so 
     { group: 'Walls', choice: 'Paint the block', cost: 409.05, amount: 32.72 },
     { group: 'Ceiling paint', choice: 'Ceiling paint', cost: 2567.5, amount: 205.4 },
   ]);
-  const opts = top(p, OPTIONS_GROUP);
-  const lvp = items(sub(sub(opts, 'Flooring'), 'LVP'));
+  const opts = selectionGroups(p.groups);
+  const lvp = items(sub(sel(p, 'Flooring'), 'LVP'));
   const share = lvp.at(-1)!;
   assert.equal(share.name, CONTINGENCY_LINE);
   assert.equal(share.quantity, 348);
@@ -245,8 +255,8 @@ test('each option carries its own contingency share inside its choice group, so 
   assert.equal(share.organizationCostItemId, fx.names.contingencyItemId);
   assert.match(share.description!, /8% on this option.*comes with the option when the customer takes it/);
   // Every choice has exactly one share, after its own lines; the base line is the only one with the formula.
-  for (const og of opts.lineItems) {
-    for (const ch of (og as NewGroup).lineItems) {
+  for (const og of opts) {
+    for (const ch of og.lineItems) {
       const shares = items(ch as NewGroup).filter((i) => i.name === CONTINGENCY_LINE);
       assert.equal(shares.length, 1, `${og.name} › ${ch.name}`);
       assert.equal(items(ch as NewGroup).at(-1), shares[0]);
@@ -308,13 +318,13 @@ test('a draft with no fit, or a line in no template that was read, is refused or
 
 test('planText reads as the tree the rep will see', () => {
   const text = planText(plan());
-  assert.match(text, /^Build pass 2 of 25-0000 Kay Oss_Test Job 1 into its budget: 4 top-level groups, 11 template lines, 3 from the catalog, 3 created, 3 option groups\./);
-  assert.match(text, /\nFINISHES\n  - General Description: qty — · \$0 \/ \$0\n  Paint\n    - Primer: 4 · \$30 \/ \$43\.5\n/);
-  assert.match(text, /\n  Flooring \[select: min 1, max 1\]\n    LVP \[selected\]\n/);
-  assert.match(text, /\n  Ceiling paint \[select: min 0, max 1\]\n/);
+  assert.match(text, /^Build pass 2 of 25-0000 Kay Oss_Test Job 1 into its budget: 2 top-level groups, 11 template lines, 3 from the catalog, 3 created, 3 option groups\./);
+  assert.match(text, /\nFINISHES\n  Flooring\n    Flooring \[select: min 1, max 1\]\n      LVP \[selected\]\n        - Flooring: 650 · \$5 \/ \$7\.25\n/);
+  assert.match(text, /\n  Paint\n    - Primer: 4 · \$30 \/ \$43\.5\n/);
+  assert.match(text, /\n    Ceiling paint \[select: min 0, max 1\]\n/);
   assert.match(text, /- Framing lumber for the false walls \(DRAFT - Carl confirms\): 120 · \$3\.55 \/ \$5\.92 · no catalog item/);
   assert.match(text, /- Project Contingency: 217\.6 = \{Contingency Base\} \* \{Contingency Rate\} \/ 100 · \$1 \/ \$1/);
-  assert.match(text, /\n      - Project Contingency: 348 · \$1 \/ \$1\n/);
+  assert.match(text, /\n        - Project Contingency: 348 · \$1 \/ \$1\n/);
   assert.match(text, /\nContingency 8%: \$217\.60 on the \$2720\.00 base scope; inside each option: Flooring — LVP \+\$348\.00, Flooring — Epoxy \+\$390\.00, Walls — Framed false walls \+\$208\.86, Walls — Paint the block \+\$32\.72, Ceiling paint — Ceiling paint \+\$205\.40\n/);
   assert.match(text, /\nJob parameters: Contingency Rate = 8, Contingency Base = 2720\n/);
   assert.match(text, /\nCHECK BEFORE --apply \(0 problems, 2 to check\):\n  1\. check: 1 line has no count yet and cost nothing until the rep sets it: "Electrical Labor"\.\n  2\. check: 3 lines were created for Carl to confirm/);
@@ -322,19 +332,22 @@ test('planText reads as the tree the rep will see', () => {
 
 test('groupMutation: jobId and the group at the root with no discriminator, nested _type kept, nothing undefined, the created ids asked back', () => {
   const p = plan();
-  const m = groupMutation('job1', top(p, OPTIONS_GROUP)) as { createCostGroup: { $: Record<string, unknown>; createdCostGroup: Record<string, unknown> } };
+  const m = groupMutation('job1', top(p, 'FINISHES')) as { createCostGroup: { $: Record<string, unknown>; createdCostGroup: Record<string, unknown> } };
   const $ = m.createCostGroup.$;
   assert.equal($['jobId'], 'job1');
-  assert.equal($['name'], OPTIONS_GROUP);
+  assert.equal($['name'], 'FINISHES');
   assert.ok(!('_type' in $));
   const first = ($['lineItems'] as Record<string, unknown>[])[0]!;
   assert.equal(first['_type'], 'costGroup');
-  assert.equal(first['minSelectionsRequired'], 1);
+  assert.equal(first['name'], 'Flooring');
+  // The selection is nested inside its section, flags and all.
+  const selection = (first['lineItems'] as Record<string, unknown>[])[0]!;
+  assert.equal(selection['minSelectionsRequired'], 1);
   assert.ok(!JSON.stringify(m).includes('undefined'));
   assert.deepEqual(m.createCostGroup.createdCostGroup, { id: {}, name: {}, descendentCostItems: { $: { size: 100 }, count: {} } });
   // A kept line carries exactly what a job line needs.
   const fin = groupMutation('job1', top(p, 'FINISHES')) as { createCostGroup: { $: { lineItems: Record<string, unknown>[] } } };
-  const paint = (fin.createCostGroup.$.lineItems[1] as { lineItems: Record<string, unknown>[] }).lineItems[0]!;
+  const paint = (fin.createCostGroup.$.lineItems[2] as { lineItems: Record<string, unknown>[] }).lineItems[0]!;
   assert.deepEqual(Object.keys(paint).sort(), ['_type', 'costCodeId', 'costTypeId', 'description', 'name', 'organizationCostItemId', 'quantity', 'unitCost', 'unitId', 'unitPrice']);
 });
 
@@ -440,10 +453,8 @@ test('verifyBuild: every top-level group with as many lines as planned, the cont
   const ok = verifyBuild(p, built, params);
   assert.equal(ok.ok, true, ok.lines.join('\n'));
   assert.deepEqual(ok.lines, [
-    'ok: "FINISHES" with 5 lines',
+    'ok: "FINISHES" with 21 lines',
     'ok: "GENERAL REQUIREMENTS" with 2 lines',
-    'ok: "CUSTOMER OPTIONS" with 16 lines',
-    'ok: "Phase 5 - Contingency" with 1 line',
     'ok: "Project Contingency" at 217.6 on the base scope (cost $217.6)',
     'ok: 5 option shares inside the choices, $1184.98 in all',
     'ok: parameter Contingency Rate = 8',
@@ -453,7 +464,7 @@ test('verifyBuild: every top-level group with as many lines as planned, the cont
   const short: ApiBudget = { ...built, costItems: { count: built.costItems.count - 1, nodes: built.costItems.nodes.filter((i) => i.name !== 'Flooring Labor') } };
   const bad = verifyBuild(p, short, params);
   assert.equal(bad.ok, false);
-  assert.ok(bad.lines.includes('MISMATCH: "CUSTOMER OPTIONS" holds 15 lines, the plan 16'));
+  assert.ok(bad.lines.includes('MISMATCH: "FINISHES" holds 20 lines, the plan 21'));
   // The contingency lines without their quantity (what the API does to a formula alone), a parameter dropped.
   const noQty: ApiBudget = { ...built, costItems: { ...built.costItems, nodes: built.costItems.nodes.map((i) => (i.name === CONTINGENCY_LINE ? { ...i, quantity: null } : i)) } };
   const worse = verifyBuild(p, noQty, [{ name: 'Contingency Rate', value: 8 }]);
@@ -463,13 +474,13 @@ test('verifyBuild: every top-level group with as many lines as planned, the cont
   // A group missing altogether.
   const gone = verifyBuild(p, budgetWith(STRUCTURAL), params);
   assert.ok(gone.lines.includes('MISSING: "FINISHES" is not on the budget'));
-  assert.ok(gone.lines.includes(`MISSING: the "${CONTINGENCY_LINE}" line in "${CONTINGENCY_GROUP}"`));
+  assert.ok(gone.lines.includes(`MISSING: the "${CONTINGENCY_LINE}" line in "FINISHES"`));
 });
 
 test('planFile holds the exact mutations in the order they run: deletes, the parameters, the groups', () => {
   const p = plan();
   const f = planFile(p, [{ id: 'old', name: 'FINISHES' }], [{ name: 'Area', value: 1000 }], 'review/x-draft.json') as { mutations: Record<string, unknown>[]; counts: unknown; plan: string };
-  assert.deepEqual(f.mutations.map((m) => Object.keys(m).filter((k) => k !== 'note')[0]), ['deleteCostGroup', 'updateJob', 'createCostGroup', 'createCostGroup', 'createCostGroup', 'createCostGroup']);
+  assert.deepEqual(f.mutations.map((m) => Object.keys(m).filter((k) => k !== 'note')[0]), ['deleteCostGroup', 'updateJob', 'createCostGroup', 'createCostGroup']);
   assert.equal(f.mutations[0]!['note'], 'delete "FINISHES"');
   const u = f.mutations[1]!['updateJob'] as { $: { parameters: unknown[] } };
   assert.deepEqual(u.$.parameters, [{ name: 'Area', value: 1000 }, { name: 'Contingency Rate', value: 8 }, { name: 'Contingency Base', value: 2720 }]);
@@ -502,7 +513,9 @@ test('the first live build on 25-0000 (2026-10-01): what JobTread held afterward
   const built = (fx as unknown as { built: { budget: ApiBudget; parameters: { name: string; value: number }[]; groupIds: string[]; selection: { name: string; minSelectionsRequired: number | null; maxSelectionsAllowed: number | null; showChildDeltas: boolean; isSelected: boolean }[]; contingency: { quantity: number; cost: number; quantityFormula: string } } }).built;
   const p = plan();
   const tops = built.budget.costGroups.nodes.filter((g) => g.parentCostGroup === null).map((g) => g.name);
-  assert.deepEqual(tops, p.groups.map((g) => g.name));
+  // That day's layout: the options and the contingency each in a top-level group (both moved inside the scope 2026-10-02).
+  assert.deepEqual(tops, ['FINISHES', 'GENERAL REQUIREMENTS', OPTIONS_GROUP, CONTINGENCY_GROUP]);
+  assert.deepEqual(p.groups.map((g) => g.name), ['FINISHES', 'GENERAL REQUIREMENTS']);
   assert.equal(built.budget.costItems.count, 19);
   assert.equal(built.groupIds.length, 4);
   assert.deepEqual(built.parameters, [{ name: 'Contingency Rate', value: 8 }, { name: 'Contingency Base', value: 2380 }]);
@@ -531,7 +544,8 @@ test('the build page: the tree with quantities, prices and tags on a dry run; th
   const dry = renderBuildPage({ ...common, gate, plan: p });
   assert.match(dry, /<title>25-0000 Kay Oss_Test Job 1 — build dry run<\/title>/);
   assert.match(dry, /Dry run\. Nothing was written\./);
-  for (const name of ['FINISHES', 'GENERAL REQUIREMENTS', OPTIONS_GROUP, CONTINGENCY_GROUP]) assert.ok(dry.includes(`<h2>${name}</h2>`), name);
+  for (const name of ['FINISHES', 'GENERAL REQUIREMENTS']) assert.ok(dry.includes(`<h2>${name}</h2>`), name);
+  for (const name of [OPTIONS_GROUP, CONTINGENCY_GROUP]) assert.ok(!dry.includes(`<h2>${name}</h2>`), name);
   assert.match(dry, /<div class="name">Primer<\/div>/);
   assert.match(dry, /\$43\.50<div class="unit">cost \$30\.00<\/div>/);           // unit price and cost
   assert.match(dry, /\$174\.00<div class="unit">cost \$120\.00<\/div>/);         // 4 gallons extended
@@ -546,13 +560,11 @@ test('the build page: the tree with quantities, prices and tags on a dry run; th
   assert.match(dry, /<strong>Ceiling paint<\/strong>, optional add-on &mdash; \$3,928\.28 price, \$2,772\.90 cost \(incl\. \$205\.40 contingency\)<\/li>/);
   assert.match(dry, /npm run build-budget -- 22PDZbwDdZfq --draft review\/22PDZbwDdZfq-draft\.json --apply<\/pre>/);
   assert.ok(!dry.includes('Read back from JobTread'));
-  // Base price = the template groups and the contingency, not the options.
-  const basePrice = p.groups.filter((g) => g.name !== OPTIONS_GROUP).flatMap((g) => g.lineItems).length;
-  assert.ok(basePrice > 0);
+  // Base price = the template groups and the contingency, not the selections inside them.
   // FINISHES $3,913.50 + GENERAL REQUIREMENTS $800.00 + contingency $217.60; the options are not in it.
   assert.match(dry, /<span class="k">Base price<\/span><span class="v">\$4,931\.10<\/span>/);
   assert.match(dry, /<span class="k">Base cost<\/span><span class="v">\$2,937\.60<\/span>/);
-  assert.match(dry, /<span class="k">Lines<\/span><span class="v">24<\/span>/);
+  assert.match(dry, /<span class="k">Lines<\/span><span class="v">23<\/span>/);
 
   const refused = gateBuild({ job: REAL_JOB, draft: fx.draft, budget: budgetWith(STRUCTURAL), record: null, live: false, replace: false });
   const no = renderBuildPage({ ...common, job: REAL_JOB, gate: refused, plan: null });
@@ -576,7 +588,7 @@ test('the unit name rides on the plan for the page and never goes on the wire', 
   const primer = allItems(top(p, 'FINISHES')).find((i) => i.name === 'Primer')!;
   assert.equal(primer.unitName, 'Gallons');
   assert.ok(!JSON.stringify(groupMutation('job1', top(p, 'FINISHES'))).includes('unitName'));
-  assert.ok(!JSON.stringify(groupMutation('job1', top(p, OPTIONS_GROUP))).includes('unitName'));
+  assert.ok(!JSON.stringify(groupMutation('job1', top(p, 'GENERAL REQUIREMENTS'))).includes('unitName'));
 });
 
 // ---- the checks (checks.ts) ----------------------------------------------------------------
@@ -655,12 +667,12 @@ test('a line counted in one unit and priced per another is a problem with the do
   const p = planBuild(counted, tpl, names, priced);
   const conflict = p.flags.find((f) => f.kind === 'unit-conflict')!;
   assert.equal(conflict.severity, 'problem');
-  assert.equal(conflict.text, 'CUSTOMER OPTIONS › Walls › Framed false walls: "Drywall Brd- Mat" is counted in Each, but its catalog price ($1.02) is per Square Foot. 21 Each at $1.02 comes to $21.42. Set the count in the unit the price is really per, and fix whichever unit is wrong in the catalog.');
+  assert.equal(conflict.text, 'FINISHES › Drywall/Plaster › Walls › Framed false walls: "Drywall Brd- Mat" is counted in Each, but its catalog price ($1.02) is per Square Foot. 21 Each at $1.02 comes to $21.42. Set the count in the unit the price is really per, and fix whichever unit is wrong in the catalog.');
   assert.ok(!p.flags.some((f) => f.kind === 'unit'), 'the draft and the line agree on Each');
-  const item = allItems(top(p, OPTIONS_GROUP)).find((i) => i.name === 'Drywall Brd- Mat')!;
+  const item = allItems(sel(p, 'Walls')).find((i) => i.name === 'Drywall Brd- Mat')!;
   assert.equal(item.unitId, UNITS['Each']);
   // Page-only fields never go on the wire.
-  const wire = JSON.stringify(groupMutation('job1', top(p, OPTIONS_GROUP)));
+  const wire = JSON.stringify(groupMutation('job1', top(p, 'FINISHES')));
   for (const k of ['draftUnit', 'pricedUnit', 'costTypeName', 'unitName']) assert.ok(!wire.includes(k), k);
 
   // After the catalog is fixed (the template line now says Square Foot), an old draft that counted sheets is caught.
@@ -668,7 +680,7 @@ test('a line counted in one unit and priced per another is a problem with the do
   const q = planBuild(counted, new Map([...templates, [fin.id, fixed]]), names, priced);
   const stale = q.flags.find((f) => f.kind === 'unit')!;
   assert.equal(stale.severity, 'problem');
-  assert.equal(stale.text, 'CUSTOMER OPTIONS › Walls › Framed false walls: the draft counted "Drywall Brd- Mat" as 21 Each, but the line is now in Square Foot. Built as it is, that is 21 Square Foot = $21.42. Draft it again, or set the quantity in Square Foot on the job.');
+  assert.equal(stale.text, 'FINISHES › Drywall/Plaster › Walls › Framed false walls: the draft counted "Drywall Brd- Mat" as 21 Each, but the line is now in Square Foot. Built as it is, that is 21 Square Foot = $21.42. Draft it again, or set the quantity in Square Foot on the job.');
   assert.ok(!q.flags.some((f) => f.kind === 'unit-conflict'));
 });
 

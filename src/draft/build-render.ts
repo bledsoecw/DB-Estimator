@@ -12,7 +12,7 @@
 import { CSS } from '../report.ts';
 import { EXTRA_CSS } from './render.ts';
 import { CONTINGENCY_GROUP, CONTINGENCY_LINE } from './contingency.ts';
-import { DRAFT_TAG, OPTIONS_GROUP, countItems, type BuildPlan, type BuildRecord, type Gate, type NewGroup, type NewItem } from './build.ts';
+import { DRAFT_TAG, OPTIONS_GROUP, countItems, selectionGroups, type BuildPlan, type BuildRecord, type Gate, type NewGroup, type NewItem } from './build.ts';
 import { CHECKS_CSS, flagsHtml, type ReviewFlag } from './checks.ts';
 
 /** Which checks a row is named in, numbered as the box numbers them. */
@@ -136,8 +136,15 @@ function groupSection(g: NewGroup, record: BuildRecord | null, marks: Marks): st
 export function renderBuildPage(x: BuildPageInput): string {
   const { job, plan, gate } = x;
   const mode = x.applied ? (x.applied.verify.ok ? 'built' : 'not verified') : gate.ok ? 'dry run' : 'not built';
-  const base = plan ? plan.groups.filter((g) => g.name !== OPTIONS_GROUP).map(totals).reduce((a, b) => ({ cost: a.cost + b.cost, price: a.price + b.price }), { cost: 0, price: 0 }) : null;
-  const options = plan?.groups.find((g) => g.name === OPTIONS_GROUP);
+  // Selections sit inside the phases now (2026-10-02); the base is everything outside them.
+  const selections = plan ? selectionGroups(plan.groups) : [];
+  const sum = (ts: { cost: number; price: number }[]): { cost: number; price: number } =>
+    ts.reduce((a, b) => ({ cost: a.cost + b.cost, price: a.price + b.price }), { cost: 0, price: 0 });
+  const base = plan ? (() => {
+    const all = sum(plan.groups.map(totals));
+    const opt = sum(selections.map(totals));
+    return { cost: all.cost - opt.cost, price: all.price - opt.price };
+  })() : null;
   const title = `${job.name} — build ${mode}`;
   const draftId = plan?.jobId ?? null;
 
@@ -183,7 +190,7 @@ export function renderBuildPage(x: BuildPageInput): string {
     <h2>What gets built</h2>
     <p>${plan.counts.lines} template line${plan.counts.lines === 1 ? '' : 's'}, ${plan.counts.found} from the catalog, ${plan.counts.created} created on the job, ${plan.counts.options} option group${plan.counts.options === 1 ? '' : 's'}${
       plan.contingency ? `. Contingency ${plan.contingency.rate}%: ${usd(plan.contingency.amount)} on the ${usd(plan.contingency.base)} base scope${plan.contingency.shares.length ? ', and each option carries its own share inside its choice, so the budget\'s contingency follows what the customer picks' : ''}` : ''}. Base price is the template groups and the base contingency; each option is priced on its own below, its share included.</p>
-    ${options ? `<ul>${options.lineItems.filter((li): li is NewGroup => li._type === 'costGroup').map((o) => {
+    ${selections.length ? `<ul>${selections.map((o) => {
       const choices = o.lineItems.filter((li): li is NewGroup => li._type === 'costGroup');
       const share = (c: NewGroup): string => {
         const s = plan.contingency?.shares.find((x) => x.group === o.name && x.choice === c.name);

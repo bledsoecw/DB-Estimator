@@ -376,8 +376,10 @@ is never written to the price book.
 under DB's policy (5% in place, 8% when anything moves, 10% for additions,
 structural or hidden conditions) and the page shows the amount on the base
 cost, at cost, with the two job parameters to type: `Contingency Rate` and
-`Contingency Base`. The seven phased construction templates now carry a
-`Phase 5 - Contingency › Project Contingency` line for it; `npm run
+`Contingency Base`. The build puts the base line at the end of Phase 1 -
+General Requirements and a share in each customer choice; there is no Phase
+5 on the job (Carl, 2026-10-02). The seven phased construction templates
+still carry a `Phase 5 - Contingency › Project Contingency` line; `npm run
 contingency` is the script that put it there and would put it in a new
 template (dry run by default; `--apply` needs a separate
 `JOBTREAD_WRITE_GRANT_KEY`). `docs/contingency.md` records what changed.

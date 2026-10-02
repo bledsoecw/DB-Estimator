@@ -6,11 +6,14 @@
  * JobTread" steps on the page, done by the code. It reads the draft JSON the
  * drafter wrote (review/<jobId>-draft.json, or --draft), reads the chosen
  * templates and the catalog items the draft prices from, and makes one
- * createCostGroup per top-level group: the template's scope group with the
- * kept lines in their sections and the General Description first, CUSTOMER
- * OPTIONS as selection groups, Phase 5 - Contingency with its line. Open
- * items are created on the job tagged "(DRAFT - Carl confirms)". The job
- * parameters the contingency formula reads are set first. See draft/build.ts.
+ * createCostGroup per template, in the shape Carl's budgets have (2026-10-02):
+ * the scope group named for the job ("BASEMENT FINISH SCOPE") with the job's
+ * description on it, the template's phases and sections in its order, each
+ * customer selection in the section of its work with a contingency share in
+ * each choice, and the base contingency at the end of Phase 1 - General
+ * Requirements (no Phase 5). Open items are created on the job tagged
+ * "(DRAFT - Carl confirms)". The job parameters the contingency formula reads
+ * are set first. See draft/build.ts.
  *
  * <job> is the target: a job id, 250000 or 25-0000. Without it the draft's
  * own job is the target. The budget must be empty apart from the structural

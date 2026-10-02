@@ -193,6 +193,10 @@ export interface Draft {
   noFit: string | null;
   summary: string;
   scopeOfWork: string;
+  /** What the job is, two to four words: the budget's top group is "<SCOPETITLE> SCOPE". */
+  scopeTitle: string;
+  /** Where each option group's selection sits on the budget; placeIn null when the model named no section that exists. */
+  optionPlaces: { group: string; placeIn: PlaceIn | null }[];
   plans: TemplatePlan[];
   /** Every kept line, the found ones included. */
   lines: DraftLine[];
@@ -265,6 +269,12 @@ export interface DraftOptions {
   model?: string;
   /** Skip the picker and use these templates, first as primary. */
   templateIds?: string[];
+  /**
+   * The template every construction budget is built on (Addition/House
+   * Build): used alone, without the picker, for any job that is not
+   * roofing. Carl, 2026-10-02. Lines it lacks are found in the catalog.
+   */
+  baseTemplateId?: string;
   /** Read DB's past work for subcontracted lines and gaps. Off when absent. */
   history?: HistorySource;
   /** A later pass: the last pass and the rep's direction(s). Both calls are told; the draft records what moved. */
@@ -333,6 +343,12 @@ export async function draftEstimate(
       role: i === 0 ? 'primary' : 'supplement',
       why: 'chosen by hand',
     }));
+  } else if (opts.baseTemplateId && !isRoofing(evidence)) {
+    picks = [{
+      templateId: opts.baseTemplateId,
+      role: 'primary',
+      why: 'every construction budget is built on this template; lines it lacks come from the catalog',
+    }];
   } else {
     const r = await runStructured(
       call,
@@ -363,7 +379,7 @@ export async function draftEstimate(
 
   const empty = (): Draft => ({
     jobId: evidence.jobId, jobName: evidence.jobName, model, pickSummary, noFit,
-    summary: pickSummary, scopeOfWork: '', plans: [], lines: [], found: [], gaps: [], questions: [],
+    summary: pickSummary, scopeOfWork: '', scopeTitle: '', optionPlaces: [], plans: [], lines: [], found: [], gaps: [], questions: [],
     rejected: [], rejectedPicks,
     totals: { base: totalsOf([]), options: [], all: totalsOf([]), proposedForGaps: NO_PROPOSALS, regionalForGaps: NO_PROPOSALS },
     contingency: null,
@@ -567,6 +583,8 @@ export async function draftEstimate(
     noFit,
     summary: d.data.summary,
     scopeOfWork: d.data.scopeOfWork,
+    scopeTitle: d.data.scopeTitle.trim(),
+    optionPlaces: resolveOptionPlaces(d.data.optionPlaces, templates),
     plans,
     lines,
     found,
@@ -595,7 +613,8 @@ export async function draftEstimate(
  * line is put into this section of the job's copy, a missing one is
  * created there.
  */
-export function placeGaps(gaps: DraftGap[], findings: AttachedFinding[], templates: Template[]): void {
+/** Every section of the chosen templates a line or a selection can be put in, by group id. */
+function sectionsById(templates: Template[]): Map<string, PlaceIn> {
   const byGroup = new Map<string, PlaceIn>();
   for (const t of templates) {
     for (const g of t.groups) {
@@ -604,6 +623,25 @@ export function placeGaps(gaps: DraftGap[], findings: AttachedFinding[], templat
       byGroup.set(g.id, { templateId: t.id, templateName: t.name, groupId: g.id, groupPath: path });
     }
   }
+  return byGroup;
+}
+
+/** A roofing job keeps its own templates (Shawn's); everything else is built on the base template. */
+export function isRoofing(evidence: Pick<JobEvidence, 'jobType'>): boolean {
+  return (evidence.jobType ?? '').trim().toLowerCase() === 'roofing';
+}
+
+/** The section each option group's selection sits in, from the ids the model named. */
+export function resolveOptionPlaces(
+  places: { group: string; sectionGroupId: string | null }[],
+  templates: Template[],
+): Draft['optionPlaces'] {
+  const byGroup = sectionsById(templates);
+  return places.map((p) => ({ group: p.group.trim(), placeIn: p.sectionGroupId ? byGroup.get(p.sectionGroupId) ?? null : null }));
+}
+
+export function placeGaps(gaps: DraftGap[], findings: AttachedFinding[], templates: Template[]): void {
+  const byGroup = sectionsById(templates);
   for (const f of findings) {
     if (f.target.kind !== 'gap' || !f.catalog) continue;
     const m = /^gap-(\d+)$/.exec(f.target.id);
@@ -712,7 +750,7 @@ export function contingencyStep(
   templates: Template[],
   options: OptionGroup[] = [],
 ): ContingencyStep | null {
-  if ((evidence.jobType ?? '').trim().toLowerCase() === 'roofing') return null;
+  if (isRoofing(evidence)) return null;
   const conditions = (reply?.conditions ?? []).filter((c) => c in CONTINGENCY_CONDITIONS);
   const rate = rateForConditions(conditions, reply?.rate);
   let line: ContingencyStep['line'] = null;

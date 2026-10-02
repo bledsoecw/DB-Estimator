@@ -45,7 +45,7 @@ import type { ApiCostType } from './jobtread/types.ts';
 import { fetchTemplate, fetchTemplateIndex, type Template, type TemplateSummary } from './draft/templates.ts';
 import { evidenceText, templateIndexText } from './draft/prompt.ts';
 import { DEFAULT_MODEL, PRICING, anthropicStructuredCall, costOf } from './draft/model.ts';
-import { draftEstimate, type DraftFixture, type HistorySource } from './draft/draft.ts';
+import { draftEstimate, isRoofing, type DraftFixture, type HistorySource } from './draft/draft.ts';
 import { draftFlags, draftJson, renderDraft } from './draft/render.ts';
 import { addDirection, changesText, previousFromJson, revisionText, type Revision } from './draft/revise.ts';
 import { CREW_LABOR, searchCatalog, type CatalogCandidate, type CatalogSource } from './draft/catalog.ts';
@@ -57,6 +57,9 @@ import { CREW_LABOR, searchCatalog, type CatalogCandidate, type CatalogSource } 
  */
 export const SHARED_LEARNED_DIR = 'C:\\Users\\carlb\\OneDrive\\Documents\\DBs\\Intranet\\dev\\DB-Estimator';
 export const SHARED_LEARNED_PATH = win32.join(SHARED_LEARNED_DIR, 'learned-prices.json');
+/** Addition/House Build: the template every construction budget is built on (Carl, 2026-10-02). */
+export const BASE_TEMPLATE_ID = '22PLm9KJ7yJF';
+
 /** Where a computer without that folder keeps its own book; git-ignored. */
 export const LOCAL_LEARNED_PATH = '.db-estimator/learned-prices.json';
 
@@ -210,6 +213,8 @@ async function main(): Promise<number> {
   let evidence: JobEvidence;
   let index: TemplateSummary[];
   let loadTemplate: (id: string) => Promise<Template>;
+  /** A fixture can only replay the templates it saved. */
+  let canLoad = (_id: string): boolean => true;
   let organizationId: string;
   const loaded: Template[] = [];
 
@@ -253,6 +258,7 @@ async function main(): Promise<number> {
     }
     if (args.catalog && f.catalog) catalogSource = fixtureCatalog(f.catalog);
     const byId = new Map(f.templates.map((t) => [t.id, t]));
+    canLoad = (id) => byId.has(id);
     loadTemplate = async (id) => {
       const t = byId.get(id);
       if (!t) throw new Error(`template ${id} is not in the fixture (it holds ${[...byId.keys()].join(', ')})`);
@@ -359,10 +365,13 @@ async function main(): Promise<number> {
   }
   if (!PRICING[args.model]) log(`no price table for ${args.model}; cost will not be shown`);
 
+  // Carl, 2026-10-02: every construction budget is built on Addition/House Build; roofing keeps its own.
+  const base = index.find((t) => t.id === BASE_TEMPLATE_ID && canLoad(t.id));
+  if (!args.templateIds.length && base && !isRoofing(evidence)) log(`drafting on ${base.name}, the base for every construction budget; --templates picks others`);
   log(`drafting with ${args.model}`);
   const draft = await draftEstimate(evidence, index, loadTemplate, anthropicStructuredCall(anthropic), {
     model: args.model,
-    ...(args.templateIds.length ? { templateIds: args.templateIds } : {}),
+    ...(args.templateIds.length ? { templateIds: args.templateIds } : base ? { baseTemplateId: base.id } : {}),
     ...(historySource ? { history: historySource } : {}),
     ...(catalogSource ? { catalog: catalogSource } : {}),
     ...(revision ? { revision } : {}),

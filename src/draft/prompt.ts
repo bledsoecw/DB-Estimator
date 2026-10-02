@@ -66,7 +66,7 @@ Rules:
 5. Scope the evidence calls for that no line in these templates covers goes in gaps: what the work is, a unit, a quantity when the evidence gives one, the cost type, the evidence, and the option it belongs to when it is part of one (the same option name as the lines it goes with; null for base scope). Never keep a line under a different meaning to cover it. The rest of the catalog is searched for each gap afterwards; what nothing covers goes to Carl.
 6. Do not price, mark up or compare to margins; do not mention money.
 7. Every kept line, gap and question cites its evidence: the comment (who and date), the photo file name, or "job description". A quantity with no evidence is a question, not a number.
-8. scopeOfWork is what the customer reads on the estimate's General Description line: three to eight plain sentences saying what is included, what is excluded, what is optional, and what the customer supplies or does themselves.
+8. scopeOfWork is what the customer reads at the top of the budget, as the description of the job's scope group: three to eight plain sentences saying what the job is with its dimensions, what is included, what is excluded, what is optional, and what the customer supplies or does themselves. scopeTitle is what the job is in two to four words ("Basement Finish", "New Pool House", "Kitchen Remodel"): the top group reads "<SCOPETITLE> SCOPE".
 9. summary is two sentences saying what the job is, as the evidence describes it.
 10. questions are what the rep must confirm with the customer or the team before the estimate goes out: at most six, ordered by how much the answer changes the price. Leave out what the estimate already handles (a color choice, picking from stock).
 11. lookBack is a list of one to three short search terms for finding DB's past work of the same kind, the trade's own single word first, then a short phrase if it helps ("epoxy", "floor coating"; "skim", "skim coat"). The search matches a term as written, inside a line's name or description, so "epoxy floor coating" misses a line called "Epoxy Sub Pckg" that "epoxy" finds. Give them on every Subcontractor line, on every gap, and on any Labor line for a trade DB might subcontract (painting, flooring, drywall, tile, concrete). Leave the list empty on everything else. The terms are matched against past line names and descriptions, so use the words a rep would have typed, not sentences.
@@ -76,6 +76,8 @@ Rules:
 15. A line marked CATALOG CONFLICT is counted in one unit and priced per another in the catalog. Give its quantity in the line's own unit as usual, and add to its basis what the count is in the other unit too ("21 sheets = 672 SF"), so the rep can correct it whichever unit turns out right.
 16. A line belongs to the section it sits in. A general line (Crew Labor, a delivery) is filed under one trade's section of a template (Crew Labor sits under Roofing › DB Duration Shingle System in Thermal & Moisture), and in the base scope it stays there on the job. Keep it in the base scope only for that section's work. Inside an option it is fine: an option's lines are built in its choice group. For base-scope crew hours of another trade (moving contents, hanging batts with no insulation labor line), put them in gaps with the unit and quantity and the trade's section; the catalog search places DB's Crew Labor where the work is. A line whose name is the work itself (Insulation - Batt) is kept wherever the template files it.
 17. Every material kept needs the labor that installs it, in the same choice or the base scope: a labor line of its own trade (Drywall Brd- Labor for Drywall Brd- Mat, Flooring Labor for Flooring), or the Subcontractor line that installs it. Count install labor once: a labor line covers only the work its name says. Trim Labor is trim (casing, baseboard, chair rail, a wainscot cap) and never wainscot panels. Wainscot gets its own labor: keep Wainscot Labor (Hours) beside Wainscoting, under the same option, with the hours and their basis; where the template has no Wainscot Labor line, put "Wainscot Labor" in gaps (Labor, Hours) under that option and the catalog search places it. Never add wainscot hours to Trim Labor. When trim is kept too, Trim Labor's basis says it is for the trim only.
+
+18. The budget is built in the template's own shape: the scope group, its phases, their sub-sections. A line not in the template goes in gaps and is placed in the phase and sub-section of its work. Each selection the customer makes sits where its work is: give optionPlaces one entry per option group (the Group of "Group — Choice", or an add-on's name) with the id, from the sections list, of the phase or sub-section of its main work (a floor choice in Phase 3 - Interiors › Flooring; a framed-wall choice in Phase 2 - Rough-In › Framing Materials; moving contents in Phase 1 - General Requirements › Site Preparation).
 
 Write for the rep: plain words, and line names exactly as listed. Reference lines by their id.`;
 
@@ -98,6 +100,10 @@ const Evidence = z.array(z.object({ source: z.string(), quote: z.string() }));
 export const DraftSchema = z.object({
   summary: z.string(),
   scopeOfWork: z.string(),
+  /** What the job is, two to four words; the budget's top group is "<SCOPETITLE> SCOPE". */
+  scopeTitle: z.string(),
+  /** Where each option group's selection sits on the budget: a section id from the chosen templates. */
+  optionPlaces: z.array(z.object({ group: z.string(), sectionGroupId: z.string().nullable() })),
   lines: z.array(
     z.object({
       lineId: z.string(),
@@ -284,6 +290,7 @@ export function buildDraftContent(e: JobEvidence, templates: Template[], revisio
     ...attachments(e),
     ...revisionBlock(revision),
     ...templates.map((t): Anthropic.ContentBlockParam => ({ type: 'text', text: templateLinesText(t) })),
+    { type: 'text', text: sectionsText(templates) },
     {
       type: 'text',
       text:
