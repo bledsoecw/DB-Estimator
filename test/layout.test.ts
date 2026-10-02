@@ -16,12 +16,13 @@ import { readFileSync } from 'node:fs';
 import type { Template, TemplateLine } from '../src/draft/templates.ts';
 import { CONTINGENCY_FORMULA, CONTINGENCY_LINE } from '../src/draft/contingency.ts';
 import {
-  countItems, planBuild, planLines, scopeGroupName, selectionGroups, verifyBuild,
+  countItems, planBuild, planLines, scopeGroupName, sectionCode, selectionGroups, verifyBuild,
   type BuildPlan, type DraftFile, type NewGroup, type NewItem, type PricedInfo,
 } from '../src/draft/build.ts';
 import { namesFromFixture, type BuildFixture } from '../src/build-cli.ts';
 import type { ApiBudget } from '../src/jobtread/types.ts';
-import { draftEstimate, resolveOptionPlaces, type DraftFixture } from '../src/draft/draft.ts';
+import { constructionTwins, draftEstimate, priceLines, resolveOptionPlaces, type DraftFixture } from '../src/draft/draft.ts';
+import type { DraftReply } from '../src/draft/prompt.ts';
 import { draftJson } from '../src/draft/render.ts';
 import type { StructuredArgs, StructuredCall } from '../src/draft/model.ts';
 
@@ -235,4 +236,70 @@ test('a construction job is drafted on the base template with no pick call; a ro
   await draftEstimate({ ...hx.evidence, jobType: 'Roofing' }, hx.index, load, roof, { baseTemplateId: FIN });
   assert.match(roof.calls[0]!.system, /pick/i, 'a roofing job goes to the picker');
   assert.deepEqual(resolveOptionPlaces([{ group: ' Walls ', sectionGroupId: null }], []), [{ group: 'Walls', placeIn: null }]);
+});
+
+// ---- the construction line, not the roofing division's -----------------------------------
+
+/** Addition/House Build's Project/Site Management carries both, and its Roofing section its own (R) line. */
+const TWINS: Template = {
+  ...HOME,
+  groups: [...HOME.groups, g('P2roof', 'Roofing', 'P2', 'i'), g('P2shingle', 'DB (DONE BETTER) Duration Shingle System', 'P2roof', 'a')],
+  lines: [
+    ...HOME.lines.filter((l) => l.id !== 'pm'),
+    { ...line('pmc', 'Project Management (C)', 'P1pm', 'a', 'Hours', 'Labor', 55, 100) },
+    { ...line('pmr', 'Project Management (R)', 'P1pm', 'b', 'Hours', 'Labor', 55, 100), costCodeName: 'Roofing' },
+    { ...line('sh', 'OC Duration Shingles', 'P2shingle', 'a', 'Square', 'Materials', 120, 174), costCodeName: 'Roofing' },
+    { ...line('pmrr', 'Project Management (R)', 'P2shingle', 'b', 'Hours', 'Labor', 55, 100), costCodeName: 'Roofing' },
+  ],
+};
+const replyLine = (lineId: string, quantity: number, basis = '') =>
+  ({ lineId, quantity, basis, evidence: [], option: null, confidence: 'medium' as const, lookBack: [] });
+const reply = (lines: DraftReply['lines']): DraftReply =>
+  ({ summary: '', scopeOfWork: '', scopeTitle: '', optionPlaces: [], lines, gaps: [], questions: [], contingency: { rate: 10, why: '', conditions: [] } }) as unknown as DraftReply;
+
+test('a roofing (R) line kept on work with no roof becomes its construction (C) twin; kept with it, it is dropped', () => {
+  // 25-0000, 2026-10-02: the basement kept Project Management (R), booked to Roofing.
+  const swapped = constructionTwins(reply([replyLine('pmr', 8, '8 hours over a two-week job.'), replyLine('fw', 909)]), [TWINS]);
+  assert.deepEqual(swapped.reply.lines.map((l) => [l.lineId, l.quantity]), [['pmc', 8], ['fw', 909]]);
+  assert.match(swapped.reply.lines[0]!.basis, /^Project Management \(C\), not Project Management \(R\): .*8 hours over a two-week job\.$/);
+  assert.deepEqual(swapped.dropped, []);
+  const { lines } = priceLines(swapped.reply, [TWINS]);
+  assert.equal(lines[0]!.name, 'Project Management (C)');
+
+  const both = constructionTwins(reply([replyLine('pmc', 8), replyLine('pmr', 4)]), [TWINS]);
+  assert.deepEqual(both.reply.lines.map((l) => l.lineId), ['pmc'], 'the hours counted once');
+  assert.deepEqual(both.dropped.map((r) => r.lineId), ['pmr']);
+  assert.match(both.dropped[0]!.reason, /roofing division's line/);
+
+  // Roofing work on the job: both may be meant, so the draft is left as it is.
+  const roof = constructionTwins(reply([replyLine('pmr', 4), replyLine('sh', 20), replyLine('pmrr', 6)]), [TWINS]);
+  assert.deepEqual(roof.reply.lines.map((l) => l.lineId), ['pmr', 'sh', 'pmrr']);
+  // An (R) line with no (C) twin in its section stays.
+  assert.deepEqual(constructionTwins(reply([replyLine('pmrr', 6)]), [TWINS]).reply.lines.map((l) => l.lineId), ['pmrr']);
+});
+
+test('the draft prompt marks the roofing division\'s lines and says to keep the construction twin', async () => {
+  const { buildDraftContent, DRAFT_SYSTEM } = await import('../src/draft/prompt.ts');
+  assert.match(DRAFT_SYSTEM, /ends \(R\) is the roofing division's .* keep the \(C\) one \(Project Management \(C\)\), never the \(R\) one/);
+  const text = buildDraftContent(hx.evidence, [TWINS]).map((b) => ('text' in b ? b.text : '')).join('\n');
+  assert.match(text, /- pmr · Project Management \(R\) · Hours · Labor · roofing division/);
+  assert.match(text, /- pmc · Project Management \(C\) · Hours · Labor\n/);
+});
+
+test('a line created on the job takes the cost code of its section, never General Requirements by default', () => {
+  const coded: Template = {
+    ...HOME,
+    groups: [...HOME.groups, g('P3floorSel', 'Flooring choices', 'P3floor', 'z')],
+    lines: HOME.lines.map((l) => (l.groupId === 'P3floor' ? { ...l, costCodeName: 'Finishes' } : l)),
+  };
+  assert.equal(sectionCode({ groupId: 'P3floor' }, [coded]), 'Finishes');
+  assert.equal(sectionCode({ groupId: 'P3' }, [coded]), 'Finishes', 'a phase: the code its sections\' lines use most');
+  assert.equal(sectionCode({ groupId: 'P3floorSel' }, [coded]), null, 'no lines under it');
+  assert.equal(sectionCode({ groupId: 'nowhere' }, [coded]), null);
+  assert.equal(sectionCode(null, [coded]), null);
+
+  // The epoxy floor, an option placed in Flooring, is created on Finishes.
+  const p = planBuild(DRAFT, new Map([[T, coded]]), names, priced);
+  const epoxy = planLines(p.groups).find((x) => x.item.name.startsWith('Epoxy floor by sub'))!;
+  assert.equal(epoxy.item.costCodeId, names.costCodes.get('finishes'));
 });

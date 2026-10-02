@@ -40,6 +40,11 @@ Also from Carl, 25-0000, 2026-10-02:
   so DB's Crew Labor is placed where the work is. Option lines are built in
   their choice group, so they are exempt (`borrowedLines` in
   `src/draft/checks.ts`, rule 16 in `src/draft/prompt.ts`).
+- **The construction line, not the roofing division's.** A line ending (R)
+  is the roofing division's, booked to Roofing; on a job with no roofing work
+  its (C) twin is kept (Project Management (C)), and the draft swaps a kept
+  (R) line for the (C) one in the same section (`constructionTwins` in
+  `src/draft/draft.ts`, rule 16 in `src/draft/prompt.ts`).
 - **"Choose one" means two or more choices.** An open item (a gap with an
   option) is a choice; a "Group — Choice" with no other choice is flagged
   (`totalsByOption` in `src/draft/draft.ts`, `optionFlags` in
@@ -69,6 +74,9 @@ From Carl, 2026-10-02, with a picture of the NEW POOL HOUSE SCOPE budget:
   work) as its description. Under it the template's phases and sections, in
   the template's order. No General Description line.
 - **Selections sit in the section of their work**, no CUSTOMER OPTIONS group.
+- **A line created on the job takes its section's cost code** (the code the
+  section's own lines carry), never General Requirements by default
+  (`sectionCode` in `src/draft/build.ts`).
 - **Contingency: a share in each choice and the base line at the end of
   Phase 1 - General Requirements. No Phase 5.** The seven phased templates
   carry the line there too (moved 2026-10-02, `docs/contingency.md`).

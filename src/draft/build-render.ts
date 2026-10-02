@@ -56,28 +56,38 @@ const qtyText = (n: number | null): string => (n === null ? '—' : n.toLocaleSt
 /** JobTread bills a null quantity as one unit. */
 const extension = (li: NewItem, unit: number | null): number | null => (unit === null ? null : (li.quantity ?? 1) * unit);
 
-interface Row { path: string[]; tags: string[]; item: NewItem }
+/** `taken`: the line counts in the budget as built, outside every choice or in a pre-selected one. */
+interface Row { path: string[]; tags: string[]; item: NewItem; taken: boolean }
 
 /** Every line under a group, with the subgroup path below it and what the selection groups say about the line. */
-function rows(g: NewGroup, path: string[] = [], tags: string[] = []): Row[] {
+function rows(g: NewGroup, path: string[] = [], tags: string[] = [], taken = true): Row[] {
   const out: Row[] = [];
   for (const li of g.lineItems) {
-    if (li._type === 'costItem') out.push({ path, tags, item: li });
+    if (li._type === 'costItem') out.push({ path, tags, item: li, taken });
     else {
       const t = [...tags];
       if (li.minSelectionsRequired !== undefined) t.push(li.minSelectionsRequired >= 1 ? 'one choice required' : 'add-on');
       else if (li.isSelected === true) t.push('pre-selected');
       else if (li.isSelected === false && (g.minSelectionsRequired ?? 0) >= 1) t.push('not selected');
-      out.push(...rows(li, [...path, li.name], t));
+      // A choice (a child of a selection group) counts only when it is pre-selected; an add-on starts unselected.
+      const choice = g.minSelectionsRequired !== undefined;
+      out.push(...rows(li, [...path, li.name], t, taken && (!choice || li.isSelected === true)));
     }
   }
   return out;
 }
 
-function totals(g: NewGroup): { cost: number; price: number } {
+/**
+ * Cost and price of every line under a group. `asSelected`: only what the
+ * budget carries as built, the pre-selected choices and no add-on, which is
+ * what JobTread totals. 25-0000, 2026-10-02: the scope group read $52,683.07,
+ * every choice and add-on summed, for a budget that comes to $34,682.11.
+ */
+function totals(g: NewGroup, asSelected = false): { cost: number; price: number } {
   let cost = 0;
   let price = 0;
   for (const r of rows(g)) {
+    if (asSelected && !r.taken) continue;
     cost += extension(r.item, r.item.unitCost) ?? 0;
     price += extension(r.item, r.item.unitPrice) ?? 0;
   }
@@ -115,7 +125,8 @@ function rowHtml(r: Row, top: string, marks: Marks): string {
 }
 
 function groupSection(g: NewGroup, record: BuildRecord | null, marks: Marks): string {
-  const t = totals(g);
+  const t = totals(g, true);
+  const all = totals(g);
   const kind = g.name === OPTIONS_GROUP ? 'The options the customer picks; each choice priced on its own.'
     : g.name === CONTINGENCY_GROUP ? 'At cost. The quantity is the dollars; the formula is stored for the rep who changes the parameters in JobTread.'
     : g.description ?? '';
@@ -123,7 +134,8 @@ function groupSection(g: NewGroup, record: BuildRecord | null, marks: Marks): st
   return `<section class="plan">
     <div class="bar">
       <h2>${esc(g.name)}${created ? ` <code class="id">${esc(created.id)}</code>` : ''}</h2>
-      <p class="tally">${countItems(g)} line${countItems(g) === 1 ? '' : 's'} &middot; ${usd(t.price)} price &middot; ${usd(t.cost)} cost</p>
+      <p class="tally">${countItems(g)} line${countItems(g) === 1 ? '' : 's'} &middot; ${usd(t.price)} price &middot; ${usd(t.cost)} cost${
+        all.price !== t.price ? ` with the pre-selected choices &middot; ${usd(all.price)} with every choice and add-on` : ''}</p>
     </div>
     ${kind ? `<p class="detail">${esc(kind)}</p>` : ''}
     <table class="lines">
@@ -141,10 +153,11 @@ export function renderBuildPage(x: BuildPageInput): string {
   const sum = (ts: { cost: number; price: number }[]): { cost: number; price: number } =>
     ts.reduce((a, b) => ({ cost: a.cost + b.cost, price: a.price + b.price }), { cost: 0, price: 0 });
   const base = plan ? (() => {
-    const all = sum(plan.groups.map(totals));
-    const opt = sum(selections.map(totals));
+    const all = sum(plan.groups.map((g) => totals(g)));
+    const opt = sum(selections.map((g) => totals(g)));
     return { cost: all.cost - opt.cost, price: all.price - opt.price };
   })() : null;
+  const asSelected = plan ? sum(plan.groups.map((g) => totals(g, true))) : null;
   const title = `${job.name} — build ${mode}`;
   const draftId = plan?.jobId ?? null;
 
@@ -152,7 +165,7 @@ export function renderBuildPage(x: BuildPageInput): string {
     ? `<p class="verdict">Not built. ${esc(gate.reason)}</p>`
     : x.applied
       ? x.applied.verify.ok
-        ? `<p class="verdict ok">Built. ${x.applied.record.groups.length} groups on the job's Budget tab, read back and checked. Open the job in JobTread.</p>`
+        ? `<p class="verdict ok">Built. ${x.applied.record.groups.length} group${x.applied.record.groups.length === 1 ? '' : 's'} on the job's Budget tab, read back and checked. Open the job in JobTread.</p>`
         : `<p class="verdict">Written, but the read-back does not match the plan. Read the checks below before touching the budget by hand.</p>`
       : `<p class="verdict ok">Dry run. Nothing was written. This is what <code>--apply</code> will build.</p>`;
 
@@ -175,6 +188,7 @@ export function renderBuildPage(x: BuildPageInput): string {
     ${base ? `<div class="totals">
       <div class="fig"><span class="k">Base price</span><span class="v">${usd(base.price)}</span></div>
       <div class="fig"><span class="k">Base cost</span><span class="v">${usd(base.cost)}</span></div>
+      ${selections.length ? `<div class="fig"><span class="k">As pre-selected</span><span class="v">${usd(asSelected!.price)}</span></div>` : ''}
       <div class="fig"><span class="k">Lines</span><span class="v">${plan!.groups.reduce((n, g) => n + countItems(g), 0)}</span></div>
     </div>` : ''}
   </header>
@@ -189,7 +203,8 @@ export function renderBuildPage(x: BuildPageInput): string {
   ${plan ? `<section class="summary">
     <h2>What gets built</h2>
     <p>${plan.counts.lines} template line${plan.counts.lines === 1 ? '' : 's'}, ${plan.counts.found} from the catalog, ${plan.counts.created} created on the job, ${plan.counts.options} option group${plan.counts.options === 1 ? '' : 's'}${
-      plan.contingency ? `. Contingency ${plan.contingency.rate}%: ${usd(plan.contingency.amount)} on the ${usd(plan.contingency.base)} base scope${plan.contingency.shares.length ? ', and each option carries its own share inside its choice, so the budget\'s contingency follows what the customer picks' : ''}` : ''}. Base price is the template groups and the base contingency; each option is priced on its own below, its share included.</p>
+      plan.contingency ? `. Contingency ${plan.contingency.rate}%: ${usd(plan.contingency.amount)} on the ${usd(plan.contingency.base)} base scope${plan.contingency.shares.length ? ', and each option carries its own share inside its choice, so the budget\'s contingency follows what the customer picks' : ''}` : ''}. Base price is the template groups and the base contingency; each option is priced on its own below, its share included${
+      selections.length ? `. As pre-selected, the budget comes to ${usd(asSelected!.price)} price, ${usd(asSelected!.cost)} cost` : ''}.</p>
     ${selections.length ? `<ul>${selections.map((o) => {
       const choices = o.lineItems.filter((li): li is NewGroup => li._type === 'costGroup');
       const share = (c: NewGroup): string => {

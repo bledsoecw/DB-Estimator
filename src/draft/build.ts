@@ -538,7 +538,7 @@ export function planBuild(
       unitId: need(names.units, 'unit', g.unit, notes),
       costTypeId: need(names.costTypes, 'cost type', g.costType, notes),
       costTypeName: g.costType,
-      costCodeId: codeOf('General Requirements'),
+      costCodeId: codeOf(sectionCode(g.placeIn, templates.values()) ?? 'General Requirements'),
       quantity: g.quantity ?? 0,
       unitCost,
       unitPrice,
@@ -808,6 +808,35 @@ function placeFor(
   const first = [...templates.values()][0];
   if (!first) throw new Error(`${what}: no template to put it in`);
   return rootFor(first);
+}
+
+/**
+ * The cost code a line created on the job takes: the one its section's own
+ * lines carry. 25-0000, 2026-10-02: the epoxy floor and the masonry paint
+ * were created on General Requirements while every Flooring and Paint line
+ * beside them is Finishes, so their cost would be reported under the wrong
+ * code. The code most of the section's lines use, those in its sub-sections
+ * included; null when the section has no lines or is in no template read.
+ */
+export function sectionCode(placeIn: { groupId: string } | null, templates: Iterable<Template>): string | null {
+  if (!placeIn) return null;
+  for (const t of templates) {
+    if (!t.groups.some((g) => g.id === placeIn.groupId)) continue;
+    const under = new Set([placeIn.groupId]);
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const g of t.groups) if (g.parentId && under.has(g.parentId) && !under.has(g.id)) { under.add(g.id); grew = true; }
+    }
+    const count = new Map<string, number>();
+    for (const l of t.lines) {
+      if (l.groupId && under.has(l.groupId) && l.costCodeName) count.set(l.costCodeName, (count.get(l.costCodeName) ?? 0) + 1);
+    }
+    let best: string | null = null;
+    let n = 0;
+    for (const [code, k] of count) if (k > n) { best = code; n = k; }
+    return best;
+  }
+  return null;
 }
 
 /** How many lines a group holds, all the way down. */

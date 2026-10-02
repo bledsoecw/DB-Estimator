@@ -173,7 +173,7 @@ test('open items are created on the job, tagged, priced from history or the ball
   assert.equal(elec.costCodeId, CODES['Electrical']);
   assert.match(elec.description!, /Extend or relocate outlets/);
   assert.match(elec.description!, /quantity is 0 until the rep sets it/);
-  // History-priced, created from scratch under General Requirements.
+  // History-priced, created from scratch, on the cost code of the section it is placed in (Drywall/Plaster: Finishes).
   const lumber = framed.find((i) => i.name === `Framing lumber for the false walls ${DRAFT_TAG}`)!;
   assert.equal(lumber.organizationCostItemId, undefined);
   assert.equal(lumber.quantity, 120);
@@ -181,7 +181,7 @@ test('open items are created on the job, tagged, priced from history or the ball
   assert.equal(lumber.unitPrice, 5.92);
   assert.equal(lumber.unitId, UNITS['Linear Feet']);
   assert.equal(lumber.costTypeId, TYPES['Materials']);
-  assert.equal(lumber.costCodeId, CODES['General Requirements']);
+  assert.equal(lumber.costCodeId, CODES['Finishes']);
   assert.match(lumber.description!, /Priced from DB history: 25-0003/);
   // The ballpark, in the other choice, says so loudly.
   const paint = items(sub(walls, 'Paint the block')).filter((i) => i.name !== CONTINGENCY_LINE);
@@ -190,6 +190,8 @@ test('open items are created on the job, tagged, priced from history or the ball
   assert.equal(paint[0]!.unitCost, 0.45);
   assert.equal(paint[0]!.unitPrice, 0.6525);
   assert.match(paint[0]!.description!, /regional ballpark, NOT DB pricing/);
+  // Placed in Paint, whose lines are Finishes: never General Requirements by default.
+  assert.equal(paint[0]!.costCodeId, CODES['Finishes']);
   // The sections named for a line with an option do not pull it out of its choice group.
   assert.deepEqual(planLines(p.groups).filter((x) => !x.inOption && x.item.name.endsWith(DRAFT_TAG)), []);
 });
@@ -565,6 +567,12 @@ test('the build page: the tree with quantities, prices and tags on a dry run; th
   assert.match(dry, /<span class="k">Base price<\/span><span class="v">\$4,931\.10<\/span>/);
   assert.match(dry, /<span class="k">Base cost<\/span><span class="v">\$2,937\.60<\/span>/);
   assert.match(dry, /<span class="k">Lines<\/span><span class="v">23<\/span>/);
+  // As pre-selected is what JobTread totals: base $4,931.10 + Framed false walls $4,411.15 + LVP $7,060.50; no add-on, no other choice.
+  // 25-0000 read $52,683.07 on its scope group, every choice summed, for a $34,682.11 budget.
+  assert.match(dry, /<span class="k">As pre-selected<\/span><span class="v">\$16,402\.75<\/span>/);
+  assert.match(dry, /As pre-selected, the budget comes to \$16,402\.75 price/);
+  assert.match(dry, /<p class="tally">21 lines &middot; \$15,602\.75 price &middot; \$10,015\.21 cost with the pre-selected choices &middot; \$27,615\.62 with every choice and add-on<\/p>/);
+  assert.match(dry, /<p class="tally">2 lines &middot; \$800\.00 price &middot; \$440\.00 cost<\/p>/, 'a group with no selection shows one figure');
 
   const refused = gateBuild({ job: REAL_JOB, draft: fx.draft, budget: budgetWith(STRUCTURAL), record: null, live: false, replace: false });
   const no = renderBuildPage({ ...common, job: REAL_JOB, gate: refused, plan: null });
@@ -578,6 +586,7 @@ test('the build page: the tree with quantities, prices and tags on a dry run; th
   assert.match(built, /<h2>FINISHES <code class="id">g1<\/code><\/h2>/);
   assert.match(built, /<li class="ok">ok: &quot;FINISHES&quot; with 5 lines<\/li>/);
   assert.match(built, /Built 2026-10-01 19:10/);
+  assert.match(built, /Built\. 1 group on the job's Budget tab/);
   const bad = renderBuildPage({ ...common, gate, plan: p, applied: { record: rec, verify: { ok: false, lines: ['MISMATCH: x'] } } });
   assert.match(bad, /build not verified<\/title>/);
   assert.match(bad, /<li class="bad">MISMATCH: x<\/li>/);

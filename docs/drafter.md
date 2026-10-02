@@ -259,6 +259,21 @@ kept wherever the template files it. The check box on both pages flags a
 general line (crew labor, delivery, hauling) that is the only line kept in
 a section named for a trade.
 
+**The construction line, not the roofing division's.** Addition/House Build
+files Project Management (C) and Project Management (R) side by side under
+Project/Site Management: (C) is construction's, on General Requirements;
+(R) is the roofing division's, on Roofing. The first basement draft on the
+new layout (25-0000, 2026-10-02) kept the (R) one, so DB's project
+management on a basement was booked to Roofing. Rule 16 now says a line
+ending (R) is the roofing division's and a job with no roofing work keeps
+its (C) twin, and the template text marks each (R) line "roofing division".
+The draft step also does it itself (`constructionTwins` in
+`src/draft/draft.ts`): on a job that keeps no line from a roofing section,
+a kept (R) line becomes the (C) line in the same section at the same
+quantity, its basis saying why; kept beside its twin, the (R) line is
+dropped and listed with the reason. A job with roofing work is left as
+drafted, and an (R) line with no (C) twin in its section stays.
+
 **"Choose one" means two or more choices.** The General Description said
 the customer chooses LVP or epoxy, but the page called Flooring an add-on
 the customer may skip: the epoxy floor had no template line, only an open
@@ -613,8 +628,10 @@ prices from again, and creates the budget as the rep would have:
 - **open items** created on the job as lines tagged `(DRAFT - Carl confirms)`:
   a catalog match at quantity 0 with the description saying the rep sets the
   count, otherwise a new line priced from DB history or the regional ballpark
-  with the basis and the warning in its description, under General
-  Requirements;
+  with the basis and the warning in its description, on the cost code its
+  section's lines carry (`sectionCode`: an epoxy floor placed in Flooring is
+  Finishes, like the Flooring lines beside it), General Requirements only
+  when the section has no lines;
 - **each selection in the section of its work**, no CUSTOMER OPTIONS group:
   the draft names the section (`optionPlaces`: a floor choice in Phase 3 -
   Interiors › Flooring), else it goes in the phase of its first line. Two or
@@ -633,6 +650,13 @@ prices from again, and creates the budget as the rep would have:
   paint and its share goes too. The two job parameters are set first,
   merged with whatever parameters the job already has
   (`updateJob.parameters` replaces the list).
+
+The build page heads with the base price and cost, and with the price **as
+pre-selected**: the base, the pre-selected choices and no add-on, which is
+what JobTread totals. Each group's tally says the same, with the figure for
+every choice and add-on beside it. The first 25-0000 build on the new layout
+read $52,683.07 on its scope group, every choice summed, for a budget that
+comes to $34,682.11.
 
 The job's structural groups (CLOCK IN ITEMS, BURDEN, GENERAL AND
 ADMINISTRATIVE, CHANGE ORDER) are not touched, and no catalog template is

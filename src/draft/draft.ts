@@ -402,7 +402,10 @@ export async function draftEstimate(
   usage = addUsage(usage, d.usage);
   addCost(d.cost);
 
-  const { lines, rejected } = priceLines(d.data, templates);
+  // A roofing line kept on work with no roof is swapped for its construction twin (constructionTwins).
+  const twins = isRoofing(evidence) ? { reply: d.data, dropped: [] } : constructionTwins(d.data, templates);
+  const { lines, rejected } = priceLines(twins.reply, templates);
+  rejected.push(...twins.dropped);
   const gaps: DraftGap[] = d.data.gaps.map((g) => ({
     ...g, option: g.option?.trim() || null,
     history: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null,
@@ -976,6 +979,60 @@ export function proposedForGaps(gaps: DraftGap[], source: ProposalSource): GapPr
     price = price === null || g.proposed.price === null ? null : add(price, g.proposed.price);
   }
   return { cost, price, gaps: n };
+}
+
+/** "Project Management (R)": the roofing division's line, booked to the Roofing cost code. */
+const ROOFING_TWIN = /\s*\(R\)\s*$/;
+const CONSTRUCTION_TWIN = /\s*\(C\)\s*$/;
+
+/**
+ * On a job with no roofing work, a kept "(R)" line is the construction
+ * line's twin from the roofing division: swap it for the "(C)" line in the
+ * same section. 25-0000, 2026-10-02: Addition/House Build files Project
+ * Management (C) and Project Management (R) side by side under
+ * Project/Site Management; the basement draft kept the (R) one, so DB's
+ * project management on a basement was booked to Roofing. Same rate, same
+ * hours; the twin is the line for the work. Kept with its twin, the (R) one
+ * is dropped, so the hours are counted once. A job that keeps any line from
+ * a roofing section is left as drafted: there both may be meant.
+ */
+export function constructionTwins(
+  reply: DraftReply,
+  templates: Template[],
+): { reply: DraftReply; dropped: { lineId: string; reason: string }[] } {
+  const byId = new Map<string, { t: Template; l: TemplateLine }>();
+  for (const t of templates) for (const l of scopeLines(t)) byId.set(l.id, { t, l });
+  const roofWork = reply.lines.some((r) => {
+    const hit = byId.get(r.lineId);
+    return hit !== undefined && groupPath(hit.t, hit.l.groupId).some((n) => /\broof/i.test(n));
+  });
+  if (roofWork) return { reply, dropped: [] };
+
+  const kept = new Set(reply.lines.map((r) => r.lineId));
+  const dropped: { lineId: string; reason: string }[] = [];
+  const lines: DraftReply['lines'] = [];
+  for (const r of reply.lines) {
+    const hit = byId.get(r.lineId);
+    if (!hit || !ROOFING_TWIN.test(hit.l.name)) { lines.push(r); continue; }
+    const base = hit.l.name.replace(ROOFING_TWIN, '').trim().toLowerCase();
+    const twin = scopeLines(hit.t).find((l) =>
+      l.groupId === hit.l.groupId && CONSTRUCTION_TWIN.test(l.name) && l.name.replace(CONSTRUCTION_TWIN, '').trim().toLowerCase() === base);
+    if (!twin) { lines.push(r); continue; }
+    if (kept.has(twin.id)) {
+      dropped.push({
+        lineId: r.lineId,
+        reason: `"${hit.l.name}" is the roofing division's line and "${twin.name}" is kept beside it; with no roofing work the hours are counted once, on "${twin.name}"`,
+      });
+      continue;
+    }
+    kept.add(twin.id);
+    lines.push({
+      ...r,
+      lineId: twin.id,
+      basis: `${twin.name}, not ${hit.l.name}: the (R) line is the roofing division's and this job has no roofing work. ${r.basis}`.trim(),
+    });
+  }
+  return { reply: { ...reply, lines }, dropped };
 }
 
 /**
