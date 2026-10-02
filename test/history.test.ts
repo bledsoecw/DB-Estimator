@@ -25,7 +25,8 @@ import type { StructuredArgs, StructuredCall } from '../src/draft/model.ts';
 import { MAX_TERMS, attachHistory, draftEstimate, historyTargets, keyWord, searchedTargets, uniqueTerms, withKeyWord, type DraftFixture } from '../src/draft/draft.ts';
 import { DRAFT_SYSTEM, HISTORY_SYSTEM, historyTargetsText } from '../src/draft/prompt.ts';
 import { draftFlags, draftJson, draftSteps, optionFlags, renderDraft } from '../src/draft/render.ts';
-import { borrowedLines, type CheckLine } from '../src/draft/checks.ts';
+import { borrowedLines, uninstalledMaterials, type CheckLine, type LaborUse, type MaterialUse } from '../src/draft/checks.ts';
+import { rateForConditions } from '../src/draft/contingency.ts';
 import { LOCAL_LEARNED_PATH, SHARED_LEARNED_DIR, SHARED_LEARNED_PATH, marginsOf, parseDraftArgs, resolveLearnedPath } from '../src/draft-cli.ts';
 
 const fx = JSON.parse(readFileSync('test/fixtures/haag-basement.json', 'utf8')) as DraftFixture;
@@ -236,7 +237,7 @@ const DRAFT = {
     { scope: 'Move contents', why: 'no template line', unit: 'Hours', quantity: null, costType: 'Labor', basis: 'unknown', evidence: ev('moving'), lookBack: [], option: null },
   ],
   questions: [],
-  contingency: { rate: 8, why: 'The walls are stripped to the concrete and the floor comes up.' },
+  contingency: { rate: 8, why: 'The walls are stripped to the concrete and the floor comes up.', conditions: ['stripped-to-substrate', 'something-moves'] },
 };
 const HISTORY = {
   findings: [
@@ -1067,4 +1068,61 @@ test('lesson 3: an open item is a choice, so "pick one" stays pick one, and a lo
   assert.match(flags[0]!.text, /"Flooring — LVP" is written as one of several choices, but "Flooring" has no other choice/);
   assert.ok(draftFlags(alone).some((f) => f.kind === 'option'), 'and it is in the box at the top of the page');
   assert.match(DRAFT_SYSTEM, /never write a choice that has neither lines nor a gap/);
+});
+
+// ---- 25-0000, 2026-10-02: install labor, and the contingency pinned to policy --------------
+
+test('every kept material needs labor to install it in its choice; wainscot gets its own, never Trim Labor', () => {
+  const panels: MaterialUse = { scope: 'Walls — Framed', name: 'Wainscoting', quantity: 29, unit: 'Each', sectionLabor: ['Trim Labor'] };
+  const framed = (name: string, forWhat?: string): LaborUse => ({ scope: 'Walls — Framed', name, ...(forWhat ? { for: forWhat } : {}) });
+
+  // The 2026-10-02 draft: panels kept, Trim Labor deleted, nothing to hang them.
+  const bare = uninstalledMaterials([panels], [framed('Framing/Sheathing Labor'), framed('Drywall Brd- Labor')]);
+  assert.equal(bare.length, 1);
+  assert.equal(bare[0]!.severity, 'problem');
+  assert.match(bare[0]!.text, /"Walls — Framed": "Wainscoting" \(29 Each\) has no labor to install it\. Wainscot gets its own labor line: add wainscot install hours to this choice, once\./);
+  // The run before: Trim Labor carried the panels. That is not wainscot labor.
+  assert.match(uninstalledMaterials([panels], [framed('Trim Labor')])[0]!.text, /Trim Labor is for the trim, not the panels/);
+  // Its own line covers it: an open item, or a catalog line found for it.
+  assert.deepEqual(uninstalledMaterials([panels], [framed('Wainscot install labor', 'Wainscot install labor')]), []);
+  assert.deepEqual(uninstalledMaterials([panels], [framed('Crew Labor', 'Labor to install the wainscot panels')]), []);
+  // In another choice it does not count.
+  assert.equal(uninstalledMaterials([panels], [{ scope: 'Walls — Concrete Paint', name: 'Wainscot install labor' }]).length, 1);
+
+  // Other materials: their trade's labor, or the labor the template files beside them.
+  const primer: MaterialUse = { scope: 'Walls — Framed', name: 'Primer', quantity: 2, unit: 'Gallons', sectionLabor: ['Paint Labor', 'Paint Labor - Sub'] };
+  const batts: MaterialUse = { scope: 'Walls — Framed', name: 'Insulation - Batt', quantity: 909, unit: 'Square Foot', sectionLabor: ['Siding Labor', 'Insulation - Sub'] };
+  const shingles: MaterialUse = { scope: 'base', name: 'OC Duration Shingles', quantity: 30, unit: 'Square', sectionLabor: [] };
+  assert.deepEqual(uninstalledMaterials([primer, batts, shingles], [framed('Paint Labor'), framed('Insulation Labor')]), [], 'primer by the paint labor beside it; batts by insulation labor; no labor filed beside the shingles');
+  const noPaint = uninstalledMaterials([primer], [framed('Drywall Brd- Labor')]);
+  assert.match(noPaint[0]!.text, /"Walls — Framed": "Primer" \(2 Gallons\) is kept with no labor to install it; the template files "Paint Labor", "Paint Labor - Sub" beside it and none is kept here\./);
+
+  assert.match(DRAFT_SYSTEM, /17\. Every material kept needs the labor that installs it/);
+  assert.match(DRAFT_SYSTEM, /Trim Labor is trim .* and never wainscot panels/);
+  assert.match(HISTORY_SYSTEM, /Wainscot install labor is its own line: never match it to Trim Labor/);
+});
+
+test('the draft page flags a material kept with no labor in its choice', async () => {
+  const mat = { lineId: '22PLCchBuFMU', quantity: 667, basis: 'board', evidence: ev('framed'), option: 'Walls — Framed', confidence: 'medium', lookBack: [] };
+  const hang = { lineId: '22PLCchBuFMV', quantity: 12, basis: 'hang', evidence: ev('framed'), option: 'Walls — Framed', confidence: 'medium', lookBack: [] };
+  const without = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, lines: [mat], gaps: [] }]), { templateIds: [FIN, GR] });
+  const flag = draftFlags(without).find((f) => f.kind === 'install');
+  assert.match(flag!.text, /"Walls — Framed": "Drywall Brd- Mat" \(667 [A-Za-z ]+\) is kept with no labor to install it; the template files "Drywall Brd- Labor"/);
+  const withLabor = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, lines: [mat, hang], gaps: [] }]), { templateIds: [FIN, GR] });
+  assert.equal(draftFlags(withLabor).filter((f) => f.kind === 'install').length, 0);
+});
+
+test('contingency is pinned to DB\'s policy: the highest rate any condition calls for, whatever number the model wrote', async () => {
+  assert.equal(rateForConditions(['something-moves', 'older-home-hidden-conditions']), 10);
+  assert.equal(rateForConditions(['stripped-to-substrate', 'something-moves']), 8);
+  assert.equal(rateForConditions(['in-kind']), 5);
+  assert.equal(rateForConditions([], 7), 8, 'with no condition named, the model\'s number, snapped');
+
+  // 25-0000: walls come off (8) and the foundation is cracked, stained and peeling (10): 10, every time.
+  const reply = { ...DRAFT, contingency: { rate: 8, why: 'Cracked, water-stained, peeling foundation walls.', conditions: ['stripped-to-substrate', 'older-home-hidden-conditions'] } };
+  const d = await draftEstimate(fx.evidence, fx.index, load, fake([reply]), { templateIds: [FIN, GR] });
+  assert.equal(d.contingency?.rate, 10);
+  assert.match(draftSteps(d), /Contingency at 10% \(finish stripped to the substrate; older home, more hidden conditions likely\): Cracked, water-stained, peeling foundation walls\./);
+  assert.deepEqual((draftJson(d) as { contingency: { conditions: string[] } }).contingency.conditions, ['stripped-to-substrate', 'older-home-hidden-conditions']);
+  assert.match(DRAFT_SYSTEM, /A basement with cracked, stained, peeling foundation walls is older-home-hidden-conditions/);
 });

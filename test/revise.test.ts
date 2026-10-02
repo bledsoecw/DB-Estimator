@@ -49,7 +49,7 @@ const PASS1 = {
   ],
   gaps: [{ scope: 'Move basement contents', why: 'no line', unit: 'Hours', quantity: 4, costType: 'Labor', basis: 'two people', evidence: ev, lookBack: [], option: null }],
   questions: [{ question: 'Skim the walls or paint over them?', why: 'the note is tentative' }],
-  contingency: { rate: 8, why: 'Walls stripped to the concrete.' },
+  contingency: { rate: 8, why: 'Walls stripped to the concrete.', conditions: ['stripped-to-substrate'] },
 };
 const DIRECTION = 'Forget the skim coating. Go with a mold-resistant concrete paint, or an option to frame out false walls 6-8" off the foundation with plastic, drywall above wainscot, batt insulation, painted.';
 const PASS2 = {
@@ -62,7 +62,7 @@ const PASS2 = {
   ],
   gaps: [],
   questions: [],
-  contingency: { rate: 10, why: 'Moisture on the block and a framed wall against it.' },
+  contingency: { rate: 10, why: 'Moisture on the block and a framed wall against it.', conditions: ['older-home-hidden-conditions', 'something-moves'] },
 };
 const PICK = { summary: 'Basement refresh.', picks: [{ templateId: FIN, role: 'primary', why: 'paint' }, { templateId: GR, role: 'supplement', why: 'PM' }], noFit: null };
 const T0 = new Date('2026-09-30T18:00:00Z');

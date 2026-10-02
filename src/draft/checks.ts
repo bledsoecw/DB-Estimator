@@ -22,7 +22,7 @@ export type Severity = 'problem' | 'check' | 'info';
 export interface ReviewFlag {
   severity: Severity;
   /** What kind of check raised it; stable, for tests and for the page's ordering. */
-  kind: 'double-count' | 'unit' | 'unit-conflict' | 'no-count' | 'unpriced' | 'draft' | 'contingency' | 'option' | 'section' | 'note';
+  kind: 'double-count' | 'unit' | 'unit-conflict' | 'no-count' | 'unpriced' | 'draft' | 'contingency' | 'option' | 'section' | 'install' | 'note';
   /** One or two sentences for the rep, with the names and the money. */
   text: string;
   /** The lines it is about, by where they sit and their name, so the page can mark the rows. */
@@ -165,6 +165,67 @@ export function borrowedLines(lines: CheckLine[], optionsRoot: string): ReviewFl
       severity: 'check', kind: 'section', lines: [{ where, name: l.name }],
       text: `"${l.name}" (${amount(l)}) is the only line kept under ${where}: on the job it sits in that ${trade} section with nothing else from it. ` +
         `If the work is not ${trade.toLowerCase()} work, put DB's "${l.name}" from the catalog in the section the work is in.`,
+    });
+  }
+  return out;
+}
+
+/** A kept material, where it is in the job, and the labor its template files beside it. */
+export interface MaterialUse {
+  /** "base", or the option it is part of ("Walls — Framed"). */
+  scope: string;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  /** Labor and subcontractor lines the template files in the same section. Empty: the template expects no labor there. */
+  sectionLabor: string[];
+}
+
+/** A kept labor or sub line, or an open item for labor, and where it is in the job. */
+export interface LaborUse {
+  scope: string;
+  name: string;
+  /** What it is for, when that says more than the name: an open item's scope, a found line's gap. */
+  for?: string;
+}
+
+/** Materials whose labor is a line of its own, never another trade's: Carl, 2026-10-02. */
+const OWN_LABOR = /wainscot/i;
+const words = (s: string): string[] => s.replace(DRAFT_SUFFIX, '').toLowerCase().match(/[a-z]+/g) ?? [];
+const sameTrade = (stem: string, labor: LaborUse): boolean =>
+  stem.length >= 4 && words(`${labor.name} ${labor.for ?? ''}`).some((w) => w.length >= 4 && (w.startsWith(stem) || stem.startsWith(w)));
+const sameName = (a: string, b: string): boolean => a.replace(DRAFT_SUFFIX, '').trim().toLowerCase() === b.replace(DRAFT_SUFFIX, '').trim().toLowerCase();
+
+/**
+ * A material kept with no labor to install it. 25-0000, 2026-10-02: the
+ * framed-wall choice kept 29 wainscot panels and deleted Trim Labor in both
+ * templates, so nothing paid to hang them. Carl: wainscot needs a labor line
+ * of its own, and is not counted twice by also sitting in Trim Labor.
+ *
+ * A material is covered by a labor or sub line in the same choice (or the
+ * base scope) whose name or purpose is its trade ("Drywall Brd- Labor" for
+ * "Drywall Brd- Mat"), or by a labor line its template files beside it
+ * ("Paint Labor" for "Primer"). Wainscot only by its own. A material whose
+ * section has no labor in the template is not checked.
+ */
+export function uninstalledMaterials(materials: MaterialUse[], labor: LaborUse[]): ReviewFlag[] {
+  const out: ReviewFlag[] = [];
+  for (const m of materials) {
+    if (!m.sectionLabor.length) continue;
+    const here = labor.filter((l) => l.scope === m.scope);
+    const stem = stemOf(m.name);
+    const own = OWN_LABOR.test(m.name);
+    const covered = here.some((l) => sameTrade(stem, l)) ||
+      (!own && here.some((l) => m.sectionLabor.some((s) => sameName(s, l.name))));
+    if (covered) continue;
+    const where = m.scope === 'base' ? 'Base scope' : `"${m.scope}"`;
+    const count = `${m.quantity === null ? '—' : m.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${m.unit ?? ''}`.trimEnd();
+    const trimKept = own && here.some((l) => /^trim labor/i.test(l.name));
+    out.push({
+      severity: 'problem', kind: 'install', lines: [{ where: m.scope, name: m.name }],
+      text: own
+        ? `${where}: "${m.name}" (${count}) has no labor to install it. Wainscot gets its own labor line${trimKept ? '; Trim Labor is for the trim, not the panels' : ''}: add wainscot install hours to this choice, once.`
+        : `${where}: "${m.name}" (${count}) is kept with no labor to install it; the template files ${m.sectionLabor.map((s) => `"${s}"`).join(', ')} beside it and none is kept here. Add the install labor, or the sub line that installs it.`,
     });
   }
   return out;

@@ -45,7 +45,7 @@
 
 import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_GROUP_DESCRIPTION, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
 import { STRUCTURAL_GROUPS, groupPath, orderedLines, type Template, type TemplateLine } from './templates.ts';
-import { borrowedLines, doubleCounts, openLines, sortFlags, unitConflictFlag, type CheckLine, type ReviewFlag } from './checks.ts';
+import { borrowedLines, doubleCounts, openLines, sortFlags, uninstalledMaterials, unitConflictFlag, type CheckLine, type LaborUse, type MaterialUse, type ReviewFlag } from './checks.ts';
 import { isTestJob, type Reader } from '../jobtread/queries.ts';
 import type { ApiBudget } from '../jobtread/types.ts';
 
@@ -568,9 +568,45 @@ export function planBuild(
     contingencyQuantity,
     contingency,
     notes,
-    flags: reviewPlan(groups, contingency, notes),
+    flags: reviewPlan(groups, contingency, notes, installFlags(draft, lineIndex, priced)),
     counts: { lines, found, created, options },
   };
+}
+
+const LABOR_TYPE = /^(labor|subcontractor)$/i;
+
+/** A kept material with no labor to install it in its choice: the same check as the draft page (checks.ts). */
+export function installFlags(
+  draft: DraftFile,
+  lineIndex: Map<string, { t: Template; l: TemplateLine }>,
+  priced: Map<string, PricedInfo>,
+): ReviewFlag[] {
+  const scopeOf = (option: string | null): string => option?.trim() || 'base';
+  const foundIds = new Set((draft.found ?? []).map((f) => f.lineId));
+  const materials: MaterialUse[] = [];
+  const labor: LaborUse[] = [];
+  for (const d of draft.lines) {
+    if (foundIds.has(d.lineId)) continue;
+    const hit = lineIndex.get(d.lineId);
+    if (!hit) continue;
+    if (LABOR_TYPE.test(hit.l.costTypeName)) { labor.push({ scope: scopeOf(d.option), name: d.name }); continue; }
+    if (d.tracking || !/^materials$/i.test(hit.l.costTypeName)) continue;
+    const sectionLabor = hit.t.lines
+      .filter((x) => x.groupId === hit.l.groupId && LABOR_TYPE.test(x.costTypeName))
+      .map((x) => x.name);
+    materials.push({ scope: scopeOf(d.option), name: d.name, quantity: d.quantity, unit: d.unit, sectionLabor });
+  }
+  for (const f of draft.found ?? []) {
+    const type = priced.get(f.source.pricedItemId)?.costTypeName ?? '';
+    if (!LABOR_TYPE.test(type)) continue;
+    const gap = draft.gaps?.[f.forGap];
+    labor.push({ scope: scopeOf(f.option), name: f.name, ...(gap ? { for: gap.scope } : {}) });
+  }
+  for (const g of draft.gaps ?? []) {
+    if (g.resolved || !LABOR_TYPE.test(g.costType)) continue;
+    labor.push({ scope: scopeOf(g.option), name: g.scope, for: g.scope });
+  }
+  return uninstalledMaterials(materials, labor);
 }
 
 /** Every line of the plan with the path of groups it sits in, for the checks and the page. */
@@ -590,7 +626,7 @@ export function planLines(groups: NewGroup[]): { where: string; item: NewItem }[
 const dollars = (n: number): string => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /** The checks on a plan: double counts, units, open lines, the plan's notes, and what the contingency comes to. */
-export function reviewPlan(groups: NewGroup[], contingency: BuildPlan['contingency'], notes: string[]): ReviewFlag[] {
+export function reviewPlan(groups: NewGroup[], contingency: BuildPlan['contingency'], notes: string[], extra: ReviewFlag[] = []): ReviewFlag[] {
   const all = planLines(groups);
   const lines: CheckLine[] = all.map(({ where, item }) => ({
     where,
@@ -617,6 +653,7 @@ export function reviewPlan(groups: NewGroup[], contingency: BuildPlan['contingen
     if (item.pricedUnit) flags.push(unitConflictFlag(where, item.name, item.unitName ?? null, item.pricedUnit, item.quantity, item.unitCost));
   }
   for (const n of notes) flags.push({ severity: 'check', kind: 'note', text: n, lines: [] });
+  flags.push(...extra);
   if (contingency) {
     const holder = groups.find((g) => g.name === OPTIONS_GROUP);
     const picked = (holder?.lineItems ?? []).flatMap((og) =>

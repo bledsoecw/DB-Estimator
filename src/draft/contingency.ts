@@ -65,6 +65,42 @@ export const CONTINGENCY_NAMES = {
   costCode: 'General Requirements',
 } as const;
 
+/**
+ * DB's contingency policy, as the conditions the evidence can show and the
+ * rate each calls for. The highest wins. Carl, 2026-10-02, on 25-0000: two
+ * runs on the same basement gave 8% and 10%, because the walls come off
+ * (8) and the walls are cracked, stained and peeling (10) were weighed
+ * differently. An older home with signs of more to find is 10, every time.
+ * So the model names the conditions and the code applies the rate.
+ */
+export const CONTINGENCY_CONDITIONS = {
+  'in-kind': 5,
+  'something-moves': 8,
+  'stripped-to-substrate': 8,
+  'addition': 10,
+  'structural': 10,
+  'older-home-hidden-conditions': 10,
+} as const satisfies Record<string, ContingencyRate>;
+export type ContingencyCondition = keyof typeof CONTINGENCY_CONDITIONS;
+export const CONTINGENCY_CONDITION_NAMES = Object.keys(CONTINGENCY_CONDITIONS) as [ContingencyCondition, ...ContingencyCondition[]];
+
+/** How each condition reads on the page. */
+export const CONTINGENCY_CONDITION_LABELS: Record<ContingencyCondition, string> = {
+  'in-kind': 'replaced in kind, nothing moves',
+  'something-moves': 'something moves',
+  'stripped-to-substrate': 'finish stripped to the substrate',
+  'addition': 'an addition',
+  'structural': 'structural work',
+  'older-home-hidden-conditions': 'older home, more hidden conditions likely',
+};
+
+/** The rate for the conditions the evidence shows: the highest any calls for. With none named, the model's number, snapped. */
+export function rateForConditions(conditions: readonly ContingencyCondition[] | undefined, fallback?: number | null): ContingencyRate {
+  const known = (conditions ?? []).filter((c) => c in CONTINGENCY_CONDITIONS);
+  if (!known.length) return chooseRate(fallback);
+  return Math.max(...known.map((c) => CONTINGENCY_CONDITIONS[c])) as ContingencyRate;
+}
+
 /** Snap whatever the model said to the nearest rate the policy allows. */
 export function chooseRate(n: number | null | undefined): ContingencyRate {
   if (n === null || n === undefined || !Number.isFinite(n)) return DEFAULT_CONTINGENCY_RATE;
@@ -245,6 +281,8 @@ export interface ContingencyOption {
 /** What the recipe tells the rep, given the template's state and the amount. */
 export interface ContingencyStep {
   rate: ContingencyRate;
+  /** The policy conditions the evidence shows; the rate is the highest they call for. */
+  conditions: ContingencyCondition[];
   why: string;
   /** The base-scope cost the rate applies to. */
   base: Money;

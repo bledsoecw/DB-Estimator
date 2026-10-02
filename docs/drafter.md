@@ -270,6 +270,26 @@ grows once the item is priced. A choice written "Flooring — LVP" in a group
 with no other choice is flagged, and the draft prompt says every alternative
 the scope offers gets its lines or a gap.
 
+### Install labor, and wainscot's own (2026-10-02)
+
+The next run kept 29 wainscot panels in the framed-wall choice and deleted
+Trim Labor in both templates, so nothing paid to hang them; the run before
+had carried the panels in Trim Labor. Carl: wainscot needs a labor line to
+install it, its own, not counted twice by also sitting in Trim Labor.
+
+So, for every job: every material kept needs the labor that installs it in
+the same choice or the base scope, a labor line of its own trade or the sub
+line that installs it, counted once (rule 17 of the draft prompt). Trim
+Labor is trim (casing, baseboard, chair rail, a wainscot cap), never the
+panels. The catalog has no wainscot labor item, so wainscot install hours go
+in as an open item under the wainscot's option, and the catalog step never
+matches them to Trim Labor. The check box on both pages flags a kept
+material with no install labor in its choice (`uninstalledMaterials` in
+`src/draft/checks.ts`): it counts a labor or sub line of the material's
+trade, or the labor the template files beside it ("Paint Labor" for
+"Primer"); for wainscot, only its own. A material whose template section
+carries no labor line is not checked.
+
 ### The learned price book
 
 Carl's second rule, the same day: once a past price has been found for a
@@ -453,12 +473,22 @@ A gap whose quantity is what is unknown still gets the unit figure, marked
 ## Contingency
 
 Every construction draft (job type not Roofing) ends its template steps
-with a contingency step. The model chooses the rate under DB's policy
-(decided 28 Sep 2026: 5% when everything stays in place, 8% for a remodel
-where anything moves, 10% for additions, structural work or hidden
-conditions) and says why from the evidence; the code snaps it to one of the
-three, applies it to the base-scope cost, and prints the amount and the two
-job parameters the rep types — `Contingency Rate` and `Contingency Base`.
+with a contingency step. DB's policy (decided 28 Sep 2026: 5% when
+everything stays in place, 8% for a remodel where anything moves or the
+finish is stripped to the substrate, 10% for additions, structural work, or
+an older home where more hidden conditions are likely) is applied by the
+code, not weighed by the model. The model names every condition the
+evidence shows and says why; the code takes the highest rate any of them
+calls for (`CONTINGENCY_CONDITIONS` in `src/draft/contingency.ts`), applies
+it to the base-scope cost, and prints the amount, the conditions, and the
+two job parameters the rep types — `Contingency Rate` and `Contingency Base`.
+
+Pinned 2026-10-02 by Carl after two runs on the same 25-0000 basement came
+out at 8% and then 10%: the walls come off (8) and the foundation walls are
+cracked, water-stained and peeling (10) had been weighed differently. An
+older home with signs of more to find (water staining, cracks,
+efflorescence, peeling or failing paint, old wiring or plumbing, past patch
+repairs) is 10%, every time.
 When a chosen template carries the `Project Contingency` line (the seven
 phased construction templates do, since 2026-09-30), the step says to keep
 it; when none does, an X-Division draft, it says how to add the group and

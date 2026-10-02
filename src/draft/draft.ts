@@ -32,7 +32,7 @@ import {
 import type { HistoryFile, HistoryReport } from './history.ts';
 import type { LearnedStore } from './learned.ts';
 import { readFiles } from './readings.ts';
-import { chooseRate, contingencyAmount, contingencyLine, type ContingencyStep } from './contingency.ts';
+import { CONTINGENCY_CONDITIONS, contingencyAmount, contingencyLine, rateForConditions, type ContingencyCondition, type ContingencyStep } from './contingency.ts';
 import { candidatesFor, gapTerms, type CatalogCandidate, type CatalogSource } from './catalog.ts';
 import { diffDrafts, revisionText, type Direction, type DraftChanges, type Revision } from './revise.ts';
 import {
@@ -707,13 +707,14 @@ export function resolveGaps(
  */
 export function contingencyStep(
   evidence: Pick<JobEvidence, 'jobType'>,
-  reply: { rate: number; why: string } | undefined,
+  reply: { rate: number; why: string; conditions?: ContingencyCondition[] } | undefined,
   base: Money,
   templates: Template[],
   options: OptionGroup[] = [],
 ): ContingencyStep | null {
   if ((evidence.jobType ?? '').trim().toLowerCase() === 'roofing') return null;
-  const rate = chooseRate(reply?.rate);
+  const conditions = (reply?.conditions ?? []).filter((c) => c in CONTINGENCY_CONDITIONS);
+  const rate = rateForConditions(conditions, reply?.rate);
   let line: ContingencyStep['line'] = null;
   for (const t of templates) {
     const l = contingencyLine(t);
@@ -734,7 +735,7 @@ export function contingencyStep(
       open: c.open.length,
     })),
   );
-  return { rate, why: reply?.why?.trim() ?? '', base, amount, options: shares, line };
+  return { rate, conditions, why: reply?.why?.trim() ?? '', base, amount, options: shares, line };
 }
 
 /** Subcontracted lines, lines the model wanted looked up, and every gap. */

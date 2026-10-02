@@ -162,7 +162,7 @@ const DRAFT = {
     gap('Extend or relocate outlets to the new false wall face', 'Subcontractor', 'Each', null, ['electrical', 'outlet']),
   ],
   questions: [],
-  contingency: { rate: 10, why: 'Moisture on the block.' },
+  contingency: { rate: 10, why: 'Moisture on the block.', conditions: ['older-home-hidden-conditions'] },
 };
 const finding = (id: string, extra: Record<string, unknown>) => ({
   target: { kind: 'gap', id }, match: 'none', summary: 'Nothing in DB history.', pastWork: [], suggestedUnitCost: null, thisJob: '', suggestionBasis: '',

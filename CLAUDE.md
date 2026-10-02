@@ -44,6 +44,17 @@ Also from Carl, 25-0000, 2026-10-02:
   option) is a choice; a "Group — Choice" with no other choice is flagged
   (`totalsByOption` in `src/draft/draft.ts`, `optionFlags` in
   `src/draft/render.ts`).
+- **Every material needs labor to install it, counted once.** A labor line
+  of its own trade or the sub line that installs it, in the same choice.
+  Wainscot gets its own labor line, never Trim Labor (Trim Labor is the
+  trim); with no wainscot labor item in the catalog, it is an open item on
+  the job (rule 17 in `src/draft/prompt.ts`, `uninstalledMaterials` in
+  `src/draft/checks.ts`).
+- **Contingency follows DB's policy conditions; the highest wins.** The
+  model names the conditions, the code sets the rate
+  (`CONTINGENCY_CONDITIONS` in `src/draft/contingency.ts`). An older home
+  with signs of more hidden unknowns (water staining, cracks, efflorescence,
+  peeling paint, old wiring or plumbing) is 10%.
 
 ## What not to do
 

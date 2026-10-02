@@ -16,10 +16,10 @@ import { CSS } from '../report.ts';
 import { STRUCTURAL_GROUPS, groupPath } from './templates.ts';
 import type { JobEvidence } from './evidence.ts';
 import { parseOption, type Draft, type DraftGap, type DraftLine, type FoundLine, type GapProposals, type OptionChoice, type OptionGroup, type TemplatePlan, type Totals } from './draft.ts';
-import { CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
+import { CONTINGENCY_CONDITION_LABELS, CONTINGENCY_FORMULA, CONTINGENCY_GROUP, CONTINGENCY_LINE, CONTINGENCY_PARAMETERS } from './contingency.ts';
 import { changesText, reviseCommand } from './revise.ts';
 import type { HistoryFinding } from './prompt.ts';
-import { CHECKS_CSS, borrowedLines, doubleCounts, flagsHtml, sortFlags, unitConflictFlag, type CheckLine, type ReviewFlag } from './checks.ts';
+import { CHECKS_CSS, borrowedLines, doubleCounts, flagsHtml, sortFlags, uninstalledMaterials, unitConflictFlag, type CheckLine, type LaborUse, type MaterialUse, type ReviewFlag } from './checks.ts';
 import { readingText } from './readings.ts';
 
 /**
@@ -56,7 +56,41 @@ export function draftFlags(d: Draft): ReviewFlag[] {
     if (l.pricedUnit) flags.push(unitConflictFlag(placeOf(l, found), l.name, l.unit, l.pricedUnit, l.quantity, l.priced ? toNumber(l.unitCost) : null));
   }
   flags.push(...optionFlags(d.totals?.options ?? []));
+  if (d.plans) {
+    const { materials, labor } = installUses(d);
+    flags.push(...uninstalledMaterials(materials, labor));
+  }
   return sortFlags(flags);
+}
+
+const LABOR_TYPE = /^(labor|subcontractor)$/i;
+
+/** The draft's kept materials and its labor, by the choice each is in, for the install check. */
+export function installUses(d: Pick<Draft, 'lines' | 'found' | 'gaps' | 'plans'>): { materials: MaterialUse[]; labor: LaborUse[] } {
+  const scopeOf = (option: string | null): string => option?.trim() || 'base';
+  const found = new Map(d.found.map((f) => [f.lineId, f]));
+  const templates = new Map(d.plans.map((p) => [p.template.id, p.template]));
+  const materials: MaterialUse[] = [];
+  const labor: LaborUse[] = [];
+  for (const l of d.lines) {
+    const f = found.get(l.lineId);
+    if (LABOR_TYPE.test(l.costTypeName)) {
+      const gap = f ? d.gaps[f.forGap] : undefined;
+      labor.push({ scope: scopeOf(l.option), name: l.name, ...(gap ? { for: gap.scope } : {}) });
+      continue;
+    }
+    if (f || l.tracking || !/^materials$/i.test(l.costTypeName)) continue;
+    const t = templates.get(l.templateId);
+    const tl = t?.lines.find((x) => x.id === l.lineId);
+    if (!t || !tl) continue;
+    const sectionLabor = t.lines.filter((x) => x.groupId === tl.groupId && LABOR_TYPE.test(x.costTypeName)).map((x) => x.name);
+    materials.push({ scope: scopeOf(l.option), name: l.name, quantity: l.quantity, unit: l.unit, sectionLabor });
+  }
+  for (const g of d.gaps) {
+    if (g.resolved || !LABOR_TYPE.test(g.costType)) continue;
+    labor.push({ scope: scopeOf(g.option), name: g.scope, for: g.scope });
+  }
+  return { materials, labor };
 }
 
 /**
@@ -243,7 +277,8 @@ export function draftSteps(d: Draft): string {
   if (d.contingency) {
     step++;
     const c = d.contingency;
-    out.push(`${step}. Contingency at ${c.rate}%${c.why ? `: ${c.why}` : '.'}`);
+    const because = c.conditions.length ? ` (${c.conditions.map((x) => CONTINGENCY_CONDITION_LABELS[x]).join('; ')})` : '';
+    out.push(`${step}. Contingency at ${c.rate}%${because}${c.why ? `: ${c.why}` : '.'}`);
     if (c.line) {
       out.push(
         `   Keep ${[...c.line.group, CONTINGENCY_LINE].join(' › ')} from "${c.line.templateName}".` +
@@ -541,6 +576,7 @@ export function draftJson(d: Draft): unknown {
     contingency: d.contingency
       ? {
           rate: d.contingency.rate,
+          conditions: d.contingency.conditions,
           why: d.contingency.why,
           base: formatMoney(d.contingency.base),
           amount: formatMoney(d.contingency.amount),
