@@ -137,12 +137,16 @@ test('a found line whose section is in no template that was read lands in the pr
 
 test('options: each selection sits in the section of its work; two choices make one required pick, one choice an add-on', () => {
   const p = plan();
-  assert.deepEqual(selectionGroups(p.groups).map((g) => g.name), ['Flooring', 'Walls', 'Ceiling paint']);
+  // Carl, 2026-10-03: no header under a header of the same name. Flooring holds nothing but the Flooring
+  // choice, so the section is the selection; Walls keeps its name inside Drywall/Plaster; the ceiling
+  // paint add-on sits in Paint's Options beside Paint's own lines.
+  assert.deepEqual(selectionGroups(p.groups).map((g) => g.name), ['Flooring', 'Walls', 'Options']);
   // No section named in this draft: each goes where its first line's work is.
   const fin = top(p, 'FINISHES');
-  assert.ok(sub(fin, 'Flooring').lineItems.includes(sel(p, 'Flooring')));
+  assert.equal(sub(fin, 'Flooring'), sel(p, 'Flooring'), 'the Flooring section is the selection');
   assert.ok(sub(fin, 'Drywall/Plaster').lineItems.includes(sel(p, 'Walls')));
-  assert.ok(sub(fin, 'Paint').lineItems.includes(sel(p, 'Ceiling paint')));
+  assert.ok(sub(fin, 'Paint').lineItems.includes(sel(p, 'Options')));
+  assert.deepEqual(sub(fin, 'Paint').lineItems.map((li) => li.name), ['Primer', 'Paint', 'Paint Labor', 'Options'], 'the section\'s own lines, then its options');
   // A section the draft names wins.
   const placed = plan({ ...fx.draft, optionPlaces: [{ group: 'Walls', placeIn: { template: 'X-Division 09 Finishes', group: 'FINISHES › Paint', groupId: '22PLCchBuFMY' } }] });
   assert.ok(sub(top(placed, 'FINISHES'), 'Paint').lineItems.includes(sel(placed, 'Walls')));
@@ -155,10 +159,27 @@ test('options: each selection sits in the section of its work; two choices make 
   // Each choice ends with its own contingency share (tested on its own below).
   assert.deepEqual(items(sub(flooring, 'LVP')).map((i) => [i.name, i.quantity]), [['Flooring', 650], ['Flooring Labor', 20], [CONTINGENCY_LINE, 348]]);
   assert.deepEqual(items(sub(flooring, 'Epoxy')).map((i) => [i.name, i.quantity, i.costTypeId]), [['Flooring - Sub', 650, TYPES['Subcontractor']], [CONTINGENCY_LINE, 390, TYPES['Other']]]);
-  const ceiling = sel(p, 'Ceiling paint');
+  const ceiling = sel(p, 'Options');
   assert.equal(ceiling.minSelectionsRequired, 0);
   assert.equal(ceiling.maxSelectionsAllowed, 1);
   assert.deepEqual(ceiling.lineItems.map((li) => [li.name, (li as NewGroup).isSelected]), [['Ceiling paint', false]]);
+});
+
+test('a section holding nothing but add-ons is the add-on group; a choose-one of another name keeps its group', () => {
+  // Every Paint line goes into the walls choice, so Paint holds only the ceiling-paint add-on.
+  const draft: DraftFile = { ...fx.draft, lines: fx.draft.lines.map((l) => (/^(Primer|Paint|Paint Labor)$/.test(l.name) ? { ...l, option: 'Walls — Paint the block' } : l)) };
+  const p = plan(draft);
+  const paint = sub(top(p, 'FINISHES'), 'Paint');
+  assert.equal(paint.minSelectionsRequired, 0);
+  assert.equal(paint.maxSelectionsAllowed, 1);
+  assert.equal(paint.description, 'Optional add-on; the customer may decline it.');
+  assert.deepEqual(paint.lineItems.map((li) => li.name), ['Ceiling paint'], 'Paint › Ceiling paint, not Ceiling paint › Ceiling paint');
+  // Two add-ons in one section: one Options group, take any.
+  const two: DraftFile = { ...fx.draft, lines: fx.draft.lines.map((l) => (l.name === 'Paint Labor' ? { ...l, option: 'Touch-up' } : l)) };
+  const opts = sub(sub(top(plan(two), 'FINISHES'), 'Paint'), 'Options');
+  assert.deepEqual(opts.lineItems.map((li) => li.name), ['Touch-up', 'Ceiling paint'], 'in the draft\'s order');
+  assert.equal(opts.maxSelectionsAllowed, null);
+  assert.equal(opts.description, 'Optional add-ons; the customer may take any of them, or none.');
 });
 
 test('open items are created on the job, tagged, priced from history or the ballpark; a catalog match at quantity 0', () => {
@@ -247,7 +268,7 @@ test('each option carries its own contingency share inside its choice group, so 
     { group: 'Flooring', choice: 'Epoxy', cost: 4875, amount: 390 },
     { group: 'Walls', choice: 'Framed false walls', cost: 2610.75, amount: 208.86 },
     { group: 'Walls', choice: 'Paint the block', cost: 409.05, amount: 32.72 },
-    { group: 'Ceiling paint', choice: 'Ceiling paint', cost: 2567.5, amount: 205.4 },
+    { group: 'Options', choice: 'Ceiling paint', cost: 2567.5, amount: 205.4, addOn: true },
   ]);
   const opts = selectionGroups(p.groups);
   const lvp = items(sub(sel(p, 'Flooring'), 'LVP'));
@@ -324,13 +345,14 @@ test('a draft with no fit, or a line in no template that was read, is refused or
 test('planText reads as the tree the rep will see', () => {
   const text = planText(plan());
   assert.match(text, /^Build pass 2 of 25-0000 Kay Oss_Test Job 1 into its budget: 2 top-level groups, 11 template lines, 3 from the catalog, 3 created, 3 option groups\./);
-  assert.match(text, /\nFINISHES\n  Flooring\n    Flooring \[select: min 1, max 1\]\n      LVP \[selected\]\n        - Flooring: 650 · \$5 \/ \$7\.25\n/);
+  // The Flooring section is the Flooring choice: one header, not Flooring under Flooring.
+  assert.match(text, /\nFINISHES\n  Flooring \[select: min 1, max 1\]\n    LVP \[selected\]\n      - Flooring: 650 · \$5 \/ \$7\.25\n/);
   assert.match(text, /\n  Paint\n    - Primer: 4 · \$30 \/ \$43\.5\n/);
-  assert.match(text, /\n    Ceiling paint \[select: min 0, max 1\]\n/);
+  assert.match(text, /\n    Options \[select: min 0, max 1\]\n      Ceiling paint\n/);
   assert.match(text, /- Framing lumber for the false walls \(DRAFT - Carl confirms\): 120 · \$3\.55 \/ \$5\.92 · no catalog item/);
   assert.match(text, /- Project Contingency: 217\.6 = \{Contingency Base\} \* \{Contingency Rate\} \/ 100 · \$1 \/ \$1/);
-  assert.match(text, /\n        - Project Contingency: 348 · \$1 \/ \$1\n/);
-  assert.match(text, /\nContingency 8%: \$217\.60 on the \$2720\.00 base scope; inside each option: Flooring — LVP \+\$348\.00, Flooring — Epoxy \+\$390\.00, Walls — Framed false walls \+\$208\.86, Walls — Paint the block \+\$32\.72, Ceiling paint — Ceiling paint \+\$205\.40\n/);
+  assert.match(text, /\n      - Project Contingency: 348 · \$1 \/ \$1\n/);
+  assert.match(text, /\nContingency 8%: \$217\.60 on the \$2720\.00 base scope; inside each option: Flooring — LVP \+\$348\.00, Flooring — Epoxy \+\$390\.00, Walls — Framed false walls \+\$208\.86, Walls — Paint the block \+\$32\.72, Ceiling paint \+\$205\.40\n/);
   assert.match(text, /\nJob parameters: Contingency Rate = 8, Contingency Base = 2720\n/);
   assert.match(text, /\nCHECK BEFORE --apply \(0 problems, 3 to check\):\n  1\. check: 1 line has no count yet and cost nothing until the rep sets it: "Electrical Labor"\.\n  2\. check: 3 lines were created for Carl to confirm/);
   // The sample's LVP left its supplies behind: the template files Flooring - Miscellaneous MAT beside Flooring.
@@ -347,9 +369,9 @@ test('groupMutation: jobId and the group at the root with no discriminator, nest
   const first = ($['lineItems'] as Record<string, unknown>[])[0]!;
   assert.equal(first['_type'], 'costGroup');
   assert.equal(first['name'], 'Flooring');
-  // The selection is nested inside its section, flags and all.
-  const selection = (first['lineItems'] as Record<string, unknown>[])[0]!;
-  assert.equal(selection['minSelectionsRequired'], 1);
+  // The Flooring section is the selection itself, flags and all, its choices directly under it.
+  assert.equal(first['minSelectionsRequired'], 1);
+  assert.equal((first['lineItems'] as Record<string, unknown>[])[0]!['name'], 'LVP');
   assert.ok(!JSON.stringify(m).includes('undefined'));
   assert.deepEqual(m.createCostGroup.createdCostGroup, { id: {}, name: {}, descendentCostItems: { $: { size: 100 }, count: {} } });
   // A kept line carries exactly what a job line needs.
@@ -558,7 +580,7 @@ test('the build page: the tree with quantities, prices and tags on a dry run; th
   assert.match(dry, /\$43\.50<div class="unit">cost \$30\.00<\/div>/);           // unit price and cost
   assert.match(dry, /\$174\.00<div class="unit">cost \$120\.00<\/div>/);         // 4 gallons extended
   assert.match(dry, /Flooring › LVP<\/div><div class="name">Flooring<\/div><span class="tag sel">one choice required<\/span> <span class="tag ">pre-selected<\/span>/);
-  assert.match(dry, /Ceiling paint › Ceiling paint<\/div><div class="name">Paint Labor - Sub<\/div><span class="tag sel">add-on<\/span>/);
+  assert.match(dry, /Paint › Options › Ceiling paint<\/div><div class="name">Paint Labor - Sub<\/div><span class="tag sel">add-on<\/span>/);
   assert.match(dry, /<div class="name">Mold-resistant concrete paint<\/div>.*<span class="tag warn">DRAFT — Carl confirms<\/span>/);
   assert.match(dry, /<span class="tag dim">count not set<\/span>/);
   const noted = plan();
@@ -806,6 +828,6 @@ test('a supplies line is not a material that needs install labor', async () => {
 });
 
 test('an add-on\'s contingency note names it once', () => {
-  const share = planLines(plan().groups).find((x) => x.item.name === CONTINGENCY_LINE && x.where.endsWith('Ceiling paint › Ceiling paint'))!;
-  assert.match(share.item.jobNote!, /^For this job: the 8% contingency share for "Ceiling paint", on the add-on's \$[\d,.]+ cost as built\. It comes and goes with the add-on\.$/);
+  const share = planLines(plan().groups).find((x) => x.item.name === CONTINGENCY_LINE && x.where.endsWith('Options › Ceiling paint'))!;
+  assert.match(share.item.jobNote!, /^For this job: the 8% contingency share for the "Ceiling paint" add-on, on its \$[\d,.]+ cost as built\. It comes and goes with the add-on\.$/);
 });

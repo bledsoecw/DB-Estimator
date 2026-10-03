@@ -236,6 +236,8 @@ export interface ContingencyShare {
   cost: number;
   /** contingency(base + choice) − contingency(base), so base + shares round the same as one figure. */
   amount: number;
+  /** An add-on the customer may take or not: named by itself, not by the group it sits in. */
+  addOn?: boolean;
 }
 
 export const OPTIONS_GROUP = 'CUSTOMER OPTIONS';
@@ -378,7 +380,7 @@ export function planBuild(
       unitId: need(names.units, 'unit', l.unit, notes),
       costTypeId: need(names.costTypes, 'cost type', l.costTypeName, notes),
       costTypeName: l.costTypeName,
-      costCodeId: codeOf(l.costCodeName),
+      costCodeId: codeOf(bookedCode(l.name, l.costCodeName, l.groupId ? { groupId: l.groupId } : null, [t])),
       quantity,
       unitCost: l.priced?.unitCost ?? null,
       unitPrice: l.priced?.unitPrice ?? null,
@@ -487,6 +489,17 @@ export function planBuild(
 
   // The scope text is the description of the job's scope group (rootFor), as Carl's budgets carry it.
 
+  /**
+   * The section an option's selection is placed in, for a line that names no section of its own.
+   * 25-0000, 2026-10-03: the epoxy choice sat in Phase 3 › Flooring, but its line named no section
+   * and was coded General Requirements.
+   */
+  const optionPlace = (option: string | null): { groupId: string } | null => {
+    if (!option) return null;
+    const { group } = parseOption(option);
+    return (draft.optionPlaces ?? []).find((p) => p.group.trim().toLowerCase() === group.toLowerCase())?.placeIn ?? null;
+  };
+
   // ---- found lines: into their section, priced from the catalog item -------------------
   let found = 0;
   for (const f of draft.found ?? []) {
@@ -499,7 +512,7 @@ export function planBuild(
       unitId: need(names.units, 'unit', p.unit, notes),
       costTypeId: need(names.costTypes, 'cost type', p.costTypeName, notes),
       costTypeName: p.costTypeName,
-      costCodeId: codeOf(p.costCodeName),
+      costCodeId: codeOf(bookedCode(p.name, p.costCodeName, f.placeIn ?? optionPlace(f.option), templates.values())),
       quantity: f.quantity,
       unitCost: p.unitCost,
       unitPrice: p.unitPrice,
@@ -518,17 +531,6 @@ export function planBuild(
     found++;
   }
 
-  /**
-   * The section an option's selection is placed in, for a line that names no section of its own.
-   * 25-0000, 2026-10-03: the epoxy choice sat in Phase 3 › Flooring, but its line named no section
-   * and was coded General Requirements.
-   */
-  const optionPlace = (option: string | null): { groupId: string } | null => {
-    if (!option) return null;
-    const { group } = parseOption(option);
-    return (draft.optionPlaces ?? []).find((p) => p.group.trim().toLowerCase() === group.toLowerCase())?.placeIn ?? null;
-  };
-
   // ---- open items: created on the job, tagged, priced from the ballpark or history ---------
   let created = 0;
   for (const g of draft.gaps ?? []) {
@@ -545,7 +547,7 @@ export function planBuild(
           unitId: need(names.units, 'unit', p.unit, notes),
           costTypeId: need(names.costTypes, 'cost type', p.costTypeName, notes),
           costTypeName: p.costTypeName,
-          costCodeId: codeOf(p.costCodeName),
+          costCodeId: codeOf(bookedCode(p.name, p.costCodeName, g.placeIn ?? optionPlace(g.option), templates.values())),
           quantity: 0,
           unitCost: p.unitCost,
           unitPrice: p.unitPrice,
@@ -596,19 +598,11 @@ export function planBuild(
   // Two or more choices means one is required; one means an add-on.
   let options = 0;
   const selections: NewGroup[] = [];
+  const bySection = new Map<NewGroup, { group: string; choices: NewGroup[]; required: boolean }[]>();
   for (const [group, og] of optionGroups) {
     const choices = [...og.choices.values()];
     const required = choices.length >= 2;
     choices.forEach((c, i) => { c.isSelected = required && i === 0; });
-    const sel: NewGroup = {
-      _type: 'costGroup',
-      name: group,
-      description: required ? 'One choice required.' : 'Optional add-on; the customer may decline it.',
-      minSelectionsRequired: required ? 1 : 0,
-      maxSelectionsAllowed: 1,
-      showChildDeltas: true,
-      lineItems: choices,
-    };
     const named = (draft.optionPlaces ?? []).find((p) => p.group.trim().toLowerCase() === group.toLowerCase())?.placeIn ?? null;
     let section: NewGroup;
     if (named) section = placeFor(named, templates, groupFor, rootFor, primaryId, notes, `the "${group}" selection`);
@@ -616,9 +610,55 @@ export function planBuild(
       const phase = phaseOf(og.home.t, og.home.groupId);
       section = phase ? groupFor(og.home.t, phase) : rootFor(og.home.t);
     } else section = placeFor(null, templates, groupFor, rootFor, primaryId, notes, `the "${group}" selection`);
-    section.lineItems.push(sel);
-    selections.push(sel);
+    bySection.set(section, [...(bySection.get(section) ?? []), { group, choices, required }]);
     options++;
+  }
+  // Carl, 2026-10-03, on 25-0000's Phase 3 › Paint › Ceiling paint › Ceiling paint: no header under a
+  // header of the same name; a section holds its lines. So a section that holds nothing but a choose-one of
+  // its own name, or nothing but add-ons, IS the selection: Phase 3 › Flooring (one choice) › LVP, Epoxy;
+  // Phase 3 › Paint (optional) › Ceiling paint. Otherwise a choose-one keeps its own group and name in the
+  // section (Framing Materials › Walls › Framed walls), "choice" added only if it would repeat the section's
+  // name, and add-ons go in one Options group beside the section's lines (DB's roofing budgets do the same
+  // as "Upgrades"). A phase or the scope group never becomes a selection: the base contingency goes there.
+  const scopeRoots = new Set([...roots.values()].map((r) => r.group));
+  const asSelection = (g: NewGroup, required: boolean, count: number): void => {
+    g.minSelectionsRequired = required ? 1 : 0;
+    g.maxSelectionsAllowed = required || count === 1 ? 1 : null;
+    g.showChildDeltas = true;
+    g.description = required ? 'One choice required.' : count === 1 ? 'Optional add-on; the customer may decline it.' : 'Optional add-ons; the customer may take any of them, or none.';
+    selections.push(g);
+  };
+  /** Add-ons named once ("Ceiling paint"): their one choice carries the name, so no group of their own. */
+  const bareAddOns = new Set<NewGroup>();
+  for (const [section, list] of bySection) {
+    const bare = list.filter((x) => !x.required && x.choices.length === 1 && x.choices[0]!.name === x.group);
+    const own = list.filter((x) => !bare.includes(x));
+    for (const x of bare) bareAddOns.add(x.choices[0]!);
+    const free = section.lineItems.length === 0 && !scopeRoots.has(section) && !/^phase\s*\d/i.test(section.name);
+    if (free && list.length === 1 && own.length === 1 && own[0]!.group.toLowerCase() === section.name.toLowerCase()) {
+      section.lineItems.push(...own[0]!.choices);
+      asSelection(section, own[0]!.required, own[0]!.choices.length);
+      continue;
+    }
+    if (free && own.length === 0) {
+      section.lineItems.push(...bare.flatMap((x) => x.choices));
+      asSelection(section, false, bare.length);
+      continue;
+    }
+    for (const r of own) {
+      const sel: NewGroup = {
+        _type: 'costGroup',
+        name: r.group.toLowerCase() === section.name.toLowerCase() ? `${r.group} choice` : r.group,
+        lineItems: r.choices,
+      };
+      asSelection(sel, r.required, r.choices.length);
+      section.lineItems.push(sel);
+    }
+    if (bare.length) {
+      const sel: NewGroup = { _type: 'costGroup', name: 'Options', lineItems: bare.flatMap((x) => x.choices) };
+      asSelection(sel, false, bare.length);
+      section.lineItems.push(sel);
+    }
   }
 
   // ---- the top-level groups, in order ------------------------------------------------
@@ -674,9 +714,11 @@ export function planBuild(
           choice.lineItems.push(line(
             shareCents / 100,
             `Contingency at ${rate}% on this option, at cost. It comes with the option when the customer takes it; unused contingency is credited at closeout.`,
-            `${JOB_NOTE_HEAD} the ${rate}% contingency share for "${choice.name === og.name ? og.name : `${og.name} — ${choice.name}`}"${why}, on the ${choice.name === og.name ? 'add-on' : 'choice'}'s ${dollars(choiceCents / 100)} cost as built. It comes and goes with the ${choice.name === og.name ? 'add-on' : 'choice'}.`,
+            bareAddOns.has(choice)
+              ? `${JOB_NOTE_HEAD} the ${rate}% contingency share for the "${choice.name}" add-on${why}, on its ${dollars(choiceCents / 100)} cost as built. It comes and goes with the add-on.`
+              : `${JOB_NOTE_HEAD} the ${rate}% contingency share for "${og.name} — ${choice.name}"${why}, on the choice's ${dollars(choiceCents / 100)} cost as built. It comes and goes with the choice.`,
           ));
-          shares.push({ group: og.name, choice: choice.name, cost: choiceCents / 100, amount: shareCents / 100 });
+          shares.push({ group: og.name, choice: choice.name, cost: choiceCents / 100, amount: shareCents / 100, ...(bareAddOns.has(choice) ? { addOn: true } : {}) });
         }
       }
       contingencyQuantity = amountCents / 100;
@@ -1027,6 +1069,28 @@ export function sectionCode(placeIn: { groupId: string } | null, templates: Iter
   return null;
 }
 
+/**
+ * The cost code a line is booked to where it is built. Carl, 2026-10-03:
+ * "Framing Nails under any construction section should not be booked as
+ * roofing. Only when section framing a roof should it be roofing."
+ * Addition/House Build files Fastener - Framing Nails, coded Roofing, in
+ * Framing Materials. A line coded Roofing in a section whose path names no
+ * roof takes the code its section's lines carry (Woods & Plastics there); in
+ * a roofing section, or one whose own lines are Roofing (Gutters), it stays.
+ * A line named "(R)" is the roofing division's by name and keeps its code.
+ */
+export function bookedCode(
+  name: string,
+  code: string | null,
+  placeIn: { groupId: string } | null,
+  templates: Iterable<Template>,
+): string | null {
+  if (!code || !/^roofing$/i.test(code.trim()) || !placeIn || /\(R\)\s*$/.test(name)) return code;
+  const t = [...templates].find((x) => x.groups.some((g) => g.id === placeIn.groupId));
+  if (!t || groupPath(t, placeIn.groupId).some((n) => /\broof/i.test(n))) return code;
+  return sectionCode(placeIn, [t]) ?? code;
+}
+
 /** How many lines a group holds, all the way down. */
 export function countItems(g: NewGroup): number {
   let n = 0;
@@ -1057,7 +1121,7 @@ export function planText(plan: BuildPlan): string {
   if (plan.contingency) {
     const c = plan.contingency;
     out.push(`Contingency ${c.rate}%: $${c.amount.toFixed(2)} on the $${c.base.toFixed(2)} base scope` +
-      (c.shares.length ? `; inside each option: ${c.shares.map((s) => `${s.group} — ${s.choice} +$${s.amount.toFixed(2)}`).join(', ')}` : ''));
+      (c.shares.length ? `; inside each option: ${c.shares.map((s) => `${s.addOn ? s.choice : `${s.group} — ${s.choice}`} +$${s.amount.toFixed(2)}`).join(', ')}` : ''));
   }
   if (plan.parameters.length) out.push(`Job parameters: ${plan.parameters.map((p) => `${p.name} = ${p.value}`).join(', ')}`);
   const shown = plan.flags.filter((f) => f.kind !== 'note' && f.kind !== 'contingency');

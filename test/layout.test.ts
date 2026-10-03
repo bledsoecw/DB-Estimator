@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import type { Template, TemplateLine } from '../src/draft/templates.ts';
 import { CONTINGENCY_FORMULA, CONTINGENCY_LINE } from '../src/draft/contingency.ts';
 import {
-  attachNotes, catalogIdsOf, countItems, groupMutation, jobNoteText, planBuild, planLines, scopeGroupName, sectionCode, selectionGroups,
+  attachNotes, bookedCode, catalogIdsOf, countItems, groupMutation, jobNoteText, planBuild, planLines, scopeGroupName, sectionCode, selectionGroups,
   verifyBuild, verifyNotes,
   type BuildPlan, type DraftFile, type NewGroup, type NewItem, type PricedInfo,
 } from '../src/draft/build.ts';
@@ -141,7 +141,8 @@ test('one top group that reads what the job is, the job\'s description on it, th
 test('each selection sits in the section of its work: where the draft named it, else the phase of its first line', () => {
   const p = build();
   const root = p.groups[0]!;
-  const flooring = sub(sub(sub(root, 'Phase 3 - Interiors'), 'Flooring'), 'Flooring');
+  // Carl, 2026-10-03: not Flooring under Flooring. The section holds nothing but the Flooring choice, so it is the choice.
+  const flooring = sub(sub(root, 'Phase 3 - Interiors'), 'Flooring');
   assert.equal(flooring.minSelectionsRequired, 1, 'LVP or the epoxy open item: one is required');
   assert.deepEqual(kids(flooring), ['LVP', 'Epoxy']);
   assert.deepEqual(items(sub(flooring, 'Epoxy')).map((i) => i.name), ['Epoxy floor by sub (DRAFT - Carl confirms)', CONTINGENCY_LINE]);
@@ -323,9 +324,11 @@ test('a material kept without the fastener or supplies its section files with it
   assert.match(flags[1]!.text, /"Primer" \(2 Gallons\), "Paint" \(4 Gallons\) are kept without "Paint - Miscellaneous Mat"/, 'the other choice\'s supplies do not count');
   assert.ok(flags.every((f) => f.severity === 'check' && f.kind === 'install'));
 
-  // Kept in the same choice, or in the base scope, it covers them; a supply line is never flagged for lacking another.
+  // Kept in the same choice it covers them; a supply line is never flagged for lacking another.
   assert.deepEqual(unfastenedMaterials([framing], [...kept, { scope: 'Walls — Framed walls', name: 'Fastener - Framing Nails' }]), []);
-  assert.deepEqual(unfastenedMaterials([primer], [{ scope: 'base', name: 'Paint - Miscellaneous Mat' }]), []);
+  // Once in the base is not the walls choice's: Carl, 2026-10-03, "I do not see paint misc materials if the customer picks the walls option".
+  assert.equal(unfastenedMaterials([primer], [{ scope: 'base', name: 'Paint - Miscellaneous Mat' }]).length, 1);
+  assert.deepEqual(unfastenedMaterials([{ ...primer, scope: 'base' }], [{ scope: 'base', name: 'Paint - Miscellaneous Mat' }]), [], 'base paint, base supplies');
   assert.deepEqual(unfastenedMaterials([{ ...framing, name: 'Fastener - Siding Nail', sectionSupplies: ['Siding - Caulking'] }], []), []);
   assert.deepEqual(unfastenedMaterials([{ ...framing, sectionSupplies: [] }], []), [], 'no supplies in the section: nothing to say');
   for (const name of ['Fastener - Framing Nails', 'Paint - Miscellaneous Mat', 'Flooring - Miscellaneous MAT', 'Siding - Trim Nails', 'Shower Caulk', 'Cabinet Misc Accessories']) {
@@ -338,6 +341,7 @@ test('the draft prompt keeps fasteners with their material and matches fastener 
   const { DRAFT_SYSTEM, HISTORY_SYSTEM } = await import('../src/draft/prompt.ts');
   assert.match(DRAFT_SYSTEM, /keep the fastener or supplies line its template section files with it \(Fastener - Framing Nails with Framing Wall/);
   assert.match(DRAFT_SYSTEM, /a wall's bottom plate on a concrete floor needs Concrete Fasteners/);
+  assert.match(DRAFT_SYSTEM, /when both wall choices paint, each carries its own Paint - Miscellaneous Mat\. Never put them once in the base scope/);
   assert.match(HISTORY_SYSTEM, /A fastener gap is matched to the catalog's fastener for that work/);
 });
 
@@ -413,7 +417,34 @@ test('a new line named by its gap is a short name, its note the gap\'s purpose; 
   const p = planBuild({ ...DRAFT, gaps: [DRAFT.gaps![0]!, epoxyGap] }, new Map([[T, coded]]), names, priced);
   const epoxy = planLines(p.groups).find((x) => x.item.name.startsWith('Epoxy Floor Coating - Sub'))!;
   assert.equal(epoxy.item.name, 'Epoxy Floor Coating - Sub (DRAFT - Carl confirms)');
-  assert.match(epoxy.where, /Phase 3 - Interiors › Flooring › Flooring › Epoxy$/);
+  assert.match(epoxy.where, /Phase 3 - Interiors › Flooring › Epoxy$/);
   assert.equal(epoxy.item.costCodeId, names.costCodes.get('finishes'), 'the Flooring selection is in Phase 3 › Flooring, whose lines are Finishes');
   assert.match(epoxy.item.jobNote!, /^For this job: Grind the slab, fill the cracks and coat the whole basement floor in epoxy\.\n/);
+});
+
+test('a line coded Roofing is booked to its section\'s code unless the section is roof work', () => {
+  // Carl, 2026-10-03: "Framing Nails under any construction section should not be booked as roofing.
+  // Only when section framing a roof should it be roofing."
+  const roofy: Template = {
+    ...HOME,
+    groups: [...HOME.groups, g('P2roof', 'Roofing', 'P2', 'i'), g('P2gut', 'Gutters', 'P2', 'j')],
+    lines: [
+      ...HOME.lines.map((l) => (l.groupId === 'P2frame' ? { ...l, costCodeName: 'Woods & Plastics' } : l)),
+      { ...line('nails', 'Fastener - Framing Nails', 'P2frame', 'c', 'Box', 'Materials', 49.99, 72.49), costCodeName: 'Roofing' },
+      { ...line('rnails', 'Fastener - Roofing Coil Nails', 'P2roof', 'a', 'Box', 'Materials', 40, 58), costCodeName: 'Roofing' },
+      { ...line('grem', 'Gutter Removal', 'P2gut', 'a', 'Linear Foot', 'Labor', 1, 2), costCodeName: 'Roofing' },
+      { ...line('pmr', 'Project Management (R)', 'P1pm', 'b', 'Hours', 'Labor', 55, 100), costCodeName: 'Roofing' },
+    ],
+  };
+  const at = (groupId: string) => ({ groupId });
+  assert.equal(bookedCode('Fastener - Framing Nails', 'Roofing', at('P2frame'), [roofy]), 'Woods & Plastics', 'framing walls is carpentry');
+  assert.equal(bookedCode('Fastener - Roofing Coil Nails', 'Roofing', at('P2roof'), [roofy]), 'Roofing', 'a roofing section stays Roofing');
+  assert.equal(bookedCode('Gutter Removal', 'Roofing', at('P2gut'), [roofy]), 'Roofing', 'a section whose own lines are Roofing stays');
+  assert.equal(bookedCode('Project Management (R)', 'Roofing', at('P1pm'), [roofy]), 'Roofing', 'the roofing division\'s line by name');
+  assert.equal(bookedCode('Framing Wall', 'Woods & Plastics', at('P2frame'), [roofy]), 'Woods & Plastics', 'anything else keeps its own code');
+
+  // Built: the nails kept in the framed-wall choice go on Woods & Plastics.
+  const p = planBuild({ ...DRAFT, lines: [...DRAFT.lines, kept('nails', 'Fastener - Framing Nails', 1, 'Box', 'Walls — Framed')] }, new Map([[T, roofy]]), names, priced);
+  const nails = planLines(p.groups).find((x) => x.item.name === 'Fastener - Framing Nails')!;
+  assert.equal(nails.item.costCodeId, names.costCodes.get('woods & plastics'));
 });

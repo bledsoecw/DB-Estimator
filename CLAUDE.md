@@ -60,8 +60,9 @@ Also from Carl, 25-0000, 2026-10-02:
   The fastener or supplies line its template section files with it
   (Fastener - Framing Nails with Framing Wall); where the template has none,
   a gap the catalog places (Concrete Fasteners for a plate on concrete, trim
-  nails for trim and wainscot) (rule 17, `unfastenedMaterials` in
-  `src/draft/checks.ts`).
+  nails for trim and wainscot). Supplies go in each choice whose work uses
+  them, never once in the base for work that is only in choices (rule 17,
+  `unfastenedMaterials` in `src/draft/checks.ts`).
 - **Contingency follows DB's policy conditions; the highest wins.** The
   model names the conditions, the code sets the rate
   (`CONTINGENCY_CONDITIONS` in `src/draft/contingency.ts`). An older home
@@ -80,6 +81,16 @@ From Carl, 2026-10-02, with a picture of the NEW POOL HOUSE SCOPE budget:
   work) as its description. Under it the template's phases and sections, in
   the template's order. No General Description line.
 - **Selections sit in the section of their work**, no CUSTOMER OPTIONS group.
+- **No header under a header of the same name; a section holds its lines.**
+  A section holding nothing but a choose-one of its own name, or nothing but
+  add-ons, is the selection itself (Phase 3 › Flooring › LVP, Epoxy; Phase 3
+  › Paint › Ceiling paint). Otherwise a choose-one keeps its own group
+  (Framing Materials › Walls › Framed walls) and add-ons go in one Options
+  group beside the section's lines (`planBuild` in `src/draft/build.ts`).
+- **A line is booked by the work it is in.** Coded Roofing outside a roof
+  section, it takes its section's code (Fastener - Framing Nails in Framing
+  Materials is Woods & Plastics); in a roof section, or as an (R) line, it
+  stays Roofing (`bookedCode` in `src/draft/build.ts`).
 - **A line created on the job takes its section's cost code** (the code the
   section's own lines carry), never General Requirements by default
   (`sectionCode` in `src/draft/build.ts`).

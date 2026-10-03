@@ -248,16 +248,19 @@ export const SUPPLY_LINE = /\b(fasteners?|nails?|screws?|staples|caulk(ing)?|adh
  * Build files beside it in Framing Materials; Carl: "I don't even see
  * fasteners in the budget?" A supply line of the material's own section
  * (Fastener - Framing Nails, Paint - Miscellaneous Mat, Flooring -
- * Miscellaneous MAT) kept in the same choice, or in the base scope, covers
- * every material of that section. One flag per missing supply, naming the
- * materials that need it.
+ * Miscellaneous MAT) kept in the same choice covers every material of that
+ * section in it. Kept once in the base for materials that are only in
+ * choices, it is not enough: 25-0000, 2026-10-03, Paint - Miscellaneous Mat
+ * sat in the base for both wall choices, and Carl did not see paint supplies
+ * in the walls option. One flag per missing supply, naming the materials.
  */
 export function unfastenedMaterials(materials: MaterialUse[], kept: { scope: string; name: string }[]): ReviewFlag[] {
   const missing = new Map<string, { scope: string; supplies: string[]; materials: MaterialUse[] }>();
   for (const m of materials) {
     const supplies = m.sectionSupplies ?? [];
     if (!supplies.length || SUPPLY_LINE.test(m.name.replace(DRAFT_SUFFIX, ''))) continue;
-    const here = kept.filter((k) => k.scope === m.scope || k.scope === 'base');
+    // Only the same choice counts: supplies kept once in the base are paid for even when that choice is not picked.
+    const here = kept.filter((k) => k.scope === m.scope);
     if (supplies.some((s) => here.some((k) => sameName(s, k.name)))) continue;
     const key = `${m.scope}\u0000${supplies.join('\u0000')}`;
     const entry = missing.get(key) ?? { scope: m.scope, supplies, materials: [] };

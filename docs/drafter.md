@@ -363,6 +363,40 @@ takes the cost code of the section its selection sits in
 (`optionPlaces`). An add-on's contingency note said "Move contents — Move
 contents"; it names an add-on once.
 
+### Same-name headers, supplies per choice, Roofing by section (2026-10-03)
+
+Carl, on the laptop build of 25-0000, with a picture of Phase 3 › Paint ›
+Ceiling paint › Ceiling paint: no header under a header of the same name;
+a section holds its lines, as Paint holds Paint - Misc. JobTread lets a
+section be the selection itself, and DB's roofing budgets already put
+add-ons in an "Upgrades" group. So the build now:
+
+- makes a section that holds nothing but a choose-one of its own name the
+  choose-one (Phase 3 › Flooring, one choice required › LVP, Epoxy), and a
+  section that holds nothing but add-ons named once the add-on group
+  (Phase 3 › Paint, optional › Ceiling paint);
+- otherwise keeps a choose-one in its own group with its own name (Framing
+  Materials › Walls › Framed walls; "choice" is added only where it would
+  repeat the section's name), keeps an add-on written "Group — Choice" in
+  its own group, and puts add-ons named once in one Options group beside
+  the section's own lines (Site Preparation › Options › Move contents);
+- never makes a phase or the scope group a selection, since the base
+  contingency line goes there.
+
+"I do not see paint misc materials if the customer picks the walls option":
+the draft had kept Paint - Miscellaneous Mat once in the base for both wall
+choices. Supplies now go in each choice whose work uses them, the same line
+once per choice, and the check counts only the same choice: once in the
+base, they would be paid for when that choice is not picked.
+
+"Framing Nails under any construction section should not be booked as
+roofing. Only when section framing a roof should it be roofing." A line
+coded Roofing outside a roof section is booked to the code its section's
+lines carry (`bookedCode`): the template's Fastener - Framing Nails in
+Framing Materials goes on Woods & Plastics. In a roof section, in a section
+whose own lines are Roofing (Gutters), or named (R), it stays Roofing. The
+templates are not changed; the build applies it to every one.
+
 ### The learned price book
 
 Carl's second rule, the same day: once a past price has been found for a

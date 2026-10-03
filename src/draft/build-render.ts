@@ -219,7 +219,7 @@ export function renderBuildPage(x: BuildPageInput): string {
       };
       return o.minSelectionsRequired! >= 1
         ? `<li><strong>${esc(o.name)}</strong>, one choice required:<ul>${choices.map((c) => `<li>${esc(c.name)}${c.isSelected ? ' (pre-selected)' : ''} &mdash; ${usd(totals(c).price)} price, ${usd(totals(c).cost)} cost${share(c)}</li>`).join('')}</ul></li>`
-        : `<li><strong>${esc(o.name)}</strong>, optional add-on &mdash; ${usd(totals(o).price)} price, ${usd(totals(o).cost)} cost${choices[0] ? share(choices[0]) : ''}</li>`;
+        : choices.map((c) => `<li><strong>${esc(c.name)}</strong>, optional add-on &mdash; ${usd(totals(c).price)} price, ${usd(totals(c).cost)} cost${share(c)}</li>`).join('');
     }).join('')}</ul>` : ''}
     ${plan.parameters.length ? `<p class="fine">Job parameters: ${plan.parameters.map((p) => `${esc(p.name)} = ${p.value}`).join(', ')}.</p>` : ''}
     ${noted ? `<p class="fine">${noted} line${noted === 1 ? '' : 's'} carry a note for the team in Internal Notes, under the catalog's own note: what the line is for on this job, how the count was reached, and where a new line's price came from. It is in the Note column below.</p>` : ''}
