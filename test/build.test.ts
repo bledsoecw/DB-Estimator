@@ -804,3 +804,8 @@ test('a supplies line is not a material that needs install labor', async () => {
   assert.deepEqual(uninstalledMaterials([misc], []), []);
   assert.equal(uninstalledMaterials([{ ...misc, name: 'Primer' }], []).length, 1, 'a real material still needs its labor');
 });
+
+test('an add-on\'s contingency note names it once', () => {
+  const share = planLines(plan().groups).find((x) => x.item.name === CONTINGENCY_LINE && x.where.endsWith('Ceiling paint › Ceiling paint'))!;
+  assert.match(share.item.jobNote!, /^For this job: the 8% contingency share for "Ceiling paint", on the add-on's \$[\d,.]+ cost as built\. It comes and goes with the add-on\.$/);
+});

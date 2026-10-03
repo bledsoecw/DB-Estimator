@@ -150,7 +150,7 @@ function fake(replies: unknown[]): Fake {
 const MARGINS = { Subcontractor: 0.3, Labor: 0.45, Materials: 0.31, Other: 0.31 };
 const ev = [{ source: 'Carl, pass 2 direction', quote: 'batt insulation in the false walls' }];
 const gap = (scope: string, costType: string, unit: string, quantity: number | null, lookBack: string[], option: string | null = 'Framed walls') =>
-  ({ scope, why: 'no line in these templates', unit, quantity, costType, basis: 'per the rep\'s direction', evidence: ev, lookBack, option });
+  ({ scope, purpose: '', why: 'no line in these templates', unit, quantity, costType, basis: 'per the rep\'s direction', evidence: ev, lookBack, option });
 const DRAFT = {
   summary: 'Basement: concrete paint, or framed false walls as an option.',
   scopeTitle: 'Basement Finish', optionPlaces: [], scopeOfWork: 'Paint the block; option to frame false walls.',

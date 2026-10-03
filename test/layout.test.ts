@@ -104,9 +104,9 @@ const DRAFT: DraftFile = {
     placeIn: place('P1site', 'NEW HOME BUILD SCOPE › Phase 1 - General Requirements › Site Preparation'), quantity: 8, unit: 'Hours', option: null,
   }],
   gaps: [
-    { scope: 'Move contents', why: '', unit: 'Hours', quantity: 8, costType: 'Labor', option: null, resolved: {}, placeIn: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null },
+    { scope: 'Move contents', purpose: '', why: '', unit: 'Hours', quantity: 8, costType: 'Labor', option: null, resolved: {}, placeIn: null, proposed: null, regionalUnitCost: null, regionalUnitPrice: null },
     {
-      scope: 'Epoxy floor by sub', why: 'No template line covers an epoxy floor.', unit: 'Square Foot', quantity: 706, costType: 'Subcontractor',
+      scope: 'Epoxy floor by sub', purpose: '', why: 'No template line covers an epoxy floor.', unit: 'Square Foot', quantity: 706, costType: 'Subcontractor',
       option: 'Flooring — Epoxy', resolved: null, catalogMatch: null, placeIn: place('P3floor', 'NEW HOME BUILD SCOPE › Phase 3 - Interiors › Flooring'),
       proposed: { source: 'history', unitCost: '$7.00', unitPrice: '$10.15' }, regionalUnitCost: null, regionalUnitPrice: null,
     },
@@ -404,4 +404,16 @@ test('the note goes under the catalog\'s own Internal Notes, on the wire as the 
   const read = planLines(p.groups).map((x) => ({ name: x.item.name, note: x.item.customFieldValues?.[NOTES_FIELD] ?? null }));
   assert.equal(verifyNotes(p, read), `ok: ${want} lines carry their job note in Internal Notes`);
   assert.equal(verifyNotes(p, read.map((r) => ({ ...r, note: null }))), `NOTES: 0 of ${want} lines carry their job note in Internal Notes; the rest have the catalog's note only`);
+});
+
+test('a new line named by its gap is a short name, its note the gap\'s purpose; with no section of its own it takes its selection\'s cost code', () => {
+  const coded: Template = { ...HOME, lines: HOME.lines.map((l) => (l.groupId === 'P3floor' ? { ...l, costCodeName: 'Finishes' } : l)) };
+  // 25-0000, 2026-10-03: the epoxy line named no section, so it went on General Requirements in the Flooring choice.
+  const epoxyGap = { ...DRAFT.gaps![1]!, scope: 'Epoxy Floor Coating - Sub', purpose: 'Grind the slab, fill the cracks and coat the whole basement floor in epoxy.', placeIn: null };
+  const p = planBuild({ ...DRAFT, gaps: [DRAFT.gaps![0]!, epoxyGap] }, new Map([[T, coded]]), names, priced);
+  const epoxy = planLines(p.groups).find((x) => x.item.name.startsWith('Epoxy Floor Coating - Sub'))!;
+  assert.equal(epoxy.item.name, 'Epoxy Floor Coating - Sub (DRAFT - Carl confirms)');
+  assert.match(epoxy.where, /Phase 3 - Interiors › Flooring › Flooring › Epoxy$/);
+  assert.equal(epoxy.item.costCodeId, names.costCodes.get('finishes'), 'the Flooring selection is in Phase 3 › Flooring, whose lines are Finishes');
+  assert.match(epoxy.item.jobNote!, /^For this job: Grind the slab, fill the cracks and coat the whole basement floor in epoxy\.\n/);
 });

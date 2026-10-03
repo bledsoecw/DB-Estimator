@@ -47,7 +47,7 @@ const PASS1 = {
     line('22PLCchBuFMX', 16, 'skim two coats'),
     line('22PLCchBuFMQ', 706, 'floor area', 'Flooring — LVP'),
   ],
-  gaps: [{ scope: 'Move basement contents', why: 'no line', unit: 'Hours', quantity: 4, costType: 'Labor', basis: 'two people', evidence: ev, lookBack: [], option: null }],
+  gaps: [{ scope: 'Move basement contents', purpose: '', why: 'no line', unit: 'Hours', quantity: 4, costType: 'Labor', basis: 'two people', evidence: ev, lookBack: [], option: null }],
   questions: [{ question: 'Skim the walls or paint over them?', why: 'the note is tentative' }],
   contingency: { rate: 8, why: 'Walls stripped to the concrete.', conditions: ['stripped-to-substrate'] },
 };

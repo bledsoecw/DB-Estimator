@@ -722,7 +722,7 @@ export function resolveGaps(
       priced: c.unitCost !== null && (unitCost !== ZERO || unitPrice !== ZERO),
       tracking: false,
       basis: f.catalog.basis.trim() || g.basis,
-      purpose: g.scope,
+      purpose: g.purpose?.trim() || g.scope,
       evidence: g.evidence,
       option: g.option,
       confidence: f.confidence,

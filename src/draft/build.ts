@@ -89,6 +89,8 @@ export interface DraftFile {
   }[];
   gaps?: {
     scope: string;
+    /** What the line is for on this job; absent in older drafts, where the scope says it. */
+    purpose?: string;
     why: string;
     unit: string;
     quantity: number | null;
@@ -507,7 +509,7 @@ export function planBuild(
     };
     const forGap = draft.gaps?.[f.forGap];
     const note = jobNoteText({
-      purpose: f.purpose?.trim() || forGap?.scope, quantity: f.quantity, unit: p.unit, basis: f.basis,
+      purpose: f.purpose?.trim() || forGap?.purpose?.trim() || forGap?.scope, quantity: f.quantity, unit: p.unit, basis: f.basis,
       more: [forGap?.why ? `Not in the template: ${forGap.why}` : null, historyNote(forGap?.history?.summary)],
     });
     if (note) item.jobNote = note;
@@ -515,6 +517,17 @@ export function planBuild(
     dest.lineItems.push(item);
     found++;
   }
+
+  /**
+   * The section an option's selection is placed in, for a line that names no section of its own.
+   * 25-0000, 2026-10-03: the epoxy choice sat in Phase 3 › Flooring, but its line named no section
+   * and was coded General Requirements.
+   */
+  const optionPlace = (option: string | null): { groupId: string } | null => {
+    if (!option) return null;
+    const { group } = parseOption(option);
+    return (draft.optionPlaces ?? []).find((p) => p.group.trim().toLowerCase() === group.toLowerCase())?.placeIn ?? null;
+  };
 
   // ---- open items: created on the job, tagged, priced from the ballpark or history ---------
   let created = 0;
@@ -538,7 +551,7 @@ export function planBuild(
           unitPrice: p.unitPrice,
           description: p.description,
           jobNote: jobNoteText({
-            purpose: g.scope, basis: g.basis,
+            purpose: g.purpose?.trim() || g.scope, basis: g.basis,
             more: [g.why ? `Not in the template: ${g.why}` : null, 'The count is not known yet, so the quantity is 0 until the rep sets it.'],
           }),
           unitName: p.unit,
@@ -562,14 +575,14 @@ export function planBuild(
       unitId: need(names.units, 'unit', g.unit, notes),
       costTypeId: need(names.costTypes, 'cost type', g.costType, notes),
       costTypeName: g.costType,
-      costCodeId: codeOf(sectionCode(g.placeIn, templates.values()) ?? 'General Requirements'),
+      costCodeId: codeOf(sectionCode(g.placeIn ?? optionPlace(g.option), templates.values()) ?? 'General Requirements'),
       quantity: g.quantity ?? 0,
       unitCost,
       unitPrice,
       // The reasoning is the team's, in Internal Notes; the description is what an estimate may show.
       description: null,
       jobNote: jobNoteText({
-        purpose: g.scope, quantity: g.quantity, unit: g.unit, basis: g.basis,
+        purpose: g.purpose?.trim() || g.scope, quantity: g.quantity, unit: g.unit, basis: g.basis,
         more: [g.why ? `Not in the template: ${g.why}` : null, priceNote, countNote.trim()],
       }),
       unitName: g.unit,
@@ -661,7 +674,7 @@ export function planBuild(
           choice.lineItems.push(line(
             shareCents / 100,
             `Contingency at ${rate}% on this option, at cost. It comes with the option when the customer takes it; unused contingency is credited at closeout.`,
-            `${JOB_NOTE_HEAD} the ${rate}% contingency share for "${og.name} — ${choice.name}"${why}, on the choice's ${dollars(choiceCents / 100)} cost as built. It comes and goes with the choice.`,
+            `${JOB_NOTE_HEAD} the ${rate}% contingency share for "${choice.name === og.name ? og.name : `${og.name} — ${choice.name}`}"${why}, on the ${choice.name === og.name ? 'add-on' : 'choice'}'s ${dollars(choiceCents / 100)} cost as built. It comes and goes with the ${choice.name === og.name ? 'add-on' : 'choice'}.`,
           ));
           shares.push({ group: og.name, choice: choice.name, cost: choiceCents / 100, amount: shareCents / 100 });
         }

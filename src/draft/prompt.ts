@@ -78,7 +78,7 @@ Rules:
 17. Every material kept needs the labor that installs it, in the same choice or the base scope: a labor line of its own trade (Drywall Brd- Labor for Drywall Brd- Mat, Flooring Labor for Flooring), or the Subcontractor line that installs it. Count install labor once: a labor line covers only the work its name says. Trim Labor is trim (casing, baseboard, chair rail, a wainscot cap) and never wainscot panels. Wainscot gets its own labor: keep Wainscot Labor (Hours) beside Wainscoting, under the same option, with the hours and their basis; where the template has no Wainscot Labor line, put "Wainscot Labor" in gaps (Labor, Hours) under that option and the catalog search places it. Never add wainscot hours to Trim Labor. When trim is kept too, Trim Labor's basis says it is for the trim only. A material also needs what fastens or finishes it, in the same choice: keep the fastener or supplies line its template section files with it (Fastener - Framing Nails with Framing Wall, Paint - Miscellaneous Mat with paint, Flooring - Miscellaneous MAT with Flooring) with a count and its basis. Where the template has none for the work, put it in gaps and the catalog search places it: a wall's bottom plate on a concrete floor needs Concrete Fasteners; trim and wainscot need trim or brad nails. Leave it out only when the material's own description says its fasteners are included, and say so in the basis.
 
 18. The budget is built in the template's own shape: the scope group, its phases, their sub-sections. A line not in the template goes in gaps and is placed in the phase and sub-section of its work. Each selection the customer makes sits where its work is: give optionPlaces one entry per option group (the Group of "Group — Choice", or an add-on's name) with the id, from the sections list, of the phase or sub-section of its main work (a floor choice in Phase 3 - Interiors › Flooring; a framed-wall choice in Phase 2 - Rough-In › Framing Materials; moving contents in Phase 1 - General Requirements › Site Preparation).
-19. purpose, on every kept line, is a note for DB's crew and office saying what the line is for on this job, in one plain sentence they can act on: the work, where it is, and anything particular to this job ("Hang 1/2-inch drywall on the new false walls, above the wainscot only"; "Nails for framing the 2x4 false walls 6–8 inches off the foundation"; "Move the outlets on the foundation walls onto the new false walls"). It goes in the line's Internal Notes beside the catalog's own note, with the basis after it, so it does not repeat the arithmetic. No money. A gap's scope is its purpose; write it as plainly.
+19. purpose, on every kept line, is a note for DB's crew and office saying what the line is for on this job, in one plain sentence they can act on: the work, where it is, and anything particular to this job ("Hang 1/2-inch drywall on the new false walls, above the wainscot only"; "Nails for framing the 2x4 false walls 6–8 inches off the foundation"; "Move the outlets on the foundation walls onto the new false walls"). It goes in the line's Internal Notes beside the catalog's own note, with the basis after it, so it does not repeat the arithmetic. No money. A gap's scope becomes the new line's name on the budget: a few words, like a catalog line's name ("Epoxy Floor Coating - Sub", "Mold-Resistant Masonry Paint"), never a sentence; its purpose is the sentence for the team, as for a kept line.
 
 Write for the rep: plain words, and line names exactly as listed. Reference lines by their id.`;
 
@@ -123,7 +123,10 @@ export const DraftSchema = z.object({
   ),
   gaps: z.array(
     z.object({
+      /** The new line's name on the budget: a few words, never a sentence (rule 19). */
       scope: z.string(),
+      /** What the line is for on this job, for the crew and office (rule 19). */
+      purpose: z.string(),
       why: z.string(),
       unit: z.string(),
       quantity: z.number().nullable(),

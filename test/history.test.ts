@@ -233,8 +233,8 @@ const DRAFT = {
     { lineId: '22PLCchBuFMa', quantity: 6, basis: 'two coats', purpose: '', evidence: ev('painting'), option: null, confidence: 'medium', lookBack: [] },
   ],
   gaps: [
-    { scope: 'Skim-coat the concrete walls', why: 'no template line', unit: 'Hours', quantity: 24, costType: 'Labor', basis: 'guess', evidence: ev('skimming'), lookBack: ['skim coat', 'skim'], option: null },
-    { scope: 'Move contents', why: 'no template line', unit: 'Hours', quantity: null, costType: 'Labor', basis: 'unknown', evidence: ev('moving'), lookBack: [], option: null },
+    { scope: 'Skim-coat the concrete walls', purpose: '', why: 'no template line', unit: 'Hours', quantity: 24, costType: 'Labor', basis: 'guess', evidence: ev('skimming'), lookBack: ['skim coat', 'skim'], option: null },
+    { scope: 'Move contents', purpose: '', why: 'no template line', unit: 'Hours', quantity: null, costType: 'Labor', basis: 'unknown', evidence: ev('moving'), lookBack: [], option: null },
   ],
   questions: [],
   contingency: { rate: 8, why: 'The walls are stripped to the concrete and the floor comes up.', conditions: ['stripped-to-substrate', 'something-moves'] },
@@ -744,7 +744,7 @@ test('terms are dealt out in rounds, gaps first, up to the cap; only searched ta
 test('a target whose terms were not searched is not remembered as "nothing found"', async () => {
   // Seventeen gaps, each with its own term: the sixteenth search is the last; the seventeenth gap was never looked for.
   const gaps = Array.from({ length: 17 }, (_, i) => ({
-    scope: `Gap ${i}`, why: 'no template line', unit: 'Hours', quantity: 1, costType: 'Labor', basis: 'guess', evidence: DRAFT.gaps[0]!.evidence,
+    scope: `Gap ${i}`, purpose: '', why: 'no template line', unit: 'Hours', quantity: 1, costType: 'Labor', basis: 'guess', evidence: DRAFT.gaps[0]!.evidence,
     lookBack: [`word${i}`], option: null,
   }));
   const store = new LearnedStore([], { now: () => T0 });
@@ -1051,7 +1051,7 @@ test('lesson 2: a general line borrowed from another trade\'s section is flagged
 
 test('lesson 3: an open item is a choice, so "pick one" stays pick one, and a lonely choice is flagged', async () => {
   const lvp = { lineId: '22PLhsr2Yx55', quantity: 706, basis: 'LVP', purpose: '', evidence: ev('LVP'), option: 'Flooring — LVP', confidence: 'medium', lookBack: [] };
-  const epoxy = { scope: 'Epoxy floor coating by sub', why: 'no template line', unit: 'Square Foot', quantity: 706, costType: 'Subcontractor', basis: 'the floor', evidence: ev('epoxy'), lookBack: [], option: 'Flooring — Epoxy' };
+  const epoxy = { scope: 'Epoxy floor coating by sub', purpose: '', why: 'no template line', unit: 'Square Foot', quantity: 706, costType: 'Subcontractor', basis: 'the floor', evidence: ev('epoxy'), lookBack: [], option: 'Flooring — Epoxy' };
   const both = await draftEstimate(fx.evidence, fx.index, load, fake([{ ...DRAFT, lines: [lvp], gaps: [epoxy] }]), { templateIds: [FIN, GR] });
   const flooring = both.totals.options.find((o) => o.group === 'Flooring')!;
   assert.equal(flooring.required, true, 'LVP or the epoxy open item: the customer picks one');

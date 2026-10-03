@@ -84,7 +84,7 @@ const DRAFT = {
     { lineId: '22PLht84FDJ9', quantity: -2, basis: 'nonsense', purpose: '', evidence: [], option: null, confidence: 'low', lookBack: [] },
   ],
   gaps: [
-    { scope: 'Move basement contents before and after', why: 'no template line for moving the customer\'s things', unit: 'Hours', quantity: 4, costType: 'Labor', basis: 'two people, two hours', evidence: ev('Assistance with moving basement equipment and contents will be included as a separate labor line item'), lookBack: ['skim coat', 'skim'], option: null },
+    { scope: 'Move basement contents before and after', purpose: '', why: 'no template line for moving the customer\'s things', unit: 'Hours', quantity: 4, costType: 'Labor', basis: 'two people, two hours', evidence: ev('Assistance with moving basement equipment and contents will be included as a separate labor line item'), lookBack: ['skim coat', 'skim'], option: null },
   ],
   questions: [{ question: 'Paint the ceiling or not?', why: 'the note says the decision is tentative' }],
   contingency: { rate: 7, why: 'The walls are skimmed to the concrete, so hidden conditions are likely.', conditions: [] },

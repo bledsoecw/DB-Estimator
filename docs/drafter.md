@@ -351,6 +351,18 @@ for a line created from scratch). The build page's Note column shows each
 line's note; the read-back counts the lines that carry one
 (`jobNoteText`, `attachNotes`, `verifyNotes` in `src/draft/build.ts`).
 
+The first build with notes (25-0000, 2026-10-03, from the laptop) wrote all
+43 and kept Framing Nails, Concrete Fasteners and Brad Nails in the framed-
+wall choice. It showed three things to tidy. A gap's scope is the new
+line's name, and with rule 19 the model wrote it as a sentence ("Epoxy floor
+coating by a subcontractor: grind/prep the slab, …"); now a gap carries a
+short scope for the name ("Epoxy Floor Coating - Sub") and a `purpose` for
+the note. The epoxy line named no section of its own and went on General
+Requirements inside the Flooring choice; a created line with no section now
+takes the cost code of the section its selection sits in
+(`optionPlaces`). An add-on's contingency note said "Move contents — Move
+contents"; it names an add-on once.
+
 ### The learned price book
 
 Carl's second rule, the same day: once a past price has been found for a

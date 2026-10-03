@@ -1212,5 +1212,6 @@ there (`src/draft/build.ts`; the plan and the read-back are in
   (`createCostGroup.$.lineItems._on_newCostItem.customFieldValues`, an
   object of any keys); the build sends it keyed by the custom field's id,
   `{ "<fieldId>": "text" }`, with the catalog's note first so it is not
-  lost. NOT YET VERIFIED: the first build with notes reads them back
-  (`verifyNotes`) and says so on the page.
+  lost. VERIFIED 2026-10-03: the laptop build of 25-0000 wrote all 43
+  lines' Internal Notes this way; each read back with the catalog's note,
+  a blank line, then the job note, newlines kept.
