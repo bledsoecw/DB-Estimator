@@ -1108,7 +1108,7 @@ export function gateBuild(g: GateInput): Gate {
   const ours = new Set((g.record?.groups ?? []).map((x) => x.id));
   const foreign = scope.filter((x) => !ours.has(x.id));
   if (foreign.length) {
-    return { ok: false, reason: `--replace deletes only what this tool built, and ${foreign.map((x) => `"${x.name}"`).join(', ')} ${foreign.length === 1 ? 'is' : 'are'} not in its record. Clear ${foreign.length === 1 ? 'it' : 'them'} in JobTread first.` };
+    return { ok: false, reason: `--replace deletes only what this tool built, and ${foreign.map((x) => `"${x.name}"`).join(', ')} ${foreign.length === 1 ? 'is' : 'are'} not in its record. Delete ${foreign.length === 1 ? 'it' : 'them'} on the job's Budget tab in JobTread, then build without --replace. (A build before 2026-10-03 kept its record on the computer that made it; builds now keep it in the shared OneDrive folder.)` };
   }
   return { ok: true, deletes: scope.map((x) => ({ id: x.id, name: x.name })), warnings };
 }

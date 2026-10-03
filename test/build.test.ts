@@ -19,7 +19,7 @@ import {
   attachNotes, catalogIdsOf, countItems, deleteMutation, gateBuild, groupMutation, parametersMutation, parseMoney, planBuild, planLines, planText, pricedIdsOf, selectionGroups, verifyBuild,
   type BuildPlan, type BuildRecord, type DraftFile, type NewGroup, type NewItem,
 } from '../src/draft/build.ts';
-import { askYesNo, namesFromFixture, parseBuildArgs, planFile, type BuildFixture } from '../src/build-cli.ts';
+import { askYesNo, namesFromFixture, parseBuildArgs, planFile, readRecord, recordPaths, type BuildFixture } from '../src/build-cli.ts';
 import { PassThrough, Readable } from 'node:stream';
 import { assertAllowed } from '../src/jobtread/writer.ts';
 import type { ApiBudget } from '../src/jobtread/types.ts';
@@ -423,7 +423,7 @@ test('the gate: scope already on the budget needs --replace, and --replace delet
   assert.deepEqual(g.ok && g.deletes, [{ id: 'f', name: 'FINISHES' }, { id: 'o', name: OPTIONS_GROUP }]);
   const foreign = [...scope, { id: 'x', name: 'KITCHEN (by hand)' }];
   g = gateBuild({ job: TEST_JOB, draft: fx.draft, budget: budgetWith(foreign), record, live: false, replace: true });
-  assert.ok(!g.ok && /"KITCHEN \(by hand\)" is not in its record\. Clear it in JobTread first/.test(g.reason));
+  assert.ok(!g.ok && /"KITCHEN \(by hand\)" is not in its record\. Delete it on the job's Budget tab in JobTread, then build without --replace/.test(g.reason));
 });
 
 /** What JobTread would hold after the plan is built: ids made up, structure kept. */
@@ -777,4 +777,30 @@ test('--apply asks y/n: only y or yes writes; no, anything else, or no answer wr
   assert.equal(parseBuildArgs(['25-0000', '--apply', '--yes']).yes, true);
   assert.equal(parseBuildArgs(['25-0000', '--apply', '-y']).yes, true);
   assert.throws(() => parseBuildArgs(['25-0000', '--yes']), /--yes only answers the question --apply asks/);
+});
+
+test('the build record is kept in the shared folder, so either computer can --replace what the other built', () => {
+  // 25-0000, 2026-10-03: the laptop could not replace the work computer's build; its record was on the work computer.
+  const env = { DB_LEARNED_PATH: '/onedrive/DB-Estimator/learned-prices.json' } as NodeJS.ProcessEnv;
+  const none = (): boolean => false;
+  assert.deepEqual(recordPaths('22PDZbwDdZfq', 'review', env, none), {
+    write: '/onedrive/DB-Estimator/builds/22PDZbwDdZfq-built.json',
+    read: ['/onedrive/DB-Estimator/builds/22PDZbwDdZfq-built.json', 'review/22PDZbwDdZfq-built.json'],
+  });
+  assert.deepEqual(recordPaths('22PDZbwDdZfq', 'review', {} as NodeJS.ProcessEnv, none),
+    { write: 'review/22PDZbwDdZfq-built.json', read: ['review/22PDZbwDdZfq-built.json'] }, 'no shared folder: beside the page');
+
+  const rec = (builtAt: string, id: string): string => JSON.stringify({ jobId: 'j', jobName: 'n', pass: 1, builtAt, groups: [{ id, name: 'X SCOPE' }], parameters: [] });
+  const files: Record<string, string> = { shared: rec('2026-10-03T02:30:00.000Z', 'new'), local: rec('2026-10-02T20:09:00.000Z', 'old') };
+  assert.equal(readRecord(['shared', 'local'], (p) => files[p] ?? null)!.groups[0]!.id, 'new', 'the latest build wins');
+  assert.equal(readRecord(['shared', 'local'], (p) => (p === 'local' ? files.local! : null))!.groups[0]!.id, 'old', 'an older local record is still read');
+  assert.equal(readRecord(['shared'], () => null), null);
+});
+
+test('a supplies line is not a material that needs install labor', async () => {
+  const { uninstalledMaterials } = await import('../src/draft/checks.ts');
+  // 25-0000, 2026-10-03: Paint - Miscellaneous Mat in the base for both wall choices, paint labor in the choices.
+  const misc = { scope: 'base', name: 'Paint - Miscellaneous Mat', quantity: 1, unit: 'Each', sectionLabor: ['Paint Labor', 'Paint Labor - Sub'] };
+  assert.deepEqual(uninstalledMaterials([misc], []), []);
+  assert.equal(uninstalledMaterials([{ ...misc, name: 'Primer' }], []).length, 1, 'a real material still needs its labor');
 });

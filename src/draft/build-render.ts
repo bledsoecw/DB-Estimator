@@ -40,6 +40,8 @@ export interface BuildPageInput {
   gate: Gate;
   /** Null when the gate refused. */
   plan: BuildPlan | null;
+  /** Where the build's record is kept (build-cli `recordPaths`). */
+  recordPath?: string;
   /** Set after --apply: what was created and what the read-back showed. */
   applied?: { record: BuildRecord; verify: { ok: boolean; lines: string[] } } | null;
 }
@@ -228,7 +230,7 @@ export function renderBuildPage(x: BuildPageInput): string {
   ${x.applied ? `<section class="summary">
     <h2>Read back from JobTread</h2>
     <ul class="checks">${x.applied.verify.lines.map((l) => `<li class="${l.startsWith('ok') ? 'ok' : 'bad'}">${esc(l)}</li>`).join('')}</ul>
-    <p class="fine">Built ${esc(x.applied.record.builtAt.slice(0, 16).replace('T', ' '))}; the record is beside this page as <code>${esc(job.id)}-built.json</code>, and <code>--replace</code> takes these groups down again.</p>
+    <p class="fine">Built ${esc(x.applied.record.builtAt.slice(0, 16).replace('T', ' '))}; the record is <code>${esc(x.recordPath ?? `${job.id}-built.json`)}</code>, and <code>--replace</code> takes these groups down again, from this computer or the other.</p>
   </section>` : gate.ok && plan ? `<section class="steps">
     <h2>Next</h2>
     <p class="detail">Read the tree. If a quantity or price is wrong, fix the draft (another <code>--revise</code> pass) and run this again. When it reads right:</p>

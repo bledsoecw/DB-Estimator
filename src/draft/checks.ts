@@ -210,12 +210,15 @@ const sameName = (a: string, b: string): boolean => a.replace(DRAFT_SUFFIX, '').
  * base scope) whose name or purpose is its trade ("Drywall Brd- Labor" for
  * "Drywall Brd- Mat"), or by a labor line its template files beside it
  * ("Paint Labor" for "Primer"). Wainscot only by its own. A material whose
- * section has no labor in the template is not checked.
+ * section has no labor in the template is not checked, nor a supplies line
+ * (SUPPLY_LINE): 25-0000, 2026-10-03, Paint - Miscellaneous Mat kept in the
+ * base for both wall choices was called a material with no install labor.
  */
 export function uninstalledMaterials(materials: MaterialUse[], labor: LaborUse[]): ReviewFlag[] {
   const out: ReviewFlag[] = [];
   for (const m of materials) {
-    if (!m.sectionLabor.length) continue;
+    // Supplies (Paint - Miscellaneous Mat, Fastener - Framing Nails) are used up by the work they go with, not installed.
+    if (!m.sectionLabor.length || SUPPLY_LINE.test(m.name.replace(DRAFT_SUFFIX, ''))) continue;
     const here = labor.filter((l) => l.scope === m.scope);
     const stem = stemOf(m.name);
     const own = OWN_LABOR.test(m.name);

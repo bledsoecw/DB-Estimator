@@ -713,11 +713,20 @@ the pre-selected choice, the contingency formula, and the `--apply` command
 to run next), writes the exact mutations to `review/<jobId>-build-plan.json`,
 and changes nothing. With `--apply` it needs `JOBTREAD_WRITE_GRANT_KEY`,
 issues one `createCostGroup` per top-level group, records what it created in
-`review/<jobId>-built.json` after every write (so a run that dies mid-way
-leaves a record of what exists), then reads the budget back and says, on the
+`<jobId>-built.json` after every write (so a run that dies mid-way leaves a
+record of what exists), then reads the budget back and says, on the
 terminal and on the page, whether each group is there with as many lines as
 planned, the contingency line has its quantity, and the parameters are set.
 A run the gate refuses writes the page too, with the reason.
+
+The record lives where the learned book does: `builds/` in the shared
+OneDrive folder, so `--replace` on the laptop takes down what the work
+computer built, and the other way round (`recordPaths` in
+`src/build-cli.ts`). On 2026-10-03 the laptop refused to replace the group
+the work computer had built the night before, because that record was in
+the work computer's `review/`. A computer without the shared folder keeps
+the record in `review/`, and a record an older build left there is still
+read; the latest of the two wins.
 
 **Check before you apply.** Both pages open with a box of what to look at
 before anything is built (`src/draft/checks.ts`), problems first, each with

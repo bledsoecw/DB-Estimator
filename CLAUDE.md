@@ -102,4 +102,6 @@ From Carl, 2026-10-02, with a picture of the NEW POOL HOUSE SCOPE budget:
 - Secrets stay in `.env`. Pricing data, rendered review pages, and the
   learned store never go in git. The learned store is one shared file in
   Carl's OneDrive (`SHARED_LEARNED_PATH` in `src/draft-cli.ts`), falling back
-  to `.db-estimator/` on a computer without that folder.
+  to `.db-estimator/` on a computer without that folder. A build's record sits
+  beside it in `builds/`, so either computer can `--replace` what the other
+  built (`recordPaths` in `src/build-cli.ts`).

@@ -18,7 +18,7 @@
  * <job> is the target: a job id, 250000 or 25-0000. Without it the draft's
  * own job is the target. The budget must be empty apart from the structural
  * groups the job template puts there; --replace takes down what this tool
- * built last time (recorded in review/<jobId>-built.json) and nothing else.
+ * built last time (recorded in <jobId>-built.json, see recordPaths) and nothing else.
  *
  * Without --apply it is a dry run: it reads everything, prints the plan,
  * writes it as a page (review/<jobId>-build-plan.html) and the exact
@@ -31,7 +31,7 @@
  * or no answer at all, writes nothing. --yes skips the question.
  *
  * With --apply it needs JOBTREAD_WRITE_GRANT_KEY, writes, records what it
- * created in review/<jobId>-built.json after every write, reads the budget
+ * created in its record after every write, reads the budget
  * back and says whether each group is there with as many lines as planned,
  * on the terminal and on the page.
  * Only a test job (25-0000) is built unless --live is given.
@@ -47,7 +47,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { clientFromEnv } from './jobtread/client.ts';
 import { writerFromEnv } from './jobtread/writer.ts';
 import { fetchBudget, type Reader } from './jobtread/queries.ts';
@@ -60,6 +60,7 @@ import {
   type BuildPlan, type BuildRecord, type DraftFile, type JobHead, type NameMaps, type PricedInfo,
 } from './draft/build.ts';
 import { renderBuildPage } from './draft/build-render.ts';
+import { resolveLearnedPath } from './draft-cli.ts';
 
 export interface BuildArgs {
   job: string | null;
@@ -168,9 +169,38 @@ export function planFile(plan: BuildPlan, deletes: { id: string; name: string }[
   };
 }
 
-function readRecord(path: string): BuildRecord | null {
-  if (!existsSync(path)) return null;
-  return JSON.parse(readFileSync(path, 'utf8')) as BuildRecord;
+/**
+ * Where a build's record is written and looked for. 25-0000, 2026-10-03:
+ * the laptop refused --replace on the group the work computer had built,
+ * because the record was in the work computer's review/ folder. So the
+ * record goes where the learned book goes, the shared OneDrive folder
+ * (resolveLearnedPath), in builds/, and either computer can take down what
+ * the other built. A computer without that folder keeps it in review/, and
+ * a record left there by an older build is still read.
+ */
+export function recordPaths(
+  jobId: string,
+  out: string,
+  env: NodeJS.ProcessEnv = process.env,
+  exists: (path: string) => boolean = existsSync,
+): { write: string; read: string[] } {
+  const local = join(out, `${jobId}-built.json`);
+  const learned = resolveLearnedPath(null, env, exists);
+  if (!learned.shared) return { write: local, read: [local] };
+  const shared = join(dirname(learned.path), 'builds', `${jobId}-built.json`);
+  return { write: shared, read: [shared, local] };
+}
+
+/** The latest record among the places a build may have left one. */
+export function readRecord(paths: string[], read: (path: string) => string | null = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null)): BuildRecord | null {
+  let latest: BuildRecord | null = null;
+  for (const p of paths) {
+    const text = read(p);
+    if (text === null) continue;
+    const r = JSON.parse(text) as BuildRecord;
+    if (!latest || r.builtAt > latest.builtAt) latest = r;
+  }
+  return latest;
 }
 
 async function main(): Promise<number> {
@@ -228,13 +258,14 @@ async function main(): Promise<number> {
   }
 
   mkdirSync(args.out, { recursive: true });
-  const recordPath = join(args.out, `${job.id}-built.json`);
-  const record = readRecord(recordPath);
+  const records = recordPaths(job.id, args.out);
+  const recordPath = records.write;
+  const record = readRecord(records.read);
   const planPath = join(args.out, `${job.id}-build-plan.json`);
   const pagePath = join(args.out, `${job.id}-build-plan.html`);
   const plannedAt = new Date().toISOString();
   const page = (plan: BuildPlan | null, applied?: { record: BuildRecord; verify: { ok: boolean; lines: string[] } }): void => {
-    writeFileSync(pagePath, renderBuildPage({ job, draftPath, planPath, plannedAt, gate, plan, applied: applied ?? null }));
+    writeFileSync(pagePath, renderBuildPage({ job, draftPath, planPath, plannedAt, gate, plan, applied: applied ?? null, recordPath }));
   };
 
   const gate = gateBuild({ job, draft, budget, record, live: args.live, replace: args.replace });
@@ -289,7 +320,10 @@ async function main(): Promise<number> {
     jobId: job.id, jobName: job.name, pass: plan.pass, builtAt: new Date().toISOString(),
     groups: [], parameters: plan.parameters.map((p) => p.name),
   };
-  const save = (): void => { writeFileSync(recordPath, JSON.stringify(built, null, 2)); };
+  const save = (): void => {
+    mkdirSync(dirname(recordPath), { recursive: true });
+    writeFileSync(recordPath, JSON.stringify(built, null, 2));
+  };
 
   for (const d of gate.deletes) {
     await writer.mutate(deleteMutation(d.id));
